@@ -62,12 +62,22 @@
             background: var(--app-bg);
             color: var(--text);
             height: 100vh;
+            /* iOS Safariなどの下部バーを考慮した高さ指定 */
             height: 100dvh;
+            min-height: 100vh;
+            min-height: 100dvh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            /* body自体がスクロールしないように完全固定 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
         }
 
         /* ── MODAL (Setup & Result) ── */
@@ -1092,7 +1102,8 @@
                 else {
                     S.curServTeam = 1 - S.curServTeam;
                     if ((S.gL + S.gR) === S.maxG - 1) S.isFinal = true;
-                    alert('チェンジサービス / サイズ');
+                    // 終了したゲーム数(S.gL + S.gR)が奇数の場合はチェンジサイズ、偶数の場合はチェンジサービス
+                    alert((S.gL + S.gR) % 2 !== 0 ? 'チェンジサイズ' : 'チェンジサービス');
                     step(1); document.getElementById('modal').classList.remove('hidden');
                 }
             }
@@ -1125,9 +1136,22 @@
 
         function getDisp(l, r, fin) {
             const border = fin ? 6 : 3;
-            if (l < border && r < border) return { l, r };
+
+            // どちらかがborder（デュースになる点数）に達していない場合は、必ずそのままの数字を表示
+            // 例：ファイナル(fin=true)のとき、border=6。 5-6 や 6-5 のように、どちらかが6未満ならそのまま。
+            // 例：通常(fin=false)のとき、border=3。 2-3 や 3-2 のように、どちらかが3未満ならそのまま。
+            if (l < border || r < border) {
+                return { l, r };
+            }
+
+            // 以下は、lとrの両方がborder（3または6）以上に達している場合のみ処理される。
+            // つまり、少なくとも 3-3 や 6-6 になっている状態以降。
+
+            // 同点の場合（3-3, 4-4, 6-6, 7-7 など）
             if (l === r) return { l: 'D', r: 'D' };
+            // 1点差でリードしている場合（A-D）
             if (l > r) return { l: 'A', r: 'D' };
+            // 1点差で負けている場合（D-A）
             return { l: 'D', r: 'A' };
         }
 
@@ -1175,27 +1199,58 @@
 
         // ── SUBMENU & LABELS ──
         const MENUS = {
+            // -- 得点 (Point) 第一階層 --
             p: [
-                { k: 'ace', l: 'SA', i: '🎯' }, { k: 'smash', l: 'Smash', i: '💥' },
-                { k: 'volley_f', l: 'F-Volley', i: '🟦' }, { k: 'volley_b', l: 'B-Volley', i: '🟪' },
-                { k: 'stroke_f', l: 'F-Stroke', i: '🟦' }, { k: 'stroke_b', l: 'B-Stroke', i: '🟪' },
-                { k: 'attack', l: 'Attack', i: '⚡' }
+                { k: 'ace', l: 'エース', i: '🎯' },
+                { k: 'smash', l: 'スマッシュ', i: '💥' },
+                { k: 'attack', l: 'アタック', i: '⚡' },
+                { k: 'f', l: 'フォア', i: '🟦', sub: 'p_detail_f' },
+                { k: 'b', l: 'バック', i: '🟪', sub: 'p_detail_b' }
             ],
+            // -- 共通: 得点 (Point) 第二階層 (サブメニュー表示用) --
+            p_detail: [
+                { k: 'shoot_cross', l: 'クロス', i: '↖' }, { k: 'shoot_rev_cross', l: '逆クロス', i: '↗' },
+                { k: 'shoot_str', l: 'ストレート', i: '↑' }, { k: 'shoot_ctr', l: 'センター', i: '•' },
+                { k: 'lob_cross', l: 'クロス', i: '☁↖' }, { k: 'lob_rev_cross', l: '逆クロス', i: '☁↗' },
+                { k: 'lob_str', l: 'ストレート', i: '☁↑' }, { k: 'lob_ctr', l: 'センター', i: '☁•' },
+                { k: 'volley', l: 'ボレー', i: '🛡' }
+            ],
+
+            // -- 失点 (Miss) 第一階層 --
             m: [
-                { k: 'net', l: 'Net', i: '🔴' }, { k: 'out', l: 'Out', i: '↔' },
-                { k: 'smash', l: 'Smash', i: '💨' },
-                { k: 'recv', l: 'Recv Miss', i: '🎾', sub: true }
+                { k: 'smash', l: 'スマッシュミス', i: '�' },
+                { k: 'recv', l: 'レシーブミス', i: '🎾', sub: 'm_recv' },
+                { k: 'f', l: 'フォア', i: '🟦', sub: 'm_detail_f' },
+                { k: 'b', l: 'バック', i: '🟪', sub: 'm_detail_b' }
             ],
+            // レシーブ第二階層
             m_recv: [
-                { k: 'recv_net', l: 'RM Net', i: '🔴' }, { k: 'recv_out', l: 'RM Out', i: '↔' },
-                { k: 'recv_ace', l: 'SA Recv', i: '⚡' }
+                { k: 'recv_f', l: 'フォアレシーブ', i: '🟦' },
+                { k: 'recv_b', l: 'バックレシーブ', i: '🟪' }
+            ],
+            // 共通: 失点 (Miss) 第二階層
+            m_detail: [
+                { k: 'shoot_net', l: 'シュートNet', i: '🔴' }, { k: 'shoot_back', l: 'シュートBack', i: '⬆' },
+                { k: 'shoot_out_r', l: 'シュートOutR', i: '➡' }, { k: 'shoot_out_l', l: 'シュートOutL', i: '⬅' },
+                { k: 'lob_back', l: 'ロブBack', i: '☁⬆' }, { k: 'lob_out_r', l: 'ロブOutR', i: '☁➡' },
+                { k: 'lob_out_l', l: 'ロブOutL', i: '☁⬅' },
+                { k: 'volley', l: 'ボレー', i: '🛡' }
             ]
         };
 
-        function showSM(type, p) {
+        // type: 表示するメニューのキー, p: 選択中の選手ID, prefix: 前階層で選んだ手(f/b)など
+        function showSM(type, p, prefix = '') {
             const sm = document.getElementById('sm-body'); sm.innerHTML = '';
-            const list = MENUS[type] || MENUS['p'];
-            document.getElementById('sm-title').textContent = type === 'p' ? '得点内容' : 'ミス内容';
+
+            // typeに基づくリストの取得（特殊なマッピングを含む）
+            let list = MENUS[type];
+            if (!list) {
+                if (type.startsWith('p_detail_')) list = MENUS['p_detail'];
+                else if (type.startsWith('m_detail_')) list = MENUS['m_detail'];
+                else list = MENUS['p'];
+            }
+
+            document.getElementById('sm-title').textContent = type.startsWith('p') ? '得点内容' : 'ミス内容';
 
             const inf = getServ();
             const isS = p === inf.s;
@@ -1203,24 +1258,54 @@
             list.forEach(item => {
                 if (item.k === 'ace' && !isS) return;
                 const b = document.createElement('button'); b.className = 'sm-btn';
-                b.innerHTML = `<div style="font-size:1.5rem">${item.i}</div><div>${item.l}</div>`;
+                b.innerHTML = `<div style="font-size:1.5rem">${item.i}</div><div style="font-size:0.75rem">${item.l}</div>`;
                 b.onclick = () => {
-                    if (item.sub) showSM('m_recv', p);
-                    else commit(item.k);
+                    if (item.sub) {
+                        // 次の階層へ進む (例: f を選んだら prefix='f_' として引き継ぐ)
+                        const subType = item.sub;
+                        const nextPrefix = (item.k === 'f' || item.k === 'b') ? item.k + '_' : prefix;
+                        showSM(subType, p, nextPrefix);
+                    } else {
+                        // 確定処理 (prefixがある場合は結合する 例: 'f_' + 'shoot_cross')
+                        const finalKey = prefix + item.k;
+                        // _act.type は大元の p または m を保持しているため、commitで正しい増減判定が行われる
+                        commit(finalKey);
+                    }
                 };
                 sm.appendChild(b);
             });
 
-            if (type.includes('_')) {
+            // "戻る" ボタンの表示 (サブメニューの場合)
+            if (type !== 'p' && type !== 'm') {
                 const back = document.createElement('button'); back.className = 'sm-back'; back.textContent = '戻る';
-                back.onclick = () => showSM('m', p); sm.appendChild(back);
+                back.onclick = () => {
+                    const rootType = type.startsWith('p') ? 'p' : 'm';
+                    showSM(rootType, p);
+                };
+                sm.appendChild(back);
             }
 
             document.getElementById('submenu').classList.add('open');
         }
 
+        // ラベル変換のアップデート（必要最小限の変換）
         function getLbl(k) {
-            const map = { ace: 'SA', smash: 'Smash', volley_f: 'FV', volley_b: 'BV', stroke_f: 'FST', stroke_b: 'BST', net: 'Net', out: 'Out', df: 'DF', recv_net: 'RM-N', recv_out: 'RM-O', recv_ace: 'RM-SA' };
+            const map = {
+                ace: 'SA', smash: 'Smash', attack: 'Atk', df: 'DF',
+                recv_f: 'F-Recv', recv_b: 'B-Recv',
+                // f_ prefix
+                f_shoot_cross: 'F-S.Cr', f_shoot_rev_cross: 'F-S.Rx', f_shoot_str: 'F-S.St', f_shoot_ctr: 'F-S.Ct',
+                f_lob_cross: 'F-L.Cr', f_lob_rev_cross: 'F-L.Rx', f_lob_str: 'F-L.St', f_lob_ctr: 'F-L.Ct',
+                f_volley: 'F-Vly',
+                f_shoot_net: 'F-S.Nt', f_shoot_back: 'F-S.Bk', f_shoot_out_r: 'F-S.OR', f_shoot_out_l: 'F-S.OL',
+                f_lob_back: 'F-L.Bk', f_lob_out_r: 'F-L.OR', f_lob_out_l: 'F-L.OL',
+                // b_ prefix
+                b_shoot_cross: 'B-S.Cr', b_shoot_rev_cross: 'B-S.Rx', b_shoot_str: 'B-S.St', b_shoot_ctr: 'B-S.Ct',
+                b_lob_cross: 'B-L.Cr', b_lob_rev_cross: 'B-L.Rx', b_lob_str: 'B-L.St', b_lob_ctr: 'B-L.Ct',
+                b_volley: 'B-Vly',
+                b_shoot_net: 'B-S.Nt', b_shoot_back: 'B-S.Bk', b_shoot_out_r: 'B-S.OR', b_shoot_out_l: 'B-S.OL',
+                b_lob_back: 'B-L.Bk', b_lob_out_r: 'B-L.OR', b_lob_out_l: 'B-L.OL'
+            };
             return map[k] || k;
         }
 
