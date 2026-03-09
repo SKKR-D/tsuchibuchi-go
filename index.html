@@ -101,8 +101,11 @@
         .p-role { font-size: 0.6rem; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 4px; position: absolute; top: 2px; left: 2px; font-weight: bold; }
         .role-s { background: var(--gold); color: #000; }
         .role-r { background: var(--cyan); color: #000; }
-        .p-name { font-weight: 700; margin-left: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
+        /* Edited: Input Style for Names */
+        .clean-input { background: transparent; border: none; font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; width: 100%; outline: none; text-align: center; }
+        .p-name-input { background: transparent; border: none; font-family: inherit; font-size: inherit; font-weight: 700; color: inherit; width: 100%; outline: none; margin-left: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
         .active-server { background: #fff9c4 !important; outline: 2px solid #d32f2f !important; border-color: transparent !important; }
         .active-receiver { background: #e3f2fd !important; outline: 2px solid #1976d2 !important; border-color: transparent !important; }
         
@@ -249,16 +252,16 @@
                 </div>
             </div>
             <div class="team-panel right">
-                <div class="panel-top" id="tname-R">相手</div>
+                <div class="panel-top"><input id="tname-R" class="clean-input" value="相手" onchange="S.teams.R = this.value"></div>
                 <div style="text-align:center; font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-top:4px;">ポイントカウント</div>
                 <div class="point-display" id="pt-R">0</div>
                 <div class="players-box">
                     <div class="p-row" id="row-C">
-                        <div class="p-info"><span class="p-role" id="role-C"></span><span class="p-name" id="nm-C"></span></div>
+                        <div class="p-info"><span class="p-role" id="role-C"></span><input class="p-name-input" id="nm-C" onchange="S.names.C = this.value"></div>
                         <div class="p-btns"><button class="act-btn btn-p" onclick="act('R','C','p')">ポイント</button><button class="act-btn btn-m" onclick="act('R','C','m')">ミス</button></div>
                     </div>
                     <div class="p-row" id="row-D">
-                        <div class="p-info"><span class="p-role" id="role-D"></span><span class="p-name" id="nm-D"></span></div>
+                        <div class="p-info"><span class="p-role" id="role-D"></span><input class="p-name-input" id="nm-D" onchange="S.names.D = this.value"></div>
                         <div class="p-btns"><button class="act-btn btn-p" onclick="act('R','D','p')">ポイント</button><button class="act-btn btn-m" onclick="act('R','D','m')">ミス</button></div>
                     </div>
                 </div>
@@ -418,7 +421,14 @@
             document.getElementById('pt-L').textContent = d.l; document.getElementById('pt-R').textContent = d.r;
             document.getElementById('game-info').textContent = S.isFinal ? 'ファイナル' : `${S.gL + S.gR + 1}ゲーム目`;
             ['A', 'B', 'C', 'D'].forEach(p => {
-                document.getElementById('nm-' + p).textContent = S.names[p];
+                const el = document.getElementById('nm-' + p);
+                // Check if element is an Input or just standard element (to support mixed types if ever needed)
+                if (el.tagName === 'INPUT') {
+                    el.value = S.names[p];
+                } else {
+                    el.textContent = S.names[p];
+                }
+                
                 document.getElementById('role-' + p).className = `p-role ${p === inf.s ? 'role-s' : (p === inf.r ? 'role-r' : '')}`;
                 document.getElementById('role-' + p).textContent = p === inf.s ? 'S' : (p === inf.r ? 'R' : '');
                 const row = document.getElementById('row-' + p);
@@ -426,6 +436,11 @@
                 if (p === inf.s) row.classList.add('active-server');
                 if (p === inf.r) row.classList.add('active-receiver');
             });
+            // Update Team Name Input if exists
+            const tr = document.getElementById('tname-R');
+            if (tr && tr.tagName === 'INPUT') tr.value = S.teams.R;
+            else if (document.getElementById('tname-R')) document.getElementById('tname-R').textContent = S.teams.R;
+
             if (S.fault === 0) { document.getElementById('fault-btn').textContent = "FAULT"; document.getElementById('fault-btn').classList.remove('warn'); }
             drawChart('flow-chart', S.hist, S.isFinal);
         }
@@ -478,7 +493,14 @@
             p: [
                 { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' },
                 { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' },
-                { k: 'ace', l: 'サービスエース', i: '🎯' } // Server only
+                { k: 'ace', l: 'サービスエース', i: '🎯', sub: 'p_ace_type' }, // Server only (Modified)
+                { k: 'race', l: 'レシーブエース', i: '🔥', sub: 'p_race_shot' } // Receiver only
+            ],
+            // New Service Ace Flow
+            p_ace_type: [
+                { k: 'ovh', l: 'オーバーヘッド', i: '🔨' },
+                { k: 'und', l: 'アンダーカット', i: '✂️' },
+                { k: 'other', l: 'その他 (入力)', i: '🖊️', input: true }
             ],
             p_shot: [
                 { k: 'shoot', l: 'シュート', i: '⚡', sub: 'p_course' },
@@ -488,6 +510,19 @@
                 { k: 'drop', l: 'ドロップ(ツイスト)', i: '🌀', sub: 'p_course' }
             ],
             p_course: [
+                { k: 'cross', l: 'クロス', i: '↖' },
+                { k: 'rev', l: '逆クロス', i: '↗' },
+                { k: 'ctr', l: 'センター', i: '•' },
+                { k: 'str', l: 'ストレート', i: '↑' }
+            ],
+
+            // ── RECEIVE ACE FLOW ──
+            p_race_shot: [
+                { k: 'shoot', l: 'シュート', i: '⚡', sub: 'p_race_course' },
+                { k: 'lob', l: 'ロブ', i: '☁', sub: 'p_race_course' },
+                { k: 'twist', l: 'ツイスト', i: '🌀', sub: 'p_race_course' }
+            ],
+            p_race_course: [
                 { k: 'cross', l: 'クロス', i: '↖' },
                 { k: 'rev', l: '逆クロス', i: '↗' },
                 { k: 'ctr', l: 'センター', i: '•' },
@@ -548,13 +583,20 @@
 
             list.forEach(item => {
                 if (item.k === 'ace' && !isS) return; // Hide Ace if not server
+                if (item.k === 'race' && !isR) return; // Hide Receive Ace if not receiver
                 if (item.k === 'recv' && !isR) return; // Hide Recv if not receiver
 
                 const b = document.createElement('button'); b.className = 'sm-btn';
                 b.innerHTML = `<div style="font-size:1.5rem">${item.i}</div><div style="font-size:0.75rem">${item.l}</div>`;
                 
                 b.onclick = () => { 
-                    if (item.sub) { 
+                    if (item.input) {
+                        // Handle Free Input
+                        const val = prompt(item.l + 'の内容を入力してください:');
+                        if (val) {
+                            commit(prefix + item.k + '_' + val);
+                        }
+                    } else if (item.sub) { 
                         // Prefix logic: if start of recv, force recv prefix
                         let nextPre = prefix;
                         if (item.k === 'recv') nextPre = 'recv_';
@@ -591,7 +633,8 @@
             // Dynamic parsing
             const parts = k.split('_');
             const dict = {
-                recv: 'R', f: 'F', b: 'B',
+                race: 'RA', recv: 'R', f: 'F', b: 'B',
+                ovh: 'Ovh', und: 'Und', // New Service Types
                 shoot: 'S', lob: 'L', twist: 'Tw', drop: 'Dr', volley: 'V', smash: 'Sm',
                 str: 'St', cross: 'Cr', rev: 'Rx', ctr: 'Ct',
                 net: 'Nt', out: 'Ot', sout: 'S.Ot', bout: 'B.Ot', back: 'Bk'
