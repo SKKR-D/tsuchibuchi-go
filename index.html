@@ -64,7 +64,7 @@
         .cm { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
         
         .share-row { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 8px; margin-top: 10px; }
-        .share-btn { padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 6px; color: var(--text); cursor: pointer; }
+        .share-btn { padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 6px; color: var(--text); cursor: pointer; transition: 0.2s; }
         .share-btn:hover { background: var(--surface2); }
         
         /* Collapsible */
@@ -678,7 +678,6 @@
             const payload = JSON.stringify(S);
 
             // POST送信 (no-corsモードで送信)
-            // ※ no-corsモードはサーバーからのレスポンス内容を読み取れませんが、送信自体は行われます。
             fetch(GAS_API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -690,15 +689,18 @@
             .then(() => {
                 // 送信完了のアラート
                 alert("☁ クラウドにデータを送信しました！\n(スプレッドシートを確認してください)");
-                btn.innerHTML = "送信完了";
-                setTimeout(() => { 
-                    btn.innerHTML = originalText; 
-                    btn.disabled = false; 
-                }, 3000);
+                
+                // 【改善ポイント】ボタンを「送信済み」にして、二度と押せないようにデザインも変更する
+                btn.innerHTML = "送信済み ✔";
+                btn.style.background = "var(--surface2)";
+                btn.style.color = "var(--text-dim)";
+                btn.style.borderColor = "var(--border)";
+                // ※ btn.disabled = false; を削除したため、以降クリックできなくなります
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert("送信に失敗しました。\n通信環境を確認してください。");
+                // エラーの場合は再送信できるように元の状態に戻す
                 btn.innerHTML = "再送信";
                 btn.disabled = false;
             });
