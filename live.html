@@ -247,11 +247,25 @@
                 const response = await fetch(`${GAS_URL_LIVE}?court=${currentCourtId}`);
                 const data = await response.json();
 
+                // 待機状態（手動でクリアされた場合など）
                 if (data.status === "waiting") {
                     document.getElementById('main-board').style.display = 'none';
                     document.getElementById('loading-screen').style.display = 'flex';
                     document.getElementById('v-wait-court').textContent = getCourtFullName(currentCourtId);
                     document.getElementById('v-wait-msg').textContent = "このコートの試合開始を待っています。";
+                    document.getElementById('v-wait-spinner').style.display = 'none';
+                    return;
+                }
+
+                // ★追加：ダッシュボードと同じ5分タイムアウト処理（古いデータも除外）
+                const now = Date.now();
+                const TIMEOUT_MS = 5 * 60 * 1000; // 5分
+                
+                if (!data.lastUpdate || (now - data.lastUpdate) > TIMEOUT_MS) {
+                    document.getElementById('main-board').style.display = 'none';
+                    document.getElementById('loading-screen').style.display = 'flex';
+                    document.getElementById('v-wait-court').textContent = getCourtFullName(currentCourtId);
+                    document.getElementById('v-wait-msg').textContent = "試合終了、または通信が途絶えています。";
                     document.getElementById('v-wait-spinner').style.display = 'none';
                     return;
                 }

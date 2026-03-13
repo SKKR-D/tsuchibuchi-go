@@ -109,11 +109,12 @@
         function renderDashboard(matches) {
             const wrap = document.getElementById('grid-wrap');
             const now = Date.now();
-            const TIMEOUT_MS = 10 * 60 * 1000; // 10分通信がなければ除外（タイムアウト）
+            const TIMEOUT_MS = 5 * 60 * 1000; // ★5分通信がなければ除外（タイムアウト）に変更
 
-            // 最終更新時間から10分以内の試合だけを抽出
+            // 最終更新時間から5分以内の試合だけを抽出
             let activeMatches = matches.filter(S => {
-                if (!S.lastUpdate) return true; // 古いデータ互換
+                // ★修正: 時刻データ(lastUpdate)を持たない古いキャッシュデータは強制非表示にする
+                if (!S.lastUpdate) return false; 
                 return (now - S.lastUpdate) < TIMEOUT_MS;
             });
 

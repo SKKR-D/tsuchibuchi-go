@@ -371,7 +371,7 @@
             if (isMatchStarted) { e.preventDefault(); e.returnValue = ''; }
         });
 
-        // ★追加：ブラウザのタブやウィンドウを閉じた時に消去指令を送る
+        // ブラウザのタブやウィンドウを閉じた時に消去指令を送る
         window.addEventListener('pagehide', function (e) {
             if (isMatchStarted) clearLiveScore();
         });
@@ -381,7 +381,7 @@
             return `${id.split('_')[1]}コート`;
         }
 
-        // ★追加：ライブスコアを強制的に消去する機能
+        // ライブスコアを強制的に消去する機能
         function clearLiveScore() {
             if (!S || !S.meta || !S.meta.court) return;
             const clearData = { meta: { court: S.meta.court }, clear: true };
@@ -545,10 +545,16 @@
 
         let _act = {};
         function act(side, p, type) { _act = { side, p, type }; showSM(type, p); }
+        
         function commit(sub) {
             historyStack.push(JSON.stringify(S));
             const { side, p, type } = _act; const inf = getServ();
-            if (S.fault === 0 && inf.s === p) { S.stats[inf.s].fi++; S.stats[inf.s].st++; }
+            
+            // ★ 修正箇所: フォルト状態でなければ、必ずサーバーの1stサーブをカウントする
+            if (S.fault === 0) { 
+                S.stats[inf.s].fi++; 
+                S.stats[inf.s].st++; 
+            }
             
             if (type === 'p') { 
                 S.stats[p].p++; if (sub) S.stats[p].pt[sub] = (S.stats[p].pt[sub] || 0) + 1; 
@@ -564,9 +570,24 @@
 
         function handleFault() {
             const inf = getServ();
-            if (S.fault === 0) { S.fault = 1; S.stats[inf.s].st++; document.getElementById('fault-btn').textContent = "2nd SERVICE"; document.getElementById('fault-btn').classList.add('warn'); }
-            else { historyStack.push(JSON.stringify(S)); S.fault = 0; S.stats[inf.s].m++; S.stats[inf.s].mt['df'] = (S.stats[inf.s].mt['df'] || 0) + 1; S.hist.push(inf.t === 0 ? 'R' : 'L'); inf.t === 0 ? S.pR++ : S.pL++; S.totalP++; checkEnd(); update(); }
-            sendToLive(); 
+            if (S.fault === 0) { 
+                S.fault = 1; 
+                S.stats[inf.s].st++; 
+                document.getElementById('fault-btn').textContent = "2nd SERVICE"; 
+                document.getElementById('fault-btn').classList.add('warn'); 
+            }
+            else { 
+                historyStack.push(JSON.stringify(S)); 
+                S.fault = 0; 
+                S.stats[inf.s].m++; 
+                S.stats[inf.s].mt['df'] = (S.stats[inf.s].mt['df'] || 0) + 1; 
+                S.hist.push(inf.t === 0 ? 'R' : 'L'); 
+                inf.t === 0 ? S.pR++ : S.pL++; 
+                S.totalP++; 
+                checkEnd(); 
+                update(); 
+                sendToLive(); 
+            }
         }
 
         function checkEnd() {
