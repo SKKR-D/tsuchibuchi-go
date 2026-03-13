@@ -3,33 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>あすへはばたけ Cloud</title>
+    <title>土淵中スコアブック(統合・ライブ中継対応版)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&family=Yuji+Syuku&display=swap" rel="stylesheet">
     <style>
         /* ── COLORS & THEME ── */
         :root { --bg: #f0f2f5; --surface: #ffffff; --surface2: #e4e6eb; --border: #b0b3b8; --text: #1a1a1a; --text-dim: #606770; --blue: #0060df; --blue-dim: #eef4ff; --red: #d93025; --red-dim: #ffebee; --gold: #b38600; --gold-bg: #fffbe6; --green: #008a45; --cyan: #008ba3; --app-bg: #e0e0e0; }
-        body.dark-mode { --bg: #0a0e1a; --surface: #131929; --surface2: #1c2540; --border: #2a3a5c; --text: #e8eaf6; --text-dim: #7986cb; --blue: #1e90ff; --blue-dim: #0c3d7a; --red: #ff4060; --red-dim: #7a0c20; --gold: #f5c518; --gold-bg: #3a2800; --green: #00e676; --cyan: #00e5ff; --app-bg: #000000; }
         
-        /* Layout */
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         body { font-family: 'Noto Sans JP', sans-serif; background: var(--app-bg); color: var(--text); height: 100vh; height: 100dvh; min-height: 100vh; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; }
 
-        /* ── MODAL (Setup & Result) ── */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; padding: 16px; }
         .modal-overlay.hidden { display: none; }
         .modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 500px; margin-bottom: 16px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); }
         
-        /* Setup Steps */
         .step-bar { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
         .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all .3s; }
         .step-dot.active { background: var(--gold); transform: scale(1.3); }
         
-        /* Inputs */
         .match-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
         .full-width { grid-column: span 2; }
-        .input-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px; display: block; }
-        .name-input { width: 100%; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.95rem; }
+        .input-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px; display: block; font-weight: bold; }
+        
+        .name-input { width: 100%; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.95rem; font-family: inherit; }
         
         .option-group { display: flex; gap: 6px; margin-bottom: 12px; }
         .opt-btn { flex: 1; padding: 12px 4px; background: var(--surface2); border: 2px solid var(--border); border-radius: 8px; font-weight: 700; font-size: 0.9rem; color: var(--text); cursor: pointer; transition: 0.2s; }
@@ -37,12 +33,12 @@
         .opt-btn.sel-gold { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
         .opt-btn.sel-blue { background: var(--blue); border-color: var(--blue); color: #fff; }
         .opt-btn.sel-red { background: var(--red); border-color: var(--red); color: #fff; }
+        .opt-btn.sel-green { background: var(--green); border-color: var(--green); color: #fff; }
         
         .confirm-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue), #0060cc); border: none; border-radius: 10px; color: #fff; font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; margin-top: 8px; cursor: pointer; transition: 0.2s; }
         .confirm-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0, 96, 223, 0.3); }
         .confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* ── RESULT SCREEN ── */
         .result-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--gold); padding-bottom: 8px; margin-bottom: 8px; }
         .rh-title { font-size: 0.75rem; color: var(--text-dim); font-weight: 700; }
         .rh-winner { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; font-weight: 900; color: var(--gold); }
@@ -56,6 +52,7 @@
         .ct-name { text-align: left; padding-left: 6px; max-width: 80px; overflow: hidden; white-space: nowrap; }
         
         .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+        .detail-grid.singles-mode { grid-template-columns: 1fr; }
         .d-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px; overflow: hidden; }
         .dc-head { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 900; margin-bottom: 4px; border-bottom: 1px solid var(--border); padding-bottom: 2px; }
         .dc-body { font-size: 0.65rem; line-height: 1.3; min-height: 3.6em; }
@@ -63,11 +60,13 @@
         .cp { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
         .cm { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
         
-        .share-row { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 8px; margin-top: 10px; }
-        .share-btn { padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 6px; color: var(--text); cursor: pointer; transition: 0.2s; }
-        .share-btn:hover { background: var(--surface2); }
+        .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .share-btn { padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 6px; color: var(--text); cursor: pointer; }
+        .share-btn:hover:not(:disabled) { background: var(--surface2); }
+        .share-btn-primary { grid-column: span 2; background: linear-gradient(135deg, var(--green), #006b36); color: white; font-size: 1rem; padding: 14px; border: none; }
+        .share-btn-primary:hover:not(:disabled) { box-shadow: 0 4px 10px rgba(0, 138, 69, 0.3); transform: translateY(-1px); }
+        .share-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        /* Collapsible */
         details.flow-details { margin-bottom: 8px; border: 1px solid var(--border); border-radius: 6px; }
         details.flow-details summary { padding: 8px; font-size: 0.75rem; font-weight: 700; background: var(--surface2); list-style: none; cursor: pointer; text-align: center; }
         .flow-content { padding: 8px; max-height: 150px; overflow-y: auto; }
@@ -78,7 +77,6 @@
         .dot-L { background: var(--blue); }
         .dot-R { background: var(--red); }
 
-        /* ── GAME SCREEN ── */
         .app { width: 100%; max-width: 600px; height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: var(--bg); position: relative; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); overflow-y: auto; overflow-x: hidden; }
         .header { padding: 16px 12px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; min-height: 100px; }
         .game-score-display { font-family: 'Century Gothic', sans-serif; font-size: clamp(2rem, 8vw, 4rem); font-weight: 900; }
@@ -89,22 +87,24 @@
         .team-panel { flex: 1; border-radius: 12px; display: flex; flex-direction: column; border: 2px solid transparent; background: var(--surface); position: relative; }
         .team-panel.left { border-color: var(--blue); }
         .team-panel.right { border-color: var(--red); }
+        
         .panel-top { padding: 6px; text-align: center; background: rgba(0, 0, 0, 0.03); font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+        .seamless-input { border:none; background:transparent; width:100%; text-align:center; font-family:inherit; font-weight:700; font-size:0.9rem; color:inherit; outline:none; padding:0; margin:0; }
+        .seamless-input:focus { background: rgba(255,255,255,0.5); border-radius:4px; }
         
         .point-display { flex: 1; display: flex; align-items: center; justify-content: center; font-family: 'Helvetica World', Helvetica, sans-serif; font-size: clamp(3rem, 35cqi, 12rem); container-type: inline-size; line-height: 1; font-weight: 900; margin: 10px 0; }
         .left .point-display { color: var(--blue); }
         .right .point-display { color: var(--red); }
         
-        .players-box { display: flex; flex-direction: column; gap: 4px; padding: 6px; background: var(--surface2); }
+        .players-box { display: flex; flex-direction: column; gap: 4px; padding: 6px; background: var(--surface2); flex: 1; justify-content: flex-end;}
         .p-row { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; height: 56px; }
         .p-info { width: 35%; padding: 4px; display: flex; flex-direction: column; justify-content: center; font-size: 0.75rem; border-right: 1px solid var(--border); position: relative; }
         .p-role { font-size: 0.6rem; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 4px; position: absolute; top: 2px; left: 2px; font-weight: bold; }
         .role-s { background: var(--gold); color: #000; }
         .role-r { background: var(--cyan); color: #000; }
         
-        /* Edited: Input Style for Names */
-        .clean-input { background: transparent; border: none; font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; width: 100%; outline: none; text-align: center; }
-        .p-name-input { background: transparent; border: none; font-family: inherit; font-size: inherit; font-weight: 700; color: inherit; width: 100%; outline: none; margin-left: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .p-name-input { border:none; background:transparent; width:100%; font-family:inherit; font-weight:700; font-size:0.8rem; color:var(--text); outline:none; margin-left:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .p-name-input:focus { background: rgba(0,0,0,0.05); border-radius:2px; }
 
         .active-server { background: #fff9c4 !important; outline: 2px solid #d32f2f !important; border-color: transparent !important; }
         .active-receiver { background: #e3f2fd !important; outline: 2px solid #1976d2 !important; border-color: transparent !important; }
@@ -127,7 +127,6 @@
         .fault-btn.warn { background: var(--red); color: #fff; border-color: var(--red); }
         .fault-btn.warn:hover { filter: brightness(1.1); }
         
-        /* Submenu */
         .submenu-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: .2s; }
         .submenu-overlay.open { opacity: 1; pointer-events: auto; }
         .submenu-sheet { width: 100%; max-width: 600px; background: var(--surface); border-radius: 20px 20px 0 0; padding: 16px; max-height: 70vh; overflow-y: auto; transform: translateY(100%); transition: .3s; }
@@ -137,24 +136,66 @@
         .sm-btn:hover { filter: brightness(0.95); transform: scale(1.02); }
         .sm-back { grid-column: span 2; padding: 10px; background: transparent; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; }
         
-        /* Toast */
-        .toast { position: fixed; top: 100px; left: 50%; transform: translate(-50%, -20px); background: rgba(0, 0, 0, 0.8); color: #fff; padding: 8px 16px; border-radius: 20px; opacity: 0; transition: .3s; pointer-events: none; font-size: 0.85rem; z-index: 300; }
-        .toast.show { opacity: 1; transform: translate(-50%, 0); }
-        
         @media (max-width: 600px) { body { background: var(--bg); } .app { border-radius: 0; box-shadow: none; } }
     </style>
 </head>
 <body>
     <div id="modal" class="modal-overlay">
         <div class="modal-card">
+            
             <div id="step-0">
-                <h1 style="text-align: center; background: linear-gradient(135deg, #ff7b00, #ffc107); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 8vw, 3.6rem); font-weight: 900; margin-bottom: 20px; letter-spacing: 2px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); line-height: 1.2;">あすへはばたけ</h1>
-                <div class="step-bar"> <div class="step-dot active"></div> <div class="step-dot"></div> </div>
+                <h1 style="text-align: center; background: linear-gradient(135deg, #ff7b00, #ffc107); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: 'S Motoya Daikai', 'Sモトヤ大楷', 'Yuji Syuku', serif; font-size: clamp(1.5rem, 11vw, 3.2rem); white-space: nowrap; font-weight: 900; margin-bottom: 5px; letter-spacing: 0px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); line-height: 1.2;">あすへはばたけ</h1>
+                <p style="text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-bottom:20px;">統合版スコアシステム</p>
                 
+                <p class="input-label">📌 性別</p>
+                <div class="option-group" id="gender-opts">
+                    <button class="opt-btn" onclick="selGender('男子')">男子</button>
+                    <button class="opt-btn" onclick="selGender('女子')">女子</button>
+                </div>
+                
+                <p class="input-label">📌 種目</p>
+                <div class="option-group" id="type-opts">
+                    <button class="opt-btn" onclick="selMatchType('シングルス')">シングルス</button>
+                    <button class="opt-btn" onclick="selMatchType('ダブルス')">ダブルス</button>
+                </div>
+                
+                <button class="confirm-btn" id="btn-next-0" onclick="goToStep1()" disabled>設定へ進む</button>
+            </div>
+
+            <div id="step-1" style="display:none;">
+                <div class="step-bar"> <div class="step-dot active"></div> <div class="step-dot"></div> </div>
+                <div style="text-align:center; font-weight:bold; color:var(--blue); margin-bottom:10px;" id="disp-mode-label"></div>
+                
+                <p class="input-label">🎾 会場・コート指定</p>
+                <div class="match-info-grid">
+                    <div class="full-width">
+                        <select class="name-input" id="meta-court" style="font-weight:bold; color:var(--blue);">
+                            <option value="court_1">1コート</option>
+                            <option value="court_2">2コート</option>
+                            <option value="court_3">3コート</option>
+                            <option value="court_4">4コート</option>
+                            <option value="court_5">5コート</option>
+                            <option value="court_6">6コート</option>
+                            <option value="court_7">7コート</option>
+                            <option value="court_8">8コート</option>
+                            <option value="court_9">9コート</option>
+                            <option value="court_10">10コート</option>
+                            <option value="court_11">11コート</option>
+                            <option value="court_12">12コート</option>
+                            <option value="court_13">13コート</option>
+                            <option value="court_14">14コート</option>
+                            <option value="court_15">15コート</option>
+                            <option value="court_16">16コート</option>
+                            <option value="court_17">17コート</option>
+                            <option value="court_18">18コート</option>
+                        </select>
+                    </div>
+                </div>
+
                 <p class="input-label">大会情報</p>
                 <div class="match-info-grid">
                     <div class="full-width"><input class="name-input" id="meta-tourney" placeholder="大会名"></div>
-                    <div><input class="name-input" id="meta-stage" placeholder="回戦"></div>
+                    <div><input class="name-input" id="meta-stage" placeholder="回戦 (例: 決勝)"></div>
                     <div><input type="date" class="name-input" id="meta-date"></div>
                 </div>
 
@@ -165,25 +206,36 @@
 
                 <p class="input-label">選手登録</p>
                 <div class="match-info-grid">
-                    <div class="full-width" style="color:var(--blue); font-weight:bold; font-size:0.8rem;">🔵 自チーム (土淵)</div>
-                    <input class="name-input" id="n-A" value="選手A" placeholder="後衛"><input class="name-input" id="n-B" value="選手B" placeholder="前衛">
+                    <div class="full-width" style="color:var(--blue); font-weight:bold; font-size:0.8rem;">🔵 自チーム (土淵中)</div>
+                    <div class="full-width" id="wrap-nA"><select class="name-input" id="n-A"></select></div>
+                    <div class="full-width" id="wrap-nB"><select class="name-input" id="n-B"></select></div>
+                    
                     <div class="full-width" style="color:var(--red); font-weight:bold; font-size:0.8rem; margin-top:4px;">🔴 相手チーム <input id="team-r-name" placeholder="チーム名" style="width:100px; font-size:0.8rem; border:none; background:transparent; color: var(--text);"></div>
-                    <input class="name-input" id="n-C" value="選手C"><input class="name-input" id="n-D" value="選手D">
+                    <div class="full-width" id="wrap-nC"><input class="name-input" id="n-C" value="選手C" placeholder="選手C"></div>
+                    <div class="full-width" id="wrap-nD"><input class="name-input" id="n-D" value="選手D" placeholder="選手D"></div>
                 </div>
+                
+                <p class="input-label">ゲーム数</p>
                 <div class="option-group" id="match-opts">
                     <button class="opt-btn" onclick="selMatch(5)">5ゲーム</button>
                     <button class="opt-btn" onclick="selMatch(7)">7ゲーム</button>
                 </div>
+                
+                <p class="input-label">第1ゲーム サーバー</p>
                 <div class="option-group" id="serve-team-opts">
-                    <button class="opt-btn" onclick="selServTeam(0)">🔵 土淵S</button>
+                    <button class="opt-btn" onclick="selServTeam(0)">🔵 土淵中S</button>
                     <button class="opt-btn" onclick="selServTeam(1)">🔴 相手S</button>
                 </div>
-                <button class="confirm-btn" id="btn-start" onclick="confirmStep()" disabled>次へ</button>
+                
+                <button class="confirm-btn" id="btn-next-1" onclick="confirmStep1()" disabled>次へ</button>
+                <button class="opt-btn" onclick="step(0)" style="width:100%; margin-top:10px; border:none; background:transparent;">← 種目選択に戻る</button>
             </div>
-            
-            <div id="step-1" style="display:none;">
+
+            <div id="step-2" style="display:none;">
                 <div class="step-bar"> <div class="step-dot"></div> <div class="step-dot active"></div> </div>
-                <p style="text-align:center; margin-bottom:10px; font-size:0.9rem;">ポジション確認</p>
+                <div style="text-align:center; font-weight:bold; color:var(--blue); font-size:0.9rem; margin-bottom:4px;" id="disp-court-s2"></div>
+                <p id="pos-confirm-title" style="text-align:center; margin-bottom:10px; font-size:0.9rem;">第1ゲーム ポジション確認</p>
+                
                 <p class="input-label">🎾 サーバー</p>
                 <div class="option-group" id="server-opts"></div>
                 <p class="input-label">↗ レシーバー</p>
@@ -191,14 +243,17 @@
                 <div style="background:var(--surface2); padding:10px; border-radius:8px; text-align:center; font-size:0.8rem; margin:10px 0;">
                     <div id="court-diag" style="display:flex; justify-content:center; gap:10px; font-weight:bold;"></div>
                 </div>
-                <button class="confirm-btn" onclick="confirmStep()">ゲーム開始</button>
-                
-                <button id="btn-back-first" class="opt-btn" onclick="step(0)" style="width:100%; margin-top:12px; background:var(--surface); color:var(--text-dim); border:1px solid var(--border);">入力を修正する (戻る)</button>
+                <button class="confirm-btn" onclick="confirmStep2()">ゲーム開始</button>
+                <button class="opt-btn" onclick="step(1)" style="width:100%; margin-top:10px; border:none; background:transparent;">← 設定に戻る</button>
             </div>
 
-            <div id="step-2" style="display:none;">
+            <div id="step-3" style="display:none;">
                 <div class="result-header">
-                    <div><div class="rh-title">WINNER</div><div class="rh-winner" id="winner-name">土淵</div></div>
+                    <div>
+                        <div style="font-size:0.75rem; color:var(--blue); font-weight:bold; margin-bottom:4px;" id="disp-court-s3"></div>
+                        <div class="rh-title">WINNER</div>
+                        <div class="rh-winner" id="winner-name">土淵中</div>
+                    </div>
                     <div class="rh-score" id="winner-score">4 - 2</div>
                 </div>
                 <div class="compact-chart-wrap"><canvas id="stats-flow-chart"></canvas></div>
@@ -212,10 +267,11 @@
                     <summary>スコア詳細を見る</summary>
                     <div class="flow-content" id="game-flow-list"></div>
                 </details>
+                
                 <div class="share-row">
-                    <button class="share-btn" onclick="downloadJSON()">💾 保存</button>
-                    <button class="share-btn" id="btn-send-cloud" onclick="sendToCloud()" style="background:var(--gold-bg); color:var(--gold); border:2px solid var(--gold);">☁ 共有</button>
-                    <button class="share-btn" onclick="resetMatch()">🔄 新試合</button>
+                    <button class="share-btn share-btn-primary" id="btn-send-integrated" onclick="sendToCloud()">☁ データを送信する</button>
+                    <button class="share-btn" onclick="downloadJSON()">💾 バックアップ保存</button>
+                    <button class="share-btn" onclick="resetMatch()">🔄 新しい試合を入力</button>
                 </div>
             </div>
         </div>
@@ -224,7 +280,8 @@
     <div class="app" id="main-app">
         <div class="header">
             <div style="display:flex; flex-direction:column; justify-content:center;">
-                <div style="font-size:1.2rem; font-weight:bold; margin-top:16px;" id="game-info">1ゲーム目</div>
+                <div style="font-size:0.8rem; font-weight:bold; color:var(--blue);" id="disp-court-main"></div>
+                <div style="font-size:1.2rem; font-weight:bold; margin-top:4px;" id="game-info">1ゲーム目</div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
                 <div style="font-size:0.8rem; font-weight:bold; color:var(--text-dim); margin-bottom: 4px;">ゲームカウント</div>
@@ -237,31 +294,31 @@
 
         <div class="score-area">
             <div class="team-panel left">
-                <div class="panel-top" id="tname-L">土淵</div>
-                <div style="text-align:center; font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-top:4px;">ポイントカウント</div>
+                <div class="panel-top" id="tname-L">土淵中</div>
+                <div style="text-align:center; font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-top:4px;">ポイント</div>
                 <div class="point-display" id="pt-L">0</div>
                 <div class="players-box">
                     <div class="p-row" id="row-A">
-                        <div class="p-info"><span class="p-role" id="role-A"></span><span class="p-name" id="nm-A"></span></div>
+                        <div class="p-info"><span class="p-role" id="role-A"></span><input class="p-name-input" id="nm-A" readonly></div>
                         <div class="p-btns"><button class="act-btn btn-p" onclick="act('L','A','p')">ポイント</button><button class="act-btn btn-m" onclick="act('L','A','m')">ミス</button></div>
                     </div>
                     <div class="p-row" id="row-B">
-                        <div class="p-info"><span class="p-role" id="role-B"></span><span class="p-name" id="nm-B"></span></div>
+                        <div class="p-info"><span class="p-role" id="role-B"></span><input class="p-name-input" id="nm-B" readonly></div>
                         <div class="p-btns"><button class="act-btn btn-p" onclick="act('L','B','p')">ポイント</button><button class="act-btn btn-m" onclick="act('L','B','m')">ミス</button></div>
                     </div>
                 </div>
             </div>
             <div class="team-panel right">
-                <div class="panel-top"><input id="tname-R" class="clean-input" value="相手" onchange="S.teams.R = this.value"></div>
-                <div style="text-align:center; font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-top:4px;">ポイントカウント</div>
+                <input class="panel-top seamless-input" id="in-tname-R" value="相手" onchange="updateName('team','R',this.value)">
+                <div style="text-align:center; font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-top:4px;">ポイント</div>
                 <div class="point-display" id="pt-R">0</div>
                 <div class="players-box">
                     <div class="p-row" id="row-C">
-                        <div class="p-info"><span class="p-role" id="role-C"></span><input class="p-name-input" id="nm-C" onchange="S.names.C = this.value"></div>
+                        <div class="p-info"><span class="p-role" id="role-C"></span><input class="p-name-input" id="nm-C" onchange="updateName('player','C',this.value)"></div>
                         <div class="p-btns"><button class="act-btn btn-p" onclick="act('R','C','p')">ポイント</button><button class="act-btn btn-m" onclick="act('R','C','m')">ミス</button></div>
                     </div>
                     <div class="p-row" id="row-D">
-                        <div class="p-info"><span class="p-role" id="role-D"></span><input class="p-name-input" id="nm-D" onchange="S.names.D = this.value"></div>
+                        <div class="p-info"><span class="p-role" id="role-D"></span><input class="p-name-input" id="nm-D" onchange="updateName('player','D',this.value)"></div>
                         <div class="p-btns"><button class="act-btn btn-p" onclick="act('R','D','p')">ポイント</button><button class="act-btn btn-m" onclick="act('R','D','m')">ミス</button></div>
                     </div>
                 </div>
@@ -273,7 +330,7 @@
             <button class="fault-btn" id="fault-btn" onclick="handleFault()">FAULT</button>
         </div>
     </div>
-    <div class="toast" id="toast">Message</div>
+
     <div class="submenu-overlay" id="submenu">
         <div class="submenu-sheet">
             <div style="text-align:center; font-weight:bold; margin-bottom:10px;" id="sm-title">詳細</div>
@@ -282,64 +339,128 @@
     </div>
 
     <script>
-        // ── CONFIG ──
-        // ★ご指定のGAS URLを設定済みです
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzuXEXAgWB5TgGEAiPQuMoZn0k3oUbdcHWWEArdWaezAfX70aLjZ2z4-MbjKvlT3gAU_w/exec";
+        const GAS_URL_INTEGRATED = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec";
+        const GAS_URL_LIVE = "https://script.google.com/macros/s/AKfycbwa6_h9sF72L9CCBu8d82gbjYNijPgqjH8IyvvGHGHlcDdiFg7ba3dEpNn_ro-EW2hhYA/exec";
 
-        // ── DATA & STATE ──
+        const ROSTER = {
+            '男子': [
+                '坂倉 陽', '田川 遼', '菅野 稜真', '大森 太陽'
+            ],
+            '女子': [
+                '今井 香里', '吉田 那乃葉', '佐々木 美緒', '谷地 望愛', '荒木関 唯香', 
+                '齊藤 美柚', '根本 陽真莉', '村上 心優', '野崎 莉子', '高橋 芽衣'
+            ]
+        };
+
         let S = {
             maxG: 5, winG: 3, gL: 0, gR: 0, pL: 0, pR: 0, totalP: 0, fault: 0, isFinal: false,
             startTeam: null, curServTeam: null, sOrder: [], rOrder: [],
+            meta: { gender: '', matchType: '', tourney: '', stage: '', date: '', scorer: '', court: 'court_1' },
             names: { A: '選手A', B: '選手B', C: '選手C', D: '選手D' },
-            teams: { L: '土淵', R: '相手' },
-            meta: { tourney: '', stage: '', date: '', scorer: '' },
+            teams: { L: '土淵中', R: '相手' },
             stats: { A: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} }, B: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} }, C: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} }, D: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} } },
             hist: [], log: []
         };
         let historyStack = [];
         let setupStep = 0;
+        let isMatchStarted = false;
 
-        // ── INIT ──
         window.onload = () => { document.getElementById('meta-date').valueAsDate = new Date(); };
 
-        function selMatch(n) { S.maxG = n; S.winG = (n === 5) ? 3 : 4; upBtns('match-opts', n === 5 ? 0 : 1); checkS0(); }
-        function selServTeam(t) { S.startTeam = t; S.curServTeam = t; upBtns('serve-team-opts', t); checkS0(); }
-        function upBtns(id, idx) { const el = document.getElementById(id); if (!el) return; el.querySelectorAll('.opt-btn').forEach((b, i) => b.className = `opt-btn ${i === idx ? (idx === 0 ? 'sel-blue' : (id.includes('serv') ? 'sel-red' : 'sel-gold')) : ''}`); }
-        function checkS0() { document.getElementById('btn-start').disabled = !(S.maxG && S.startTeam !== null); }
-        
-        function confirmStep() {
-            if (setupStep === 0) {
-                ['A', 'B', 'C', 'D'].forEach(p => S.names[p] = document.getElementById('n-' + p).value || S.names[p]);
-                S.teams.R = document.getElementById('team-r-name').value || '相手';
-                S.meta.tourney = document.getElementById('meta-tourney').value;
-                S.meta.stage = document.getElementById('meta-stage').value;
-                if(document.getElementById('meta-date').value) S.meta.date = document.getElementById('meta-date').value;
-                
-                S.meta.scorer = document.getElementById('meta-scorer').value;
+        window.addEventListener('beforeunload', function (e) {
+            if (isMatchStarted) { e.preventDefault(); e.returnValue = ''; }
+        });
 
-                step(1);
-            } else if (setupStep === 1) {
-                document.getElementById('modal').classList.add('hidden');
-                update();
-            }
+        function getCourtFullName(id) {
+            if(!id) return '';
+            return `${id.split('_')[1]}コート`;
         }
+
+        function sendToLive() {
+            if (!isMatchStarted) return; 
+            fetch(GAS_URL_LIVE, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(S)
+            }).catch(e => console.log("Live update error", e));
+        }
+
+        /* --- STEP 0 --- */
+        function selGender(g) { S.meta.gender = g; upBtns('gender-opts', g === '男子' ? 0 : 1); checkS0(); }
+        function selMatchType(t) { S.meta.matchType = t; upBtns('type-opts', t === 'シングルス' ? 0 : 1); checkS0(); }
+        function checkS0() { document.getElementById('btn-next-0').disabled = !(S.meta.gender && S.meta.matchType); }
         
-        function step(n) {
-            document.getElementById('step-' + setupStep).style.display = 'none';
-            setupStep = n;
-            document.getElementById('step-' + setupStep).style.display = 'block';
-            if (n === 1) {
-                buildPos();
-                
-                const backBtn = document.getElementById('btn-back-first');
-                if (backBtn) {
-                    // S.log.length === 0 なら最初のゲームなので戻れるようにする
-                    backBtn.style.display = (S.log.length === 0) ? 'block' : 'none';
+        function goToStep1() {
+            const isSingles = (S.meta.matchType === 'シングルス');
+            document.getElementById('disp-mode-label').textContent = `【 ${S.meta.gender} ${S.meta.matchType} 】`;
+
+            const roster = ROSTER[S.meta.gender] || [];
+            ['A', 'B'].forEach(p => {
+                const selectEl = document.getElementById('n-' + p);
+                if (selectEl) {
+                    let defaultText = p === 'A' ? (isSingles ? '選手を選択してください' : '選手Aを選択してください') : '選手Bを選択してください';
+                    selectEl.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+                    roster.forEach(name => {
+                        selectEl.innerHTML += `<option value="${name}">${name}</option>`;
+                    });
                 }
-            }
+            });
+
+            document.getElementById('wrap-nB').style.display = isSingles ? 'none' : 'block';
+            document.getElementById('wrap-nD').style.display = isSingles ? 'none' : 'block';
+            document.getElementById('n-C').placeholder = isSingles ? '選手名' : '選手C';
+            
+            document.getElementById('btn-next-1').textContent = isSingles ? "ゲーム開始" : "ポジション設定へ";
+            step(1);
         }
 
+        /* --- STEP 1 --- */
+        function selMatch(n) { S.maxG = n; S.winG = (n === 7) ? 4 : 3; upBtns('match-opts', n === 5 ? 0 : 1); checkS1(); }
+        function selServTeam(t) { S.startTeam = t; S.curServTeam = t; upBtns('serve-team-opts', t); checkS1(); }
+        function checkS1() { document.getElementById('btn-next-1').disabled = !(S.maxG && S.startTeam !== null); }
+        function upBtns(id, idx) { const el = document.getElementById(id); if (!el) return; el.querySelectorAll('.opt-btn').forEach((b, i) => b.className = `opt-btn ${i === idx ? (idx === 0 ? 'sel-blue' : (id.includes('serv') ? 'sel-red' : (id.includes('opts') ? 'sel-green' : 'sel-gold'))) : ''}`); }
+
+        function confirmStep1() {
+            const nameA = document.getElementById('n-A').value;
+            const nameB = document.getElementById('n-B').value;
+            if (!nameA) { alert((S.meta.matchType==='シングルス'?'選手':'選手A') + "を選択してください。"); return; }
+            if (S.meta.matchType === 'ダブルス' && !nameB) { alert("選手Bを選択してください。"); return; }
+
+            S.meta.court = document.getElementById('meta-court').value;
+            S.meta.tourney = document.getElementById('meta-tourney').value;
+            S.meta.stage = document.getElementById('meta-stage').value;
+            
+            const courtName = getCourtFullName(S.meta.court);
+            const stageText = S.meta.stage ? ` / ${S.meta.stage}` : '';
+            const headerInfo = courtName + stageText;
+
+            if(document.getElementById('disp-court-s2')) document.getElementById('disp-court-s2').textContent = headerInfo;
+            if(document.getElementById('disp-court-s3')) document.getElementById('disp-court-s3').textContent = headerInfo;
+            if(document.getElementById('disp-court-main')) document.getElementById('disp-court-main').textContent = headerInfo;
+
+            if(document.getElementById('meta-date').value) S.meta.date = document.getElementById('meta-date').value;
+            S.meta.scorer = document.getElementById('meta-scorer').value;
+            S.teams.R = document.getElementById('team-r-name').value || '相手';
+            
+            S.names.A = nameA;
+            S.names.C = document.getElementById('n-C').value || '選手C';
+            if (S.meta.matchType === 'ダブルス') { 
+                S.names.B = nameB;
+                S.names.D = document.getElementById('n-D').value || '選手D';
+            }
+
+            document.getElementById('in-tname-R').value = S.teams.R;
+            document.getElementById('nm-C').value = S.names.C;
+            if(S.meta.matchType === 'ダブルス') document.getElementById('nm-D').value = S.names.D;
+
+            if (S.meta.matchType === 'ダブルス') step(2); else startGame();
+        }
+
+        /* --- STEP 2 --- */
         function buildPos() {
+            document.getElementById('pos-confirm-title').textContent = S.isFinal ? 'ファイナルゲーム ポジション確認' : `第${S.gL + S.gR + 1}ゲーム ポジション確認`;
+
             const sSide = S.curServTeam === 0 ? ['A', 'B'] : ['C', 'D'];
             const rSide = S.curServTeam === 0 ? ['C', 'D'] : ['A', 'B'];
             S.sOrder = [sSide[0], sSide[1]]; S.rOrder = [rSide[0], rSide[1]];
@@ -355,15 +476,48 @@
             updDiag();
         }
         function updDiag() { document.getElementById('court-diag').textContent = `S:${S.names[S.sOrder[0]]} / R:${S.names[S.rOrder[0]]}`; }
+        
+        function confirmStep2() { startGame(); }
+
+        /* --- 画面遷移 --- */
+        function step(n) {
+            document.querySelectorAll('[id^="step-"]').forEach(el => el.style.display = 'none');
+            setupStep = n; document.getElementById('step-' + setupStep).style.display = 'block';
+            if (n === 2) buildPos();
+        }
+
+        function startGame() {
+            isMatchStarted = true; document.getElementById('modal').classList.add('hidden');
+            const isSingles = (S.meta.matchType === 'シングルス');
+            document.getElementById('row-B').style.display = isSingles ? 'none' : 'flex';
+            document.getElementById('row-D').style.display = isSingles ? 'none' : 'flex';
+            update();
+            sendToLive(); 
+        }
+
+        /* --- ゲームロジック --- */
+        function updateName(type, id, val) {
+            if (type === 'team') S.teams[id] = val;
+            else { S.names[id] = val; if(document.getElementById('n-' + id)) document.getElementById('n-' + id).value = val; }
+        }
 
         function getServ() {
-            if (!S.isFinal) { return { s: S.sOrder[Math.floor(S.totalP / 2) % 2], r: S.rOrder[S.totalP % 2], t: S.curServTeam }; }
-            else {
-                const blk = Math.floor(S.totalP / 2) % 4, pb = S.totalP % 2;
-                if (blk === 0) return { s: S.sOrder[0], r: S.rOrder[pb], t: S.curServTeam };
-                if (blk === 1) return { s: S.rOrder[0], r: S.sOrder[pb], t: 1 - S.curServTeam };
-                if (blk === 2) return { s: S.sOrder[1], r: S.rOrder[pb], t: S.curServTeam };
-                return { s: S.rOrder[1], r: S.sOrder[pb], t: 1 - S.curServTeam };
+            if (S.meta.matchType === 'シングルス') {
+                if (!S.isFinal) { return { s: S.curServTeam === 0 ? 'A' : 'C', r: S.curServTeam === 0 ? 'C' : 'A', t: S.curServTeam }; }
+                else {
+                    const isFirstTeamServe = Math.floor(S.totalP / 2) % 2 === 0;
+                    const actTeam = isFirstTeamServe ? S.curServTeam : 1 - S.curServTeam;
+                    return { s: actTeam === 0 ? 'A' : 'C', r: actTeam === 0 ? 'C' : 'A', t: actTeam };
+                }
+            } else {
+                if (!S.isFinal) { return { s: S.sOrder[Math.floor(S.totalP / 2) % 2], r: S.rOrder[S.totalP % 2], t: S.curServTeam }; }
+                else {
+                    const blk = Math.floor(S.totalP / 2) % 4, pb = S.totalP % 2;
+                    if (blk === 0) return { s: S.sOrder[0], r: S.rOrder[pb], t: S.curServTeam };
+                    if (blk === 1) return { s: S.rOrder[0], r: S.sOrder[pb], t: 1 - S.curServTeam };
+                    if (blk === 2) return { s: S.sOrder[1], r: S.rOrder[pb], t: S.curServTeam };
+                    return { s: S.rOrder[1], r: S.sOrder[pb], t: 1 - S.curServTeam };
+                }
             }
         }
 
@@ -371,48 +525,54 @@
         function act(side, p, type) { _act = { side, p, type }; showSM(type, p); }
         function commit(sub) {
             historyStack.push(JSON.stringify(S));
-            const { side, p, type } = _act;
-            const inf = getServ();
-            if (S.fault === 0 && inf.s) { S.stats[inf.s].fi++; S.stats[inf.s].st++; }
+            const { side, p, type } = _act; const inf = getServ();
+            if (S.fault === 0 && inf.s === p) { S.stats[inf.s].fi++; S.stats[inf.s].st++; }
             
             if (type === 'p') { 
-                S.stats[p].p++; 
-                if (sub) S.stats[p].pt[sub] = (S.stats[p].pt[sub] || 0) + 1; 
-                S.hist.push(side); 
-                side === 'L' ? S.pL++ : S.pR++; 
+                S.stats[p].p++; if (sub) S.stats[p].pt[sub] = (S.stats[p].pt[sub] || 0) + 1; 
+                S.hist.push(side); side === 'L' ? S.pL++ : S.pR++; 
             } else { 
                 S.stats[p].m++; 
-                if (sub) {
-                    S.stats[p].mt[sub] = (S.stats[p].mt[sub] || 0) + 1;
-                    // ★ GAS互換用: レシーブミス詳細(recv_...)の場合は recv としてもカウントする
-                    if (sub.startsWith('recv_')) {
-                         S.stats[p].mt['recv'] = (S.stats[p].mt['recv'] || 0) + 1;
-                    }
-                }
-                S.hist.push(side === 'L' ? 'R' : 'L'); 
-                side === 'L' ? S.pR++ : S.pL++; 
+                if (sub) { S.stats[p].mt[sub] = (S.stats[p].mt[sub] || 0) + 1; if (sub.startsWith('recv_')) S.stats[p].mt['recv'] = (S.stats[p].mt['recv'] || 0) + 1; }
+                S.hist.push(side === 'L' ? 'R' : 'L'); side === 'L' ? S.pR++ : S.pL++; 
             }
             S.fault = 0; S.totalP++; checkEnd(); document.getElementById('submenu').classList.remove('open'); update();
+            sendToLive(); 
         }
 
         function handleFault() {
             const inf = getServ();
             if (S.fault === 0) { S.fault = 1; S.stats[inf.s].st++; document.getElementById('fault-btn').textContent = "2nd SERVICE"; document.getElementById('fault-btn').classList.add('warn'); }
             else { historyStack.push(JSON.stringify(S)); S.fault = 0; S.stats[inf.s].m++; S.stats[inf.s].mt['df'] = (S.stats[inf.s].mt['df'] || 0) + 1; S.hist.push(inf.t === 0 ? 'R' : 'L'); inf.t === 0 ? S.pR++ : S.pL++; S.totalP++; checkEnd(); update(); }
+            sendToLive(); 
         }
 
         function checkEnd() {
             const L = S.pL, R = S.pR, fin = S.isFinal;
-            const win = (L >= (fin ? 7 : 4) && L - R >= 2) ? 'L' : (R >= (fin ? 7 : 4) && R - L >= 2) ? 'R' : null;
+            const border = fin ? 7 : 4; 
+            const win = (L >= border && L - R >= 2) ? 'L' : (R >= border && R - L >= 2) ? 'R' : null;
+            
             if (win) {
                 S.log.push({ n: S.gL + S.gR + 1, L: S.pL, R: S.pR, w: win, flow: [...S.hist], fin });
                 win === 'L' ? S.gL++ : S.gR++; S.pL = 0; S.pR = 0; S.totalP = 0; S.hist = [];
                 if (S.gL === S.winG || S.gR === S.winG) showResult();
-                else { S.curServTeam = 1 - S.curServTeam; if ((S.gL + S.gR) === S.maxG - 1) S.isFinal = true; alert((S.gL + S.gR) % 2 !== 0 ? 'チェンジサイズ' : 'チェンジサービス'); step(1); document.getElementById('modal').classList.remove('hidden'); }
+                else { 
+                    S.curServTeam = 1 - S.curServTeam; 
+                    if ((S.gL + S.gR) === S.maxG - 1) S.isFinal = true; 
+                    alert((S.gL + S.gR) % 2 !== 0 ? 'チェンジサイズ' : 'チェンジサービス'); 
+                    if (S.meta.matchType === 'ダブルス') { step(2); document.getElementById('modal').classList.remove('hidden'); }
+                    else { update(); }
+                }
             }
         }
 
-        function undo() { if (historyStack.length) { S = JSON.parse(historyStack.pop()); update(); } }
+        function undo() { 
+            if (historyStack.length) { 
+                S = JSON.parse(historyStack.pop()); 
+                update(); 
+                sendToLive(); 
+            } 
+        }
 
         function update() {
             const inf = getServ();
@@ -420,15 +580,10 @@
             const d = getDisp(S.pL, S.pR, S.isFinal);
             document.getElementById('pt-L').textContent = d.l; document.getElementById('pt-R').textContent = d.r;
             document.getElementById('game-info').textContent = S.isFinal ? 'ファイナル' : `${S.gL + S.gR + 1}ゲーム目`;
-            ['A', 'B', 'C', 'D'].forEach(p => {
-                const el = document.getElementById('nm-' + p);
-                // Check if element is an Input or just standard element (to support mixed types if ever needed)
-                if (el.tagName === 'INPUT') {
-                    el.value = S.names[p];
-                } else {
-                    el.textContent = S.names[p];
-                }
-                
+            
+            const activePlayers = S.meta.matchType === 'シングルス' ? ['A', 'C'] : ['A', 'B', 'C', 'D'];
+            activePlayers.forEach(p => {
+                document.getElementById('nm-' + p).value = S.names[p];
                 document.getElementById('role-' + p).className = `p-role ${p === inf.s ? 'role-s' : (p === inf.r ? 'role-r' : '')}`;
                 document.getElementById('role-' + p).textContent = p === inf.s ? 'S' : (p === inf.r ? 'R' : '');
                 const row = document.getElementById('row-' + p);
@@ -436,43 +591,38 @@
                 if (p === inf.s) row.classList.add('active-server');
                 if (p === inf.r) row.classList.add('active-receiver');
             });
-            // Update Team Name Input if exists
-            const tr = document.getElementById('tname-R');
-            if (tr && tr.tagName === 'INPUT') tr.value = S.teams.R;
-            else if (document.getElementById('tname-R')) document.getElementById('tname-R').textContent = S.teams.R;
-
+            
+            document.getElementById('in-tname-R').value = S.teams.R;
             if (S.fault === 0) { document.getElementById('fault-btn').textContent = "FAULT"; document.getElementById('fault-btn').classList.remove('warn'); }
             drawChart('flow-chart', S.hist, S.isFinal);
         }
 
-        function getDisp(l, r, fin) {
-            const border = fin ? 6 : 3;
-            if (l < border || r < border) return { l, r };
-            if (l === r) return { l: 'D', r: 'D' };
-            if (l > r) return { l: 'A', r: 'D' };
-            return { l: 'D', r: 'A' };
-        }
+        function getDisp(l, r, fin) { const border = fin ? 6 : 3; if (l < border || r < border) return { l, r }; if (l === r) return { l: 'D', r: 'D' }; if (l > r) return { l: 'A', r: 'D' }; return { l: 'D', r: 'A' }; }
 
         function showResult() {
+            isMatchStarted = false; 
             const winName = S.gL > S.gR ? S.teams.L : S.teams.R;
             document.getElementById('winner-name').textContent = winName;
             document.getElementById('winner-score').textContent = `${S.gL} - ${S.gR}`;
+            
             const tbl = document.getElementById('res-score-tbl');
             let h = `<tr><th></th>${S.log.map((g, i) => `<th>G${i + 1}</th>`).join('')}<th>計</th></tr>`;
             h += `<tr><td class="ct-name" style="color:var(--blue)">${S.teams.L}</td>${S.log.map(g => `<td>${g.L}</td>`).join('')}<td>${S.gL}</td></tr>`;
             h += `<tr><td class="ct-name" style="color:var(--red)">${S.teams.R}</td>${S.log.map(g => `<td>${g.R}</td>`).join('')}<td>${S.gR}</td></tr>`;
             tbl.innerHTML = h;
             
+            const isSingles = (S.meta.matchType === 'シングルス');
+            const players = isSingles ? ['A', 'C'] : ['A', 'B', 'C', 'D'];
+            
             const stTbl = document.getElementById('res-stats-tbl'); stTbl.innerHTML = '';
-            ['A', 'B', 'C', 'D'].forEach(p => {
+            const cards = document.getElementById('detail-cards'); cards.innerHTML = '';
+            cards.className = `detail-grid ${isSingles ? 'singles-mode' : ''}`;
+            
+            players.forEach(p => {
                 const s = S.stats[p];
                 const rate = s.st > 0 ? Math.round(s.fi / s.st * 100) + '%' : '-';
                 stTbl.innerHTML += `<tr><td class="ct-name">${S.names[p]}</td><td>${s.p}</td><td>${s.m}</td><td>${rate}</td></tr>`;
-            });
-            
-            const cards = document.getElementById('detail-cards'); cards.innerHTML = '';
-            ['A', 'B', 'C', 'D'].forEach(p => {
-                const s = S.stats[p];
+                
                 const topP = Object.entries(s.pt).map(([k, v]) => `<span class="chip cp">${getLbl(k)}:${v}</span>`).join('');
                 const topM = Object.entries(s.mt).map(([k, v]) => `<span class="chip cm">${getLbl(k)}:${v}</span>`).join('');
                 cards.innerHTML += `<div class="d-card"><div class="dc-head"><span style="color:${'AB'.includes(p) ? 'var(--blue)' : 'var(--red)'}">${S.names[p]}</span><span>+${s.p} / -${s.m}</span></div><div class="dc-body">${topP || '-'}<br>${topM || '-'}</div></div>`;
@@ -484,81 +634,23 @@
                 flowDiv.innerHTML += `<div class="game-flow-row"><div class="gfr-label">G${i + 1}</div><div class="gfr-dots">${pts}</div></div>`;
             });
             
-            step(2); document.getElementById('modal').classList.remove('hidden');
+            step(3); document.getElementById('modal').classList.remove('hidden');
             setTimeout(() => { const allPts = S.log.flatMap(g => g.flow); drawChart('stats-flow-chart', allPts, false); }, 100);
         }
 
         const MENUS = {
-            // ── POINT FLOW ──
-            p: [
-                { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' },
-                { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' },
-                { k: 'ace', l: 'サービスエース', i: '🎯', sub: 'p_ace_type' }, // Server only (Modified)
-                { k: 'race', l: 'レシーブエース', i: '🔥', sub: 'p_race_shot' } // Receiver only
-            ],
-            // New Service Ace Flow
-            p_ace_type: [
-                { k: 'ovh', l: 'オーバーヘッド', i: '🔨' },
-                { k: 'und', l: 'アンダーカット', i: '✂️' },
-                { k: 'other', l: 'その他 (入力)', i: '🖊️', input: true }
-            ],
-            p_shot: [
-                { k: 'shoot', l: 'シュート', i: '⚡', sub: 'p_course' },
-                { k: 'lob', l: 'ロブ', i: '☁', sub: 'p_course' },
-                { k: 'volley', l: 'ボレー', i: '🛡', sub: 'p_course' },
-                { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'p_course' },
-                { k: 'drop', l: 'ドロップ(ツイスト)', i: '🌀', sub: 'p_course' }
-            ],
-            p_course: [
-                { k: 'cross', l: 'クロス', i: '↖' },
-                { k: 'rev', l: '逆クロス', i: '↗' },
-                { k: 'ctr', l: 'センター', i: '•' },
-                { k: 'str', l: 'ストレート', i: '↑' }
-            ],
-
-            // ── RECEIVE ACE FLOW ──
-            p_race_shot: [
-                { k: 'shoot', l: 'シュート', i: '⚡', sub: 'p_race_course' },
-                { k: 'lob', l: 'ロブ', i: '☁', sub: 'p_race_course' },
-                { k: 'twist', l: 'ツイスト', i: '🌀', sub: 'p_race_course' }
-            ],
-            p_race_course: [
-                { k: 'cross', l: 'クロス', i: '↖' },
-                { k: 'rev', l: '逆クロス', i: '↗' },
-                { k: 'ctr', l: 'センター', i: '•' },
-                { k: 'str', l: 'ストレート', i: '↑' }
-            ],
-
-            // ── MISS FLOW ──
-            m: [
-                { k: 'f', l: 'フォア', i: '🟦', sub: 'm_shot' },
-                { k: 'b', l: 'バック', i: '🟪', sub: 'm_shot' },
-                { k: 'recv', l: 'レシーブミス', i: '🎾', sub: 'm_recv_hand' } // Receiver only
-            ],
-            
-            // Miss Shot Type
-            m_shot: [
-                { k: 'shoot', l: 'シュート', i: '⚡', sub: 'm_course' },
-                { k: 'lob', l: 'ロブ', i: '☁', sub: 'm_course' },
-                { k: 'volley', l: 'ボレー', i: '🛡', sub: 'm_course' },
-                { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'm_course' },
-                { k: 'drop', l: 'ドロップ(ツイスト)', i: '🌀', sub: 'm_course' }
-            ],
-            // Miss Course
-            m_course: [
-                { k: 'cross', l: 'クロス', i: '↖', sub: 'm_err' },
-                { k: 'rev', l: '逆クロス', i: '↗', sub: 'm_err' },
-                { k: 'ctr', l: 'センター', i: '•', sub: 'm_err' },
-                { k: 'str', l: 'ストレート', i: '↑', sub: 'm_err' }
-            ],
-            // Miss Error Type
-            m_err: [
-                { k: 'bout', l: 'バックアウト', i: '⬆' },
-                { k: 'sout', l: 'サイドアウト', i: '➡' }, 
-                { k: 'net', l: 'ネット', i: '🔴' }
-            ],
-
-            // ── Recv Miss Flow (Simple) ──
+            p_server: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' }, { k: 'ace', l: 'SA', i: '🎯', sub: 'p_ace_type' } ],
+            p_receiver: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' }, { k: 'ace', l: 'RA', i: '⚡', sub: 'r_ace_shot' } ],
+            p_standard: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' } ],
+            p_ace_type: [ { k: 'overhead', l: 'オーバー', i: '⬆' }, { k: 'undercut', l: 'カット', i: '⬇' }, { k: 'other_input', l: 'その他', i: '🖊', custom: true } ],
+            r_ace_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'r_ace_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'r_ace_course' }, { k: 'twist', l: 'ツイスト', i: '🌀', sub: 'r_ace_course' } ],
+            r_ace_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
+            p_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'p_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'p_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'p_course' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'p_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'p_course' } ],
+            p_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
+            m: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'm_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'm_shot' }, { k: 'recv', l: 'Rミス', i: '🎾', sub: 'm_recv_hand' } ],
+            m_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'm_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'm_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'm_course' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'm_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'm_course' } ],
+            m_course: [ { k: 'cross', l: 'クロス', i: '↖', sub: 'm_err' }, { k: 'rev', l: '逆クロス', i: '↗', sub: 'm_err' }, { k: 'ctr', l: 'センター', i: '•', sub: 'm_err' }, { k: 'str', l: 'ストレート', i: '↑', sub: 'm_err' } ],
+            m_err: [ { k: 'bout', l: 'Bアウト', i: '⬆' }, { k: 'sout', l: 'Sアウト', i: '➡' }, { k: 'net', l: 'ネット', i: '🔴' } ],
             m_recv_hand: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'm_recv_type' }, { k: 'b', l: 'バック', i: '🟪', sub: 'm_recv_type' } ],
             m_recv_type: [ { k: 'lob', l: 'ロブ', i: '☁', sub: 'm_recv_course' }, { k: 'shoot', l: 'シュート', i: '⚡', sub: 'm_recv_course' }, { k: 'twist', l: 'ツイスト', i: '🌀', sub: 'm_recv_course' } ], 
             m_recv_course: [ { k: 'str', l: 'ストレート', i: '↑', sub: 'm_recv_err' }, { k: 'cross', l: 'クロス', i: '↖', sub: 'm_recv_err' }, { k: 'rev', l: '逆クロス', i: '↗', sub: 'm_recv_err' }, { k: 'ctr', l: 'センター', i: '•', sub: 'm_recv_err' } ],
@@ -567,88 +659,37 @@
 
         function showSM(type, p, prefix = '') {
             const sm = document.getElementById('sm-body'); sm.innerHTML = '';
-            let list = MENUS[type];
-            // Fallback (if any old references exist)
-            if (!list) { 
-                if (type.startsWith('p_detail_')) list = MENUS['p_shot']; 
-                else if (type.startsWith('m_detail_')) list = MENUS['m_shot']; 
-                else list = MENUS['p']; 
-            }
+            let list; const inf = getServ(); const isServer = (p === inf.s); const isReceiver = (p === inf.r);
+            if (type === 'p') { list = isServer ? MENUS['p_server'] : (isReceiver ? MENUS['p_receiver'] : MENUS['p_standard']); }
+            else if (MENUS[type]) { list = MENUS[type]; }
+            else { list = type.startsWith('p_detail_') ? MENUS['p_shot'] : (type.startsWith('m_detail_') ? MENUS['m_shot'] : MENUS['p_server']); }
             
             document.getElementById('sm-title').textContent = type.startsWith('p') ? 'ポイント内容' : 'ミス内容';
-            
-            const inf = getServ(); 
-            const isS = p === inf.s;
-            const isR = p === inf.r;
-
             list.forEach(item => {
-                if (item.k === 'ace' && !isS) return; // Hide Ace if not server
-                if (item.k === 'race' && !isR) return; // Hide Receive Ace if not receiver
-                if (item.k === 'recv' && !isR) return; // Hide Recv if not receiver
-
+                if (item.k === 'recv' && !isReceiver) return; 
                 const b = document.createElement('button'); b.className = 'sm-btn';
                 b.innerHTML = `<div style="font-size:1.5rem">${item.i}</div><div style="font-size:0.75rem">${item.l}</div>`;
-                
                 b.onclick = () => { 
-                    if (item.input) {
-                        // Handle Free Input
-                        const val = prompt(item.l + 'の内容を入力してください:');
-                        if (val) {
-                            commit(prefix + item.k + '_' + val);
-                        }
-                    } else if (item.sub) { 
-                        // Prefix logic: if start of recv, force recv prefix
-                        let nextPre = prefix;
-                        if (item.k === 'recv') nextPre = 'recv_';
-                        else nextPre += item.k + '_';
-                        
-                        showSM(item.sub, p, nextPre); 
-                    } else { 
-                        commit(prefix + item.k); 
-                    } 
+                    if (item.custom) { const val = prompt("内容を入力してください"); if (val) commit(prefix + "other_" + val); }
+                    else if (item.sub) { let nextPre = prefix; if (item.k === 'recv') nextPre = 'recv_'; else nextPre += item.k + '_'; showSM(item.sub, p, nextPre); }
+                    else { commit(prefix + item.k); } 
                 };
                 sm.appendChild(b);
             });
-            
-            const back = document.createElement('button'); 
-            back.className = 'sm-back'; 
-            
-            if (type === 'p' || type === 'm') {
-                back.textContent = 'キャンセル (閉じる)'; 
-                back.onclick = () => { document.getElementById('submenu').classList.remove('open'); }; 
-            } else {
-                back.textContent = '戻る'; 
-                // Go back to top
-                back.onclick = () => { showSM(type.startsWith('p') ? 'p' : 'm', p); }; 
-            }
+            const back = document.createElement('button'); back.className = 'sm-back'; 
+            if (type === 'p' || type === 'm') { back.textContent = 'キャンセル (閉じる)'; back.onclick = () => { document.getElementById('submenu').classList.remove('open'); }; }
+            else { back.textContent = '戻る'; back.onclick = () => { showSM(type.startsWith('p') || type.startsWith('r_ace') ? 'p' : 'm', p); }; }
             sm.appendChild(back);
-            
             document.getElementById('submenu').classList.add('open');
         }
 
         function getLbl(k) {
-            if (k === 'ace') return 'SA';
-            if (k === 'df') return 'DF';
-            
-            // Dynamic parsing
+            if (k === 'ace') return 'SA'; if (k === 'df') return 'DF';
             const parts = k.split('_');
-            const dict = {
-                race: 'RA', recv: 'R', f: 'F', b: 'B',
-                ovh: 'Ovh', und: 'Und', // New Service Types
-                shoot: 'S', lob: 'L', twist: 'Tw', drop: 'Dr', volley: 'V', smash: 'Sm',
-                str: 'St', cross: 'Cr', rev: 'Rx', ctr: 'Ct',
-                net: 'Nt', out: 'Ot', sout: 'S.Ot', bout: 'B.Ot', back: 'Bk'
-            };
-            
-            // Filter out 'recv' if it's just a prefix and we have detailed parts
+            const dict = { recv: 'R', f: 'F', b: 'B', shoot: 'S', lob: 'L', twist: 'Tw', drop: 'Dr', volley: 'V', smash: 'Sm', str: 'St', cross: 'Cr', rev: 'Rx', ctr: 'Ct', net: 'Nt', out: 'Ot', sout: 'S.Ot', bout: 'B.Ot', back: 'Bk', overhead: 'Ov', undercut: 'Un', other: 'Etc' };
             let validParts = parts;
-            if (parts[0] === 'recv' && parts.length > 1) {
-                 validParts = parts.slice(1);
-                 return 'R-' + validParts.map(p => dict[p] || p).join('-');
-            }
-
-            const short = validParts.map(p => dict[p] || p).join('-');
-            return short;
+            if (parts[0] === 'recv' && parts.length > 1) { validParts = parts.slice(1); return 'R-' + validParts.map(p => dict[p] || p).join('-'); }
+            return validParts.map(p => dict[p] || p).join('-');
         }
 
         function drawChart(id, hist, fin) {
@@ -656,52 +697,36 @@
             const ctx = cvs.getContext('2d'); const dpr = window.devicePixelRatio || 1; const rect = cvs.getBoundingClientRect();
             cvs.width = rect.width * dpr; cvs.height = rect.height * dpr; ctx.scale(dpr, dpr);
             const w = rect.width; const h = rect.height; const pts = [0]; let c = 0; hist.forEach(x => { c += (x === 'L' ? 1 : -1); pts.push(c); });
-            const absMax = Math.max(fin ? 7 : 4, ...pts.map(Math.abs)); const mid = h / 2; const sc = (mid - 6) / absMax; const step = (w - 10) / (pts.length || 1);
+            const absMax = Math.max(fin ? 9 : 5, ...pts.map(Math.abs)); 
+            const mid = h / 2; const sc = (mid - 6) / absMax; const step = (w - 10) / (pts.length || 1);
             ctx.beginPath(); ctx.strokeStyle = '#ccc'; ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
             ctx.beginPath(); ctx.strokeStyle = '#888'; ctx.lineWidth = 2;
             pts.forEach((y, x) => { x === 0 ? ctx.moveTo(5, mid - y * sc) : ctx.lineTo(5 + x * step, mid - y * sc); });
             ctx.stroke();
         }
 
-        window.addEventListener('resize', () => { if (S.totalP > 0) update(); if (setupStep === 2) { const allPts = S.log.flatMap(g => g.flow); drawChart('stats-flow-chart', allPts, false); } });
-
         function downloadJSON() { const b = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'match_data.json'; a.click(); }
-        function resetMatch() { if (confirm('リセットしますか？')) location.reload(); }
+        function resetMatch() { if (confirm('本当に入力データをリセットして最初からやり直しますか？')) location.reload(); }
 
-        // ── Cloud Send Function ──
         function sendToCloud() {
-            const btn = document.getElementById('btn-send-cloud');
-            const originalText = btn.innerHTML;
+            const btn = document.getElementById('btn-send-integrated');
             btn.innerHTML = "送信中...";
             btn.disabled = true;
 
-            const payload = JSON.stringify(S);
-
-            // POST送信 (no-corsモードで送信)
-            fetch(GAS_API_URL, {
+            fetch(GAS_URL_INTEGRATED, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: payload
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(S)
             })
             .then(() => {
-                // 送信完了のアラート
-                alert("☁ クラウドにデータを送信しました！\n(スプレッドシートを確認してください)");
-                
-                // 【改善ポイント】ボタンを「送信済み」にして、二度と押せないようにデザインも変更する
-                btn.innerHTML = "送信済み ✔";
-                btn.style.background = "var(--surface2)";
-                btn.style.color = "var(--text-dim)";
-                btn.style.borderColor = "var(--border)";
-                // ※ btn.disabled = false; を削除したため、以降クリックできなくなります
+                alert(`☁ データを送信しました！\n（${S.meta.gender} / ${S.meta.matchType}）`);
+                btn.innerHTML = "✓ 送信完了";
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert("送信に失敗しました。\n通信環境を確認してください。");
-                // エラーの場合は再送信できるように元の状態に戻す
-                btn.innerHTML = "再送信";
+                btn.innerHTML = "再送信する";
                 btn.disabled = false;
             });
         }
