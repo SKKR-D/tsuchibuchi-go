@@ -92,8 +92,8 @@
         async function fetchDashboard() {
             try {
                 const response = await fetch(`${GAS_URL_LIVE}?all=true`);
-                const activeMatches = await response.json();
-                renderDashboard(activeMatches);
+                const matches = await response.json();
+                renderDashboard(matches);
                 const now = new Date();
                 document.getElementById('d-time').textContent = now.toLocaleTimeString() + ' 更新';
             } catch (error) {
@@ -108,18 +108,27 @@
 
         function renderDashboard(matches) {
             const wrap = document.getElementById('grid-wrap');
-            if (matches.length === 0) {
+            const now = Date.now();
+            const TIMEOUT_MS = 10 * 60 * 1000; // 10分通信がなければ除外（タイムアウト）
+
+            // 最終更新時間から10分以内の試合だけを抽出
+            let activeMatches = matches.filter(S => {
+                if (!S.lastUpdate) return true; // 古いデータ互換
+                return (now - S.lastUpdate) < TIMEOUT_MS;
+            });
+
+            if (activeMatches.length === 0) {
                 wrap.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #8b949e;">現在、進行中の試合はありません</div>`;
                 return;
             }
 
-            matches.sort((a, b) => {
+            activeMatches.sort((a, b) => {
                 const numA = parseInt(a.meta.court.split('_')[1]) || 0;
                 const numB = parseInt(b.meta.court.split('_')[1]) || 0;
                 return numA - numB;
             });
 
-            wrap.innerHTML = matches.map(S => {
+            wrap.innerHTML = activeMatches.map(S => {
                 const courtName = getCourtShortName(S.meta.court);
                 const d = getDisp(S.pL, S.pR, S.isFinal);
                 const inf = getServ(S);

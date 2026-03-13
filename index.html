@@ -371,13 +371,30 @@
             if (isMatchStarted) { e.preventDefault(); e.returnValue = ''; }
         });
 
+        // ★追加：ブラウザのタブやウィンドウを閉じた時に消去指令を送る
+        window.addEventListener('pagehide', function (e) {
+            if (isMatchStarted) clearLiveScore();
+        });
+
         function getCourtFullName(id) {
             if(!id) return '';
             return `${id.split('_')[1]}コート`;
         }
 
+        // ★追加：ライブスコアを強制的に消去する機能
+        function clearLiveScore() {
+            if (!S || !S.meta || !S.meta.court) return;
+            const clearData = { meta: { court: S.meta.court }, clear: true };
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(GAS_URL_LIVE, JSON.stringify(clearData));
+            } else {
+                fetch(GAS_URL_LIVE, { method: 'POST', mode: 'no-cors', body: JSON.stringify(clearData) });
+            }
+        }
+
         function sendToLive() {
             if (!isMatchStarted) return; 
+            S.lastUpdate = Date.now(); // 送信した時刻を記録
             fetch(GAS_URL_LIVE, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -385,6 +402,11 @@
                 body: JSON.stringify(S)
             }).catch(e => console.log("Live update error", e));
         }
+
+        // ページを開いている間は1分ごとにデータを送って「生存」を知らせる
+        setInterval(() => {
+            if (isMatchStarted) sendToLive();
+        }, 60000);
 
         /* --- STEP 0 --- */
         function selGender(g) { S.meta.gender = g; upBtns('gender-opts', g === '男子' ? 0 : 1); checkS0(); }
@@ -706,7 +728,13 @@
         }
 
         function downloadJSON() { const b = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'match_data.json'; a.click(); }
-        function resetMatch() { if (confirm('本当に入力データをリセットして最初からやり直しますか？')) location.reload(); }
+        
+        function resetMatch() { 
+            if (confirm('本当に入力データをリセットして最初からやり直しますか？')) {
+                clearLiveScore(); // リセット時にライブデータも消す
+                location.reload();
+            }
+        }
 
         function sendToCloud() {
             const btn = document.getElementById('btn-send-integrated');
