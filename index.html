@@ -532,6 +532,7 @@
                     return { s: actTeam === 0 ? 'A' : 'C', r: actTeam === 0 ? 'C' : 'A', t: actTeam };
                 }
             } else {
+                // 正しい「2ポイント交代」ルール
                 if (!S.isFinal) { return { s: S.sOrder[Math.floor(S.totalP / 2) % 2], r: S.rOrder[S.totalP % 2], t: S.curServTeam }; }
                 else {
                     const blk = Math.floor(S.totalP / 2) % 4, pb = S.totalP % 2;
@@ -550,10 +551,12 @@
             historyStack.push(JSON.stringify(S));
             const { side, p, type } = _act; const inf = getServ();
             
-            // ★ 修正箇所: フォルト状態でなければ、必ずサーバーの1stサーブをカウントする
+            // ★ポイント確定時：必ず現在のサーバーの総サーブ数(分母)を+1する
+            S.stats[inf.s].st++; 
+            
+            // フォルト状態でなければ、1stイン数(分子)も+1する
             if (S.fault === 0) { 
                 S.stats[inf.s].fi++; 
-                S.stats[inf.s].st++; 
             }
             
             if (type === 'p') { 
@@ -571,14 +574,18 @@
         function handleFault() {
             const inf = getServ();
             if (S.fault === 0) { 
+                // ★1回目のフォルト：総サーブ数は増やさない(2ndサービスへ)
                 S.fault = 1; 
-                S.stats[inf.s].st++; 
                 document.getElementById('fault-btn').textContent = "2nd SERVICE"; 
                 document.getElementById('fault-btn').classList.add('warn'); 
             }
             else { 
+                // ★2回目のフォルト（ダブルフォルト）：ポイント確定なので総サーブ数を+1する
                 historyStack.push(JSON.stringify(S)); 
                 S.fault = 0; 
+                
+                S.stats[inf.s].st++; 
+                
                 S.stats[inf.s].m++; 
                 S.stats[inf.s].mt['df'] = (S.stats[inf.s].mt['df'] || 0) + 1; 
                 S.hist.push(inf.t === 0 ? 'R' : 'L'); 
