@@ -339,8 +339,11 @@
     </div>
 
     <script>
+        // ★記録用GAS URL
         const GAS_URL_INTEGRATED = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec";
-        const GAS_URL_LIVE = "https://script.google.com/macros/s/AKfycbwa6_h9sF72L9CCBu8d82gbjYNijPgqjH8IyvvGHGHlcDdiFg7ba3dEpNn_ro-EW2hhYA/exec";
+        
+        // ★新しいライブ中継用API URL
+        const GAS_URL_LIVE = "https://script.google.com/macros/s/AKfycbxJElyH86BpJK_8LNZydja3uitSCKtGYwI8ll-koOD0skjc_yk58w5RkOlWLyHUKOeZ7g/exec";
 
         const ROSTER = {
             '男子': [
@@ -594,27 +597,22 @@
             }
         }
 
-        // ★修正：最終ポイントがライブ配信に反映されるように処理順を変更
         function checkEnd() {
             const L = S.pL, R = S.pR, fin = S.isFinal;
             const border = fin ? 7 : 4; 
             const win = (L >= border && L - R >= 2) ? 'L' : (R >= border && R - L >= 2) ? 'R' : null;
             
             if (win) {
-                // まずゲームカウントを増やす（ログに記録）
                 S.log.push({ n: S.gL + S.gR + 1, L: S.pL, R: S.pR, w: win, flow: [...S.hist], fin });
                 win === 'L' ? S.gL++ : S.gR++; 
 
-                // ポイントをリセットする前に、最終結果（ゲームカウント＋最終ポイント）を画面と配信に送信する
                 update();
                 sendToLive();
 
                 setTimeout(() => {
                     if (S.gL === S.winG || S.gR === S.winG) {
-                        // マッチ決着時はポイントを0にせず、最終ポイントを残したまま結果画面へ
                         showResult();
                     } else { 
-                        // 試合が続く場合のみ、ポイントをリセットして次のゲームへ
                         S.pL = 0; S.pR = 0; S.totalP = 0; S.hist = [];
                         S.curServTeam = 1 - S.curServTeam; 
                         if ((S.gL + S.gR) === S.maxG - 1) S.isFinal = true; 
@@ -778,7 +776,7 @@
         
         function resetMatch() { 
             if (confirm('本当に入力データをリセットして最初からやり直しますか？')) {
-                clearLiveScore(); // リセット時にライブデータも消す
+                clearLiveScore(); 
                 location.reload();
             }
         }
