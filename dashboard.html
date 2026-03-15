@@ -7,16 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        /* ── COLORS & THEME (ハードコート・ブルー ＆ クレー・オレンジ) ── */
         :root {
-            /* 屋外用ハイコントラスト・ライトテーマ */
-            --bg: #f0f2f5; 
+            --bg: #f1f5f9; 
             --surface: #ffffff; 
-            --border: #cbd5e1;
-            --text: #1f2937; /* 濃い黒・グレー */
-            --text-dim: #6b7280;
-            --blue: #2563eb; /* 視認性の高い青 */
-            --red: #dc2626; /* 視認性の高い赤 */
-            --gold: #b45309; /* 明るい背景に合う濃いめのオレンジ */
+            --border: #94a3b8;
+            --text: #0f172a; 
+            --text-dim: #475569;
+            --blue: #0284c7; 
+            --red: #ea580c;  
+            --gold: #d97706; 
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,7 +34,7 @@
         .m-card { 
             background: var(--surface); border: 1px solid var(--border); border-radius: 8px; 
             display: flex; flex-direction: column; cursor: pointer; text-decoration: none; color: inherit;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* 影をつけて視認性アップ */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             transition: transform 0.2s;
         }
         .m-card:active { transform: scale(0.98); }
@@ -57,6 +57,15 @@
 
         .c-L { color: var(--blue); }
         .c-R { color: var(--red); }
+
+        /* 終了した試合用のデザイン */
+        .m-card.finished { 
+            background: #f8fafc; border-color: #e2e8f0; box-shadow: none; 
+        }
+        .m-card.finished .mc-top { background: #f1f5f9; }
+        .m-card.finished .team-name, .m-card.finished .g-num { color: var(--text-dim) !important; }
+        .m-card.finished .p-num { background: #94a3b8 !important; }
+        .m-card.finished .mc-court { color: var(--text-dim) !important; }
 
         @media (max-width: 600px) {
             .grid-container { grid-template-columns: 1fr; gap: 10px; }
@@ -123,11 +132,12 @@
 
             let activeMatches = matches.filter(S => {
                 if (!S.lastUpdate) return false; 
+                if (S.isFinished) return true; 
                 return (now - S.lastUpdate) < TIMEOUT_MS;
             });
 
             if (activeMatches.length === 0) {
-                wrap.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--text-dim); font-weight: bold;">現在、進行中の試合はありません</div>`;
+                wrap.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--text-dim); font-weight: bold;">現在、表示できる試合データはありません</div>`;
                 return;
             }
 
@@ -146,15 +156,22 @@
                 const playersL = isSingles ? S.names.A : `${S.names.A}・${S.names.B}`;
                 const playersR = isSingles ? S.names.C : `${S.names.C}・${S.names.D}`;
                 
-                const sL = (inf.s === 'A' || inf.s === 'B') ? '🎾' : '';
-                const sR = (inf.s === 'C' || inf.s === 'D') ? '🎾' : '';
+                const isFin = S.isFinished;
+                const cardClass = isFin ? 'm-card finished' : 'm-card';
+                
+                const sL = (!isFin && (inf.s === 'A' || inf.s === 'B')) ? '🎾' : '';
+                const sR = (!isFin && (inf.s === 'C' || inf.s === 'D')) ? '🎾' : '';
+                
+                const statusBadge = isFin
+                    ? `<span style="background:#94a3b8; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.65rem; margin-right:5px; vertical-align:middle;">終了</span>`
+                    : `<span style="color:#dc2626; font-size:0.65rem; font-weight:900; margin-right:5px; vertical-align:middle;">●LIVE</span>`;
 
                 const detailUrl = `live.html?court=${S.meta.court}`;
 
                 return `
-                <a href="${detailUrl}" class="m-card">
+                <a href="${detailUrl}" class="${cardClass}">
                     <div class="mc-top">
-                        <span class="mc-court">${courtName}</span>
+                        <span class="mc-court">${statusBadge}${courtName}</span>
                         <span class="mc-stage">${S.meta.stage || ''} (${S.meta.matchType})</span>
                     </div>
                     <div class="mc-main">

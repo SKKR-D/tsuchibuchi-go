@@ -1,0 +1,15 @@
+{
+  "name": "土淵中スコアブック",
+  "short_name": "スコアブック",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#cbd5e1",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

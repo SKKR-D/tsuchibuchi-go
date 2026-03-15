@@ -4,14 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>土淵中スコアブック(統合・ライブ中継対応版)</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0284c7">
+    <link rel="apple-touch-icon" href="icon.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&family=Yuji+Syuku&display=swap" rel="stylesheet">
     <style>
-        /* ── COLORS & THEME ── */
-        :root { --bg: #f0f2f5; --surface: #ffffff; --surface2: #e4e6eb; --border: #b0b3b8; --text: #1a1a1a; --text-dim: #606770; --blue: #0060df; --blue-dim: #eef4ff; --red: #d93025; --red-dim: #ffebee; --gold: #b38600; --gold-bg: #fffbe6; --green: #008a45; --cyan: #008ba3; --app-bg: #e0e0e0; }
+        /* ── COLORS & THEME (ハードコート・ブルー ＆ クレー・オレンジ) ── */
+        :root { 
+            --bg: #f1f5f9; 
+            --surface: #ffffff; 
+            --surface2: #e2e8f0; 
+            --border: #94a3b8; 
+            --text: #0f172a; 
+            --text-dim: #475569; 
+            --blue: #0284c7;     
+            --blue-dim: #e0f2fe; 
+            --red: #ea580c;      
+            --red-dim: #ffedd5; 
+            --gold: #d97706;     
+            --gold-bg: #fef3c7; 
+            --green: #16a34a; 
+            --cyan: #0891b2; 
+            --app-bg: #cbd5e1; 
+        }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         body { font-family: 'Noto Sans JP', sans-serif; background: var(--app-bg); color: var(--text); height: 100vh; height: 100dvh; min-height: 100vh; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; }
+
+        /* ★追加：オフライン警告バナー */
+        #offline-banner { display:none; width: 100%; background: #dc2626; color: white; text-align: center; padding: 6px; font-size: 0.8rem; font-weight: bold; z-index: 999; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; padding: 16px; }
         .modal-overlay.hidden { display: none; }
@@ -35,8 +59,8 @@
         .opt-btn.sel-red { background: var(--red); border-color: var(--red); color: #fff; }
         .opt-btn.sel-green { background: var(--green); border-color: var(--green); color: #fff; }
         
-        .confirm-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue), #0060cc); border: none; border-radius: 10px; color: #fff; font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; margin-top: 8px; cursor: pointer; transition: 0.2s; }
-        .confirm-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0, 96, 223, 0.3); }
+        .confirm-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue), #0369a1); border: none; border-radius: 10px; color: #fff; font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; margin-top: 8px; cursor: pointer; transition: 0.2s; }
+        .confirm-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3); }
         .confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
         .result-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--gold); padding-bottom: 8px; margin-bottom: 8px; }
@@ -57,14 +81,14 @@
         .dc-head { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 900; margin-bottom: 4px; border-bottom: 1px solid var(--border); padding-bottom: 2px; }
         .dc-body { font-size: 0.65rem; line-height: 1.3; min-height: 3.6em; }
         .chip { display: inline-block; padding: 1px 5px; border-radius: 4px; margin: 1px; font-size: 0.6rem; }
-        .cp { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-        .cm { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+        .cp { background: #e8f5e9; color: #16a34a; border: 1px solid #bbf7d0; }
+        .cm { background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; }
         
         .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
         .share-btn { padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 6px; color: var(--text); cursor: pointer; }
         .share-btn:hover:not(:disabled) { background: var(--surface2); }
-        .share-btn-primary { grid-column: span 2; background: linear-gradient(135deg, var(--green), #006b36); color: white; font-size: 1rem; padding: 14px; border: none; }
-        .share-btn-primary:hover:not(:disabled) { box-shadow: 0 4px 10px rgba(0, 138, 69, 0.3); transform: translateY(-1px); }
+        .share-btn-primary { grid-column: span 2; background: linear-gradient(135deg, var(--green), #15803d); color: white; font-size: 1rem; padding: 14px; border: none; }
+        .share-btn-primary:hover:not(:disabled) { box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3); transform: translateY(-1px); }
         .share-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
         details.flow-details { margin-bottom: 8px; border: 1px solid var(--border); border-radius: 6px; }
@@ -100,14 +124,14 @@
         .p-row { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; height: 56px; }
         .p-info { width: 35%; padding: 4px; display: flex; flex-direction: column; justify-content: center; font-size: 0.75rem; border-right: 1px solid var(--border); position: relative; }
         .p-role { font-size: 0.6rem; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 4px; position: absolute; top: 2px; left: 2px; font-weight: bold; }
-        .role-s { background: var(--gold); color: #000; }
-        .role-r { background: var(--cyan); color: #000; }
+        .role-s { background: var(--gold); color: #fff; }
+        .role-r { background: var(--cyan); color: #fff; }
         
         .p-name-input { border:none; background:transparent; width:100%; font-family:inherit; font-weight:700; font-size:0.8rem; color:var(--text); outline:none; margin-left:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .p-name-input:focus { background: rgba(0,0,0,0.05); border-radius:2px; }
 
-        .active-server { background: #fff9c4 !important; outline: 2px solid #d32f2f !important; border-color: transparent !important; }
-        .active-receiver { background: #e3f2fd !important; outline: 2px solid #1976d2 !important; border-color: transparent !important; }
+        .active-server { background: var(--red-dim) !important; outline: 2px solid var(--red) !important; border-color: transparent !important; }
+        .active-receiver { background: var(--blue-dim) !important; outline: 2px solid var(--blue) !important; border-color: transparent !important; }
         
         .p-btns { flex: 1; display: flex; }
         .act-btn { flex: 1; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; transition: 0.1s; }
@@ -140,6 +164,8 @@
     </style>
 </head>
 <body>
+    <div id="offline-banner">⚠️ 現在オフラインです。データは端末に一時保存されます。</div>
+
     <div id="modal" class="modal-overlay">
         <div class="modal-card">
             
@@ -195,8 +221,7 @@
                 <p class="input-label">大会情報</p>
                 <div class="match-info-grid">
                     <div class="full-width"><input class="name-input" id="meta-tourney" placeholder="大会名"></div>
-                    <div><input class="name-input" id="meta-stage" placeholder="回戦 (例: 決勝)"></div>
-                    <div><input type="date" class="name-input" id="meta-date"></div>
+                    <div class="full-width"><input class="name-input" id="meta-stage" placeholder="回戦 (例: 決勝)"></div>
                 </div>
 
                 <p class="input-label">スコア記入者</p>
@@ -269,7 +294,9 @@
                 </details>
                 
                 <div class="share-row">
-                    <button class="share-btn share-btn-primary" id="btn-send-integrated" onclick="sendToCloud()">☁ データを送信する</button>
+                    <button class="share-btn" id="btn-sync" onclick="syncUnsentData()" style="display:none; grid-column: span 2; background: var(--gold); color: white; border: none; font-weight: bold; padding: 14px; border-radius: 8px;">☁ 未送信データを一括送信</button>
+                    
+                    <button class="share-btn share-btn-primary" id="btn-send-integrated" onclick="sendToCloud()">☁ スプレッドシートに記録</button>
                     <button class="share-btn" onclick="downloadJSON()">💾 バックアップ保存</button>
                     <button class="share-btn" onclick="resetMatch()">🔄 新しい試合を入力</button>
                 </div>
@@ -339,6 +366,30 @@
     </div>
 
     <script>
+        // ★ Service Worker の登録 (PWA・オフライン対応)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    console.log('SW registered: ', registration);
+                }).catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+            });
+        }
+
+        // ★ オフライン状態の監視
+        function checkNetwork() {
+            const banner = document.getElementById('offline-banner');
+            if (navigator.onLine) {
+                banner.style.display = 'none';
+            } else {
+                banner.style.display = 'block';
+            }
+            updateUnsentCount();
+        }
+        window.addEventListener('online', checkNetwork);
+        window.addEventListener('offline', checkNetwork);
+
         // ★記録用GAS URL
         const GAS_URL_INTEGRATED = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec";
         
@@ -358,7 +409,7 @@
         let S = {
             maxG: 5, winG: 3, gL: 0, gR: 0, pL: 0, pR: 0, totalP: 0, fault: 0, isFinal: false,
             startTeam: null, curServTeam: null, sOrder: [], rOrder: [],
-            meta: { gender: '', matchType: '', tourney: '', stage: '', date: '', scorer: '', court: 'court_1' },
+            meta: { gender: '', matchType: '', tourney: '', stage: '', scorer: '', court: 'court_1' },
             names: { A: '選手A', B: '選手B', C: '選手C', D: '選手D' },
             teams: { L: '土淵中', R: '相手' },
             stats: { A: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} }, B: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} }, C: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} }, D: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} } },
@@ -368,14 +419,16 @@
         let setupStep = 0;
         let isMatchStarted = false;
 
-        window.onload = () => { document.getElementById('meta-date').valueAsDate = new Date(); };
+        window.onload = () => {
+            checkNetwork();
+        };
 
         window.addEventListener('beforeunload', function (e) {
             if (isMatchStarted) { e.preventDefault(); e.returnValue = ''; }
         });
 
         window.addEventListener('pagehide', function (e) {
-            if (isMatchStarted) clearLiveScore();
+            if (isMatchStarted && navigator.onLine) clearLiveScore();
         });
 
         function getCourtFullName(id) {
@@ -384,7 +437,7 @@
         }
 
         function clearLiveScore() {
-            if (!S || !S.meta || !S.meta.court) return;
+            if (!S || !S.meta || !S.meta.court || !navigator.onLine) return;
             const clearData = { meta: { court: S.meta.court }, clear: true };
             if (navigator.sendBeacon) {
                 navigator.sendBeacon(GAS_URL_LIVE, JSON.stringify(clearData));
@@ -393,8 +446,9 @@
             }
         }
 
-        function sendToLive() {
-            if (!isMatchStarted) return; 
+        function sendToLive(force = false) {
+            if (!isMatchStarted && !force) return; 
+            if (!navigator.onLine) return; // ★オフライン時はライブ送信しない
             S.lastUpdate = Date.now();
             fetch(GAS_URL_LIVE, {
                 method: 'POST',
@@ -461,7 +515,6 @@
             if(document.getElementById('disp-court-s3')) document.getElementById('disp-court-s3').textContent = headerInfo;
             if(document.getElementById('disp-court-main')) document.getElementById('disp-court-main').textContent = headerInfo;
 
-            if(document.getElementById('meta-date').value) S.meta.date = document.getElementById('meta-date').value;
             S.meta.scorer = document.getElementById('meta-scorer').value;
             S.teams.R = document.getElementById('team-r-name').value || '相手';
             
@@ -532,6 +585,7 @@
                     return { s: actTeam === 0 ? 'A' : 'C', r: actTeam === 0 ? 'C' : 'A', t: actTeam };
                 }
             } else {
+                if (!S.sOrder || S.sOrder.length === 0) return { s: 'A', r: 'C', t: 0 }; 
                 if (!S.isFinal) { return { s: S.sOrder[Math.floor(S.totalP / 2) % 2], r: S.rOrder[S.totalP % 2], t: S.curServTeam }; }
                 else {
                     const blk = Math.floor(S.totalP / 2) % 4, pb = S.totalP % 2;
@@ -667,6 +721,9 @@
         function getDisp(l, r, fin) { const border = fin ? 6 : 3; if (l < border || r < border) return { l, r }; if (l === r) return { l: 'D', r: 'D' }; if (l > r) return { l: 'A', r: 'D' }; return { l: 'D', r: 'A' }; }
 
         function showResult() {
+            S.isFinished = true;
+            sendToLive(true);   
+
             isMatchStarted = false; 
             const winName = S.gL > S.gR ? S.teams.L : S.teams.R;
             document.getElementById('winner-name').textContent = winName;
@@ -703,6 +760,8 @@
             
             step(3); document.getElementById('modal').classList.remove('hidden');
             setTimeout(() => { const allPts = S.log.flatMap(g => g.flow); drawChart('stats-flow-chart', allPts, false); }, 100);
+            
+            updateUnsentCount(); // 画面を開いたときにバッジ更新
         }
 
         const MENUS = {
@@ -776,8 +835,32 @@
         
         function resetMatch() { 
             if (confirm('本当に入力データをリセットして最初からやり直しますか？')) {
-                clearLiveScore(); 
+                if(navigator.onLine) clearLiveScore(); 
                 location.reload();
+            }
+        }
+
+        // ========================================================
+        // ★ 追加：オフライン時のデータ一時保存と一括送信機能
+        // ========================================================
+        
+        function saveLocally(matchData) {
+            let unsent = JSON.parse(localStorage.getItem('tsuchibuchi_unsent') || '[]');
+            unsent.push(matchData);
+            localStorage.setItem('tsuchibuchi_unsent', JSON.stringify(unsent));
+            updateUnsentCount();
+        }
+
+        function updateUnsentCount() {
+            let unsent = JSON.parse(localStorage.getItem('tsuchibuchi_unsent') || '[]');
+            let btn = document.getElementById('btn-sync');
+            if(btn) {
+                if(unsent.length > 0) {
+                    btn.style.display = 'block';
+                    btn.innerHTML = `☁ 未送信データを一括送信 (${unsent.length}件)`;
+                } else {
+                    btn.style.display = 'none';
+                }
             }
         }
 
@@ -786,6 +869,14 @@
             btn.innerHTML = "送信中...";
             btn.disabled = true;
 
+            // オフライン時は強制的にローカル保存
+            if (!navigator.onLine) {
+                saveLocally(S);
+                alert("電波がありません！\\nデータはタブレットに安全に保存しました。\\n後で電波の良い場所で「一括送信」を押してください。");
+                btn.innerHTML = "✓ 端末に保存済";
+                return;
+            }
+
             fetch(GAS_URL_INTEGRATED, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -793,15 +884,57 @@
                 body: JSON.stringify(S)
             })
             .then(() => {
-                alert(`☁ データを送信しました！\n（${S.meta.gender} / ${S.meta.matchType}）`);
+                alert(`☁ スプレッドシートに記録しました！\n（${S.meta.gender} / ${S.meta.matchType}）`);
                 btn.innerHTML = "✓ 送信完了";
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("送信に失敗しました。\n通信環境を確認してください。");
-                btn.innerHTML = "再送信する";
-                btn.disabled = false;
+                saveLocally(S);
+                alert("送信に失敗しました。端末内に一時保存します。");
+                btn.innerHTML = "✓ 端末に保存済";
             });
+        }
+
+        async function syncUnsentData() {
+            if (!navigator.onLine) {
+                alert("現在オフラインです。電波の良い場所で再度お試しください。");
+                return;
+            }
+            
+            let unsent = JSON.parse(localStorage.getItem('tsuchibuchi_unsent') || '[]');
+            if(unsent.length === 0) return;
+            
+            let btn = document.getElementById('btn-sync');
+            btn.innerHTML = "送信中...";
+            btn.disabled = true;
+            
+            let successCount = 0;
+            let failedData = [];
+            
+            // 一つずつGASに送信する
+            for(let i=0; i<unsent.length; i++) {
+                try {
+                    await fetch(GAS_URL_INTEGRATED, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(unsent[i])
+                    });
+                    successCount++;
+                } catch(e) {
+                    failedData.push(unsent[i]);
+                }
+            }
+            
+            // 失敗したものだけローカルストレージに残す
+            localStorage.setItem('tsuchibuchi_unsent', JSON.stringify(failedData));
+            updateUnsentCount();
+            
+            alert(`${successCount}件の試合データを送信しました！`);
+            if(failedData.length > 0) {
+                alert(`${failedData.length}件の送信に失敗しました。後で再試行してください。`);
+                btn.disabled = false;
+            }
         }
     </script>
 </body>
