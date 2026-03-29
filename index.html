@@ -272,13 +272,19 @@ const TARGET_CLS = {
 };
 
 function detectType(val) {
-  const t = (val || "").trim();
+  // 全角スペース・改行・タブも除去して完全一致を試みる
+  const t = (val || "").replace(/[\s　]/g, "").trim();
   if (TYPE_MAP[t]) return TYPE_MAP[t];
-  if (/大会|選手権|地区大|春季|秋季|新人戦/.test(t)) return "match";
-  if (/練習試合/.test(t)) return "scrimmage";
-  if (/保護者|合同|交流/.test(t)) return "event";
-  if (/休養|休み|オフ/.test(t)) return "rest";
-  if (/部活|練習/.test(t)) return "practice";
+  // 元の値でも完全一致を試みる（念のため）
+  const t2 = (val || "").trim();
+  if (TYPE_MAP[t2]) return TYPE_MAP[t2];
+  // 部分一致フォールバック
+  const s = t2;
+  if (/大会|選手権|地区大|春季|秋季|新人戦/.test(s)) return "match";
+  if (/練習試合/.test(s)) return "scrimmage";
+  if (/保護者|合同|交流/.test(s)) return "event";
+  if (/休養|休み|オフ/.test(s)) return "rest";
+  if (/部活|練習/.test(s)) return "practice";
   return "other";
 }
 
@@ -545,6 +551,26 @@ async function fetchData() {
       });
 
     if (allItems.length === 0) throw new Error("データが空です");
+
+    // ★ デバッグ（確認後削除）
+    const dbg = document.createElement("div");
+    dbg.style.cssText = "background:#0d1b2a;color:#7ec8e3;font-family:monospace;font-size:11px;padding:12px 16px;border-radius:8px;margin:12px 0;white-space:pre-wrap;word-break:break-all;line-height:1.7";
+    const r0 = rows[1] || [];
+    dbg.textContent = [
+      "総列数: " + r0.length,
+      "ヘッダー: " + (rows[0] || []).join(" | "),
+      "---",
+      "先頭行の生データ: " + r0.join(" | "),
+      "---",
+      "target(1):[" + (r0[1]||"") + "]",
+      "date(2):[" + (r0[2]||"") + "]",
+      "type(5):[" + (r0[5]||"") + "]",
+      "location(6):[" + (r0[6]||"") + "]",
+      "detail(8):[" + (r0[8]||"(空)") + "]",
+      "detail(9):[" + (r0[9]||"(空)") + "]",
+      "detail(10):[" + (r0[10]||"(空)") + "]",
+    ].join("\n");
+    document.querySelector(".main").insertBefore(dbg, document.querySelector(".sec-head"));
 
     const monthSet = {};
     allItems.forEach(function(i) {
