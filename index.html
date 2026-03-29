@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&family=Yuji+Syuku&display=swap" rel="stylesheet">
     <style>
-        /* ── COLORS & THEME (ハードコート・ブルー ＆ クレー・オレンジ) ── */
+        /* ── COLORS & THEME ── */
         :root { 
             --bg: #f1f5f9; 
             --surface: #ffffff; 
@@ -34,7 +34,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         body { font-family: 'Noto Sans JP', sans-serif; background: var(--app-bg); color: var(--text); height: 100vh; height: 100dvh; min-height: 100vh; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; }
 
-        /* ★追加：オフライン警告バナー */
         #offline-banner { display:none; width: 100%; background: #dc2626; color: white; text-align: center; padding: 6px; font-size: 0.8rem; font-weight: bold; z-index: 999; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; padding: 16px; }
@@ -170,7 +169,7 @@
         <div class="modal-card">
             
             <div id="step-0">
-                <h1 style="text-align: center; background: linear-gradient(135deg, #ff7b00, #ffc107); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: 'S Motoya Daikai', 'Sモトヤ大楷', 'Yuji Syuku', serif; font-size: clamp(1.5rem, 11vw, 3.2rem); white-space: nowrap; font-weight: 900; margin-bottom: 5px; letter-spacing: 0px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); line-height: 1.2;">あすへはばたけ</h1>
+                <h1 style="text-align: center; background: linear-gradient(135deg, #ff7b00, #ffc107); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: 'S Motoya Daikai', 'Sモトヤ大楷', 'Yuji Syuku', serif; font-size: clamp(1.5rem, 11vw, 3.2rem); white-space: nowrap; font-weight: 900; margin-bottom: 5px; letter-spacing: 0px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); line-height: 1.2;">もえあがれ土淵中</h1>
                 <p style="text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-bottom:20px;">統合版スコアシステム</p>
                 
                 <p class="input-label">📌 性別</p>
@@ -282,6 +281,17 @@
                     <div class="rh-score" id="winner-score">4 - 2</div>
                 </div>
                 <div class="compact-chart-wrap"><canvas id="stats-flow-chart"></canvas></div>
+                
+                <div style="background:var(--surface2); padding:8px; border-radius:8px; margin-bottom:8px; border:1px solid var(--border);">
+                    <div style="font-size:0.7rem; color:var(--text-dim); font-weight:bold; margin-bottom:4px;">✏️ 相手チーム・選手名の修正（送信前ならいつでも可能）</div>
+                    <div style="display:flex; gap:4px; margin-bottom:4px;">
+                        <input class="name-input" style="padding:6px; font-size:0.8rem;" id="res-edit-teamR" placeholder="相手チーム名" onchange="updateResultName('team','R',this.value)">
+                    </div>
+                    <div style="display:flex; gap:4px;">
+                        <input class="name-input" style="padding:6px; font-size:0.8rem;" id="res-edit-nmC" placeholder="選手C" onchange="updateResultName('player','C',this.value)">
+                        <input class="name-input" style="padding:6px; font-size:0.8rem;" id="res-edit-nmD" placeholder="選手D" onchange="updateResultName('player','D',this.value)">
+                    </div>
+                </div>
                 <table class="compact-table" id="res-score-tbl"></table>
                 <table class="compact-table">
                     <thead><tr style="background:var(--surface2);"><th>選手</th><th>得点</th><th>ミス</th><th>1st%</th></tr></thead>
@@ -314,8 +324,10 @@
                 <div style="font-size:0.8rem; font-weight:bold; color:var(--text-dim); margin-bottom: 4px;">ゲームカウント</div>
                 <div class="game-score-display" style="line-height:1;margin-top:-10px;"><span class="gs-left" id="gs-L">0</span>-<span class="gs-right" id="gs-R">0</span></div>
             </div>
+            
             <div style="display:flex; gap:8px; align-items:center;">
-                <button onclick="undo()" style="background:none; border:none; font-size:1.6rem; cursor:pointer;">↩️</button>
+                <button onclick="abortMatch()" style="background:none; border:none; font-size:1.6rem; cursor:pointer;" title="試合を打ち切る">🛑</button>
+                <button onclick="undo()" style="background:none; border:none; font-size:1.6rem; cursor:pointer;" title="1つ戻る">↩️</button>
             </div>
         </div>
 
@@ -366,7 +378,6 @@
     </div>
 
     <script>
-        // ★ Service Worker の登録 (PWA・オフライン対応)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').then(registration => {
@@ -377,7 +388,6 @@
             });
         }
 
-        // ★ オフライン状態の監視
         function checkNetwork() {
             const banner = document.getElementById('offline-banner');
             if (navigator.onLine) {
@@ -390,10 +400,7 @@
         window.addEventListener('online', checkNetwork);
         window.addEventListener('offline', checkNetwork);
 
-        // ★記録用GAS URL
         const GAS_URL_INTEGRATED = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec";
-        
-        // ★新しいライブ中継用API URL
         const GAS_URL_LIVE = "https://script.google.com/macros/s/AKfycbxJElyH86BpJK_8LNZydja3uitSCKtGYwI8ll-koOD0skjc_yk58w5RkOlWLyHUKOeZ7g/exec";
 
         const ROSTER = {
@@ -406,7 +413,12 @@
             ]
         };
 
+        function generateMatchId() {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+        }
+
         let S = {
+            matchId: generateMatchId(), 
             maxG: 5, winG: 3, gL: 0, gR: 0, pL: 0, pR: 0, totalP: 0, fault: 0, isFinal: false,
             startTeam: null, curServTeam: null, sOrder: [], rOrder: [],
             meta: { gender: '', matchType: '', tourney: '', stage: '', scorer: '', court: 'court_1' },
@@ -438,7 +450,7 @@
 
         function clearLiveScore() {
             if (!S || !S.meta || !S.meta.court || !navigator.onLine) return;
-            const clearData = { meta: { court: S.meta.court }, clear: true };
+            const clearData = { meta: { court: S.meta.court }, matchId: S.matchId, clear: true };
             if (navigator.sendBeacon) {
                 navigator.sendBeacon(GAS_URL_LIVE, JSON.stringify(clearData));
             } else {
@@ -448,7 +460,7 @@
 
         function sendToLive(force = false) {
             if (!isMatchStarted && !force) return; 
-            if (!navigator.onLine) return; // ★オフライン時はライブ送信しない
+            if (!navigator.onLine) return; 
             S.lastUpdate = Date.now();
             fetch(GAS_URL_LIVE, {
                 method: 'POST',
@@ -462,11 +474,32 @@
             if (isMatchStarted) sendToLive();
         }, 60000);
 
-        /* --- STEP 0 --- */
         function selGender(g) { S.meta.gender = g; upBtns('gender-opts', g === '男子' ? 0 : 1); checkS0(); }
         function selMatchType(t) { S.meta.matchType = t; upBtns('type-opts', t === 'シングルス' ? 0 : 1); checkS0(); }
         function checkS0() { document.getElementById('btn-next-0').disabled = !(S.meta.gender && S.meta.matchType); }
         
+        async function lockActiveCourts() {
+            const courtSelect = document.getElementById('meta-court');
+            try {
+                const response = await fetch(GAS_URL_LIVE + "?action=getActiveCourts");
+                const activeCourts = await response.json(); 
+
+                Array.from(courtSelect.options).forEach(opt => {
+                    if (activeCourts.includes(opt.value)) {
+                        opt.disabled = true;
+                        opt.text = "⚠️使用中: " + getCourtFullName(opt.value);
+                        opt.style.color = "red";
+                    } else {
+                        opt.disabled = false;
+                        opt.text = getCourtFullName(opt.value);
+                        opt.style.color = "var(--blue)";
+                    }
+                });
+            } catch (error) {
+                console.log("コート使用状況の取得に失敗しました", error);
+            }
+        }
+
         function goToStep1() {
             const isSingles = (S.meta.matchType === 'シングルス');
             document.getElementById('disp-mode-label').textContent = `【 ${S.meta.gender} ${S.meta.matchType} 】`;
@@ -489,9 +522,9 @@
             
             document.getElementById('btn-next-1').textContent = isSingles ? "ゲーム開始" : "ポジション設定へ";
             step(1);
+            lockActiveCourts();
         }
 
-        /* --- STEP 1 --- */
         function selMatch(n) { S.maxG = n; S.winG = (n === 7) ? 4 : 3; upBtns('match-opts', n === 5 ? 0 : 1); checkS1(); }
         function selServTeam(t) { S.startTeam = t; S.curServTeam = t; upBtns('serve-team-opts', t); checkS1(); }
         function checkS1() { document.getElementById('btn-next-1').disabled = !(S.maxG && S.startTeam !== null); }
@@ -503,13 +536,19 @@
             if (!nameA) { alert((S.meta.matchType==='シングルス'?'選手':'選手A') + "を選択してください。"); return; }
             if (S.meta.matchType === 'ダブルス' && !nameB) { alert("選手Bを選択してください。"); return; }
 
+            const courtSelect = document.getElementById('meta-court');
+            const courtName = courtSelect.options[courtSelect.selectedIndex].text;
+            if (!confirm(`【⚠️重要確認】\n選択したコートは「${courtName}」です。\n\n他のタブレットとコート番号が被っていませんか？\n被るとライブ中継の表示がバグります！\n\n本当によろしいですか？`)) {
+                return; 
+            }
+
             S.meta.court = document.getElementById('meta-court').value;
             S.meta.tourney = document.getElementById('meta-tourney').value;
             S.meta.stage = document.getElementById('meta-stage').value;
             
-            const courtName = getCourtFullName(S.meta.court);
+            const courtNameFullName = getCourtFullName(S.meta.court);
             const stageText = S.meta.stage ? ` / ${S.meta.stage}` : '';
-            const headerInfo = courtName + stageText;
+            const headerInfo = courtNameFullName + stageText;
 
             if(document.getElementById('disp-court-s2')) document.getElementById('disp-court-s2').textContent = headerInfo;
             if(document.getElementById('disp-court-s3')) document.getElementById('disp-court-s3').textContent = headerInfo;
@@ -532,7 +571,6 @@
             if (S.meta.matchType === 'ダブルス') step(2); else startGame();
         }
 
-        /* --- STEP 2 --- */
         function buildPos() {
             document.getElementById('pos-confirm-title').textContent = S.isFinal ? 'ファイナルゲーム ポジション確認' : `第${S.gL + S.gR + 1}ゲーム ポジション確認`;
 
@@ -554,7 +592,6 @@
         
         function confirmStep2() { startGame(); }
 
-        /* --- 画面遷移 --- */
         function step(n) {
             document.querySelectorAll('[id^="step-"]').forEach(el => el.style.display = 'none');
             setupStep = n; document.getElementById('step-' + setupStep).style.display = 'block';
@@ -570,7 +607,6 @@
             sendToLive(); 
         }
 
-        /* --- ゲームロジック --- */
         function updateName(type, id, val) {
             if (type === 'team') S.teams[id] = val;
             else { S.names[id] = val; if(document.getElementById('n-' + id)) document.getElementById('n-' + id).value = val; }
@@ -611,11 +647,11 @@
             
             if (type === 'p') { 
                 S.stats[p].p++; if (sub) S.stats[p].pt[sub] = (S.stats[p].pt[sub] || 0) + 1; 
-                S.hist.push(side); side === 'L' ? S.pL++ : S.pR++; 
+                S.hist.push({ w: side, s: inf.t, f: (S.fault === 0) }); side === 'L' ? S.pL++ : S.pR++; 
             } else { 
                 S.stats[p].m++; 
                 if (sub) { S.stats[p].mt[sub] = (S.stats[p].mt[sub] || 0) + 1; if (sub.startsWith('recv_')) S.stats[p].mt['recv'] = (S.stats[p].mt['recv'] || 0) + 1; }
-                S.hist.push(side === 'L' ? 'R' : 'L'); side === 'L' ? S.pR++ : S.pL++; 
+                S.hist.push({ w: side === 'L' ? 'R' : 'L', s: inf.t, f: (S.fault === 0) }); side === 'L' ? S.pR++ : S.pL++; 
             }
             S.fault = 0; S.totalP++; 
             document.getElementById('submenu').classList.remove('open'); 
@@ -640,7 +676,7 @@
                 S.stats[inf.s].st++; 
                 S.stats[inf.s].m++; 
                 S.stats[inf.s].mt['df'] = (S.stats[inf.s].mt['df'] || 0) + 1; 
-                S.hist.push(inf.t === 0 ? 'R' : 'L'); 
+                S.hist.push({ w: inf.t === 0 ? 'R' : 'L', s: inf.t, f: false }); 
                 inf.t === 0 ? S.pR++ : S.pL++; 
                 S.totalP++; 
                 
@@ -660,8 +696,7 @@
                 S.log.push({ n: S.gL + S.gR + 1, L: S.pL, R: S.pR, w: win, flow: [...S.hist], fin });
                 win === 'L' ? S.gL++ : S.gR++; 
 
-                update();
-                sendToLive();
+                update(); 
 
                 setTimeout(() => {
                     if (S.gL === S.winG || S.gR === S.winG) {
@@ -678,7 +713,7 @@
                             document.getElementById('modal').classList.remove('hidden'); 
                         } else { 
                             update(); 
-                            sendToLive();
+                            sendToLive(); 
                         }
                     }
                 }, 100);
@@ -725,9 +760,29 @@
             sendToLive(true);   
 
             isMatchStarted = false; 
+            
+            renderResultUI();
+            
+            step(3); document.getElementById('modal').classList.remove('hidden');
+            setTimeout(() => { const allPts = S.log.flatMap(g => g.flow); drawChart('stats-flow-chart', allPts, false); }, 100);
+            
+            updateUnsentCount();
+        }
+
+        function renderResultUI() {
             const winName = S.gL > S.gR ? S.teams.L : S.teams.R;
             document.getElementById('winner-name').textContent = winName;
             document.getElementById('winner-score').textContent = `${S.gL} - ${S.gR}`;
+            
+            document.getElementById('res-edit-teamR').value = S.teams.R;
+            document.getElementById('res-edit-nmC').value = S.names.C;
+            const editNmD = document.getElementById('res-edit-nmD');
+            if (S.meta.matchType === 'シングルス') {
+                editNmD.style.display = 'none';
+            } else {
+                editNmD.style.display = 'block';
+                editNmD.value = S.names.D;
+            }
             
             const tbl = document.getElementById('res-score-tbl');
             let h = `<tr><th></th>${S.log.map((g, i) => `<th>G${i + 1}</th>`).join('')}<th>計</th></tr>`;
@@ -754,14 +809,27 @@
             
             const flowDiv = document.getElementById('game-flow-list'); flowDiv.innerHTML = '';
             S.log.forEach((g, i) => {
-                const pts = g.flow.map(x => `<div class="dot-s ${x === 'L' ? 'dot-L' : 'dot-R'}">${x}</div>`).join('');
+                const pts = g.flow.map(x => {
+                    const winner = typeof x === 'string' ? x : x.w;
+                    return `<div class="dot-s ${winner === 'L' ? 'dot-L' : 'dot-R'}">${winner}</div>`;
+                }).join('');
                 flowDiv.innerHTML += `<div class="game-flow-row"><div class="gfr-label">G${i + 1}</div><div class="gfr-dots">${pts}</div></div>`;
             });
+        }
+
+        function updateResultName(type, id, val) {
+            updateName(type, id, val); 
             
-            step(3); document.getElementById('modal').classList.remove('hidden');
-            setTimeout(() => { const allPts = S.log.flatMap(g => g.flow); drawChart('stats-flow-chart', allPts, false); }, 100);
-            
-            updateUnsentCount(); // 画面を開いたときにバッジ更新
+            if (type === 'team') {
+                const inTnameR = document.getElementById('in-tname-R');
+                if(inTnameR) inTnameR.value = val;
+            } else {
+                const nmInput = document.getElementById('nm-' + id);
+                if(nmInput) nmInput.value = val;
+            }
+
+            renderResultUI(); 
+            sendToLive(true); 
         }
 
         const MENUS = {
@@ -771,10 +839,14 @@
             p_ace_type: [ { k: 'overhead', l: 'オーバー', i: '⬆' }, { k: 'undercut', l: 'カット', i: '⬇' }, { k: 'other_input', l: 'その他', i: '🖊', custom: true } ],
             r_ace_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'r_ace_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'r_ace_course' }, { k: 'twist', l: 'ツイスト', i: '🌀', sub: 'r_ace_course' } ],
             r_ace_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
-            p_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'p_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'p_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'p_course' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'p_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'p_course' } ],
+            p_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'p_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'p_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'p_volley_type' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'p_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'p_course' } ],
+            p_volley_type: [ { k: 'high', l: 'ハイボレー', i: '⤴', sub: 'p_course' }, { k: 'low', l: 'ローボレー', i: '⤵', sub: 'p_course' }, { k: 'poach', l: 'ポーチ', i: '⚡', sub: 'p_course' }, { k: 'def', l: '守り', i: '🛡', sub: 'p_course' } ],
             p_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
             m: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'm_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'm_shot' }, { k: 'recv', l: 'Rミス', i: '🎾', sub: 'm_recv_hand' } ],
-            m_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'm_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'm_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'm_course' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'm_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'm_course' } ],
+            m_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'm_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'm_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'm_volley_type' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'm_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'm_course' } ],
+            m_volley_type: [ { k: 'high', l: 'ハイボレー', i: '⤴', sub: 'm_volley_err' }, { k: 'low', l: 'ローボレー', i: '⤵', sub: 'm_volley_err' }, { k: 'poach', l: 'ポーチ', i: '⚡', sub: 'm_volley_err' }, { k: 'def', l: '守り', i: '🛡', sub: 'm_volley_err' } ],
+            m_volley_err: [ { k: 'out', l: 'アウト', i: '➡', sub: 'm_volley_course' }, { k: 'net', l: 'ネット', i: '🔴', sub: 'm_volley_course' }, { k: 'tip', l: 'チップ', i: '💫', sub: 'm_volley_course' }, { k: 'swing', l: '空振り', i: '💨', sub: 'm_volley_course' } ],
+            m_volley_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
             m_course: [ { k: 'cross', l: 'クロス', i: '↖', sub: 'm_err' }, { k: 'rev', l: '逆クロス', i: '↗', sub: 'm_err' }, { k: 'ctr', l: 'センター', i: '•', sub: 'm_err' }, { k: 'str', l: 'ストレート', i: '↑', sub: 'm_err' } ],
             m_err: [ { k: 'bout', l: 'Bアウト', i: '⬆' }, { k: 'sout', l: 'Sアウト', i: '➡' }, { k: 'net', l: 'ネット', i: '🔴' } ],
             m_recv_hand: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'm_recv_type' }, { k: 'b', l: 'バック', i: '🟪', sub: 'm_recv_type' } ],
@@ -812,7 +884,7 @@
         function getLbl(k) {
             if (k === 'ace') return 'SA'; if (k === 'df') return 'DF';
             const parts = k.split('_');
-            const dict = { recv: 'R', f: 'F', b: 'B', shoot: 'S', lob: 'L', twist: 'Tw', drop: 'Dr', volley: 'V', smash: 'Sm', str: 'St', cross: 'Cr', rev: 'Rx', ctr: 'Ct', net: 'Nt', out: 'Ot', sout: 'S.Ot', bout: 'B.Ot', back: 'Bk', overhead: 'Ov', undercut: 'Un', other: 'Etc' };
+            const dict = { recv: 'R', f: 'F', b: 'B', shoot: 'S', lob: 'L', twist: 'Tw', drop: 'Dr', volley: 'V', smash: 'Sm', str: 'St', cross: 'Cr', rev: 'Rx', ctr: 'Ct', net: 'Nt', out: 'Ot', sout: 'S.Ot', bout: 'B.Ot', back: 'Bk', overhead: 'Ov', undercut: 'Un', other: 'Etc', high: 'Hi', low: 'Lw', poach: 'Po', def: 'Df', tip: 'Tip', swing: 'Sw' };
             let validParts = parts;
             if (parts[0] === 'recv' && parts.length > 1) { validParts = parts.slice(1); return 'R-' + validParts.map(p => dict[p] || p).join('-'); }
             return validParts.map(p => dict[p] || p).join('-');
@@ -822,7 +894,12 @@
             const cvs = document.getElementById(id); if (!cvs) return;
             const ctx = cvs.getContext('2d'); const dpr = window.devicePixelRatio || 1; const rect = cvs.getBoundingClientRect();
             cvs.width = rect.width * dpr; cvs.height = rect.height * dpr; ctx.scale(dpr, dpr);
-            const w = rect.width; const h = rect.height; const pts = [0]; let c = 0; hist.forEach(x => { c += (x === 'L' ? 1 : -1); pts.push(c); });
+            const w = rect.width; const h = rect.height; const pts = [0]; let c = 0; 
+            hist.forEach(x => { 
+                const winner = typeof x === 'string' ? x : x.w;
+                c += (winner === 'L' ? 1 : -1); 
+                pts.push(c); 
+            });
             const absMax = Math.max(fin ? 9 : 5, ...pts.map(Math.abs)); 
             const mid = h / 2; const sc = (mid - 6) / absMax; const step = (w - 10) / (pts.length || 1);
             ctx.beginPath(); ctx.strokeStyle = '#ccc'; ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
@@ -835,14 +912,12 @@
         
         function resetMatch() { 
             if (confirm('本当に入力データをリセットして最初からやり直しますか？')) {
-                if(navigator.onLine) clearLiveScore(); 
+                if(navigator.onLine && !S.isFinished) {
+                    clearLiveScore(); 
+                }
                 location.reload();
             }
         }
-
-        // ========================================================
-        // ★ 追加：オフライン時のデータ一時保存と一括送信機能
-        // ========================================================
         
         function saveLocally(matchData) {
             let unsent = JSON.parse(localStorage.getItem('tsuchibuchi_unsent') || '[]');
@@ -869,7 +944,6 @@
             btn.innerHTML = "送信中...";
             btn.disabled = true;
 
-            // オフライン時は強制的にローカル保存
             if (!navigator.onLine) {
                 saveLocally(S);
                 alert("電波がありません！\\nデータはタブレットに安全に保存しました。\\n後で電波の良い場所で「一括送信」を押してください。");
@@ -911,7 +985,6 @@
             let successCount = 0;
             let failedData = [];
             
-            // 一つずつGASに送信する
             for(let i=0; i<unsent.length; i++) {
                 try {
                     await fetch(GAS_URL_INTEGRATED, {
@@ -926,7 +999,6 @@
                 }
             }
             
-            // 失敗したものだけローカルストレージに残す
             localStorage.setItem('tsuchibuchi_unsent', JSON.stringify(failedData));
             updateUnsentCount();
             
@@ -934,6 +1006,20 @@
             if(failedData.length > 0) {
                 alert(`${failedData.length}件の送信に失敗しました。後で再試行してください。`);
                 btn.disabled = false;
+            }
+        }
+
+        function abortMatch() {
+            if (!isMatchStarted) return;
+            if (confirm('【警告】本当にこの試合を「打ち切り」として終了しますか？\n（ダッシュボード等には「打ち切り」と表示され、このコートは空き状態になります）')) {
+                S.isFinished = true;
+                S.isAborted = true; 
+                
+                sendToLive(true); 
+                isMatchStarted = false;
+                
+                alert('試合を打ち切りました。最初の画面に戻ります。');
+                location.reload(); 
             }
         }
     </script>

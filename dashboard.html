@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        /* ── COLORS & THEME (ハードコート・ブルー ＆ クレー・オレンジ) ── */
+        /* ── COLORS & THEME ── */
         :root {
             --bg: #f1f5f9; 
             --surface: #ffffff; 
@@ -22,15 +22,14 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); padding: 10px; }
 
-        /* HEADER */
         .dash-header { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 2px solid var(--border); margin-bottom: 15px; background: var(--surface); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .dash-title { font-size: 1.1rem; font-weight: 900; color: var(--text); display: flex; align-items: center; gap: 8px; }
         .live-badge { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: bold; border: 1px solid #fca5a5; }
 
-        /* GRID/LIST CONTAINER */
+        .section-title { font-size: 1rem; font-weight: bold; color: var(--text-dim); margin-top: 20px; margin-bottom: 10px; padding-left: 5px; border-left: 4px solid var(--border); }
+
         .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 15px; }
 
-        /* MATCH CARD */
         .m-card { 
             background: var(--surface); border: 1px solid var(--border); border-radius: 8px; 
             display: flex; flex-direction: column; cursor: pointer; text-decoration: none; color: inherit;
@@ -49,7 +48,6 @@
         .team-name { font-size: 0.95rem; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
         .player-names { font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
 
-        /* スコア表示 */
         .score-box { display: flex; align-items: center; background: #f1f5f9; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); }
         .g-num { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 900; width: 25px; text-align: center; }
         .p-num { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: bold; color: #ffffff; background: var(--text); padding: 2px 4px; border-radius: 4px; margin-left: 5px; min-width: 20px; text-align: center;}
@@ -57,14 +55,14 @@
 
         .c-L { color: var(--blue); }
         .c-R { color: var(--red); }
+        
+        .lose-text { color: #94a3b8 !important; font-weight: normal !important; }
 
-        /* 終了した試合用のデザイン */
         .m-card.finished { 
             background: #f8fafc; border-color: #e2e8f0; box-shadow: none; 
         }
         .m-card.finished .mc-top { background: #f1f5f9; }
-        .m-card.finished .team-name, .m-card.finished .g-num { color: var(--text-dim) !important; }
-        .m-card.finished .p-num { background: #94a3b8 !important; }
+        .m-card.finished .p-num { background: #cbd5e1 !important; color: #f1f5f9 !important; }
         .m-card.finished .mc-court { color: var(--text-dim) !important; }
 
         @media (max-width: 600px) {
@@ -87,12 +85,28 @@
         <div class="dash-title">
             <span class="live-badge">LIVE</span>
             土淵中 速報ダッシュボード
+            <span id="d-date" style="font-size: 0.9rem; color: var(--text-dim); font-weight: bold; margin-left: 8px;"></span>
         </div>
         <div id="d-time" style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">--:--:-- 更新</div>
     </div>
 
-    <div class="grid-container" id="grid-wrap">
-        <div style="text-align: center; padding: 40px; color: var(--text-dim); font-weight: bold;">接続中...</div>
+    <div id="live-section" style="display: none;">
+        <div class="section-title">🎾 進行中の試合</div>
+        <div class="grid-container" id="live-wrap"></div>
+    </div>
+
+    <div id="finished-section" style="display: none;">
+        <div class="section-title" style="margin-top: 30px;">✅ 終了した試合</div>
+        <div class="grid-container" id="finished-wrap"></div>
+    </div>
+
+    <div id="aborted-section" style="display: none;">
+        <div class="section-title" style="margin-top: 30px;">🛑 打ち切り</div>
+        <div class="grid-container" id="aborted-wrap"></div>
+    </div>
+
+    <div id="empty-msg" style="text-align: center; padding: 40px; color: var(--text-dim); font-weight: bold;">
+        接続中...
     </div>
 
     <div class="footer-info">
@@ -104,6 +118,10 @@
         const GAS_URL_LIVE = "https://script.google.com/macros/s/AKfycbxJElyH86BpJK_8LNZydja3uitSCKtGYwI8ll-koOD0skjc_yk58w5RkOlWLyHUKOeZ7g/exec";
 
         window.onload = () => {
+            const now = new Date();
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            document.getElementById('d-date').textContent = `${now.getMonth() + 1}月${now.getDate()}日（${days[now.getDay()]}）`;
+
             fetchDashboard();
             setInterval(fetchDashboard, 5000); 
         };
@@ -125,77 +143,142 @@
             return id.split('_')[1] + 'コート';
         }
 
-        function renderDashboard(matches) {
-            const wrap = document.getElementById('grid-wrap');
-            const now = Date.now();
-            const TIMEOUT_MS = 30 * 60 * 1000; 
+        function createMatchCardHTML(S) {
+            const courtName = getCourtShortName(S.meta.court);
+            const d = getDisp(S.pL, S.pR, S.isFinal);
+            const inf = getServ(S);
+            const isSingles = (S.meta.matchType === 'シングルス');
+            
+            const playersL = isSingles ? S.names.A : `${S.names.A}・${S.names.B}`;
+            const playersR = isSingles ? S.names.C : `${S.names.C}・${S.names.D}`;
+            
+            const isFin = S.isFinished;
+            const isAborted = S.isAborted;
+            const cardClass = isFin ? 'm-card finished' : 'm-card';
+            
+            const sL = (!isFin && (inf.s === 'A' || inf.s === 'B')) ? '🎾' : '';
+            const sR = (!isFin && (inf.s === 'C' || inf.s === 'D')) ? '🎾' : '';
+            
+            let statusBadge = '';
+            if (isAborted) {
+                statusBadge = `<span style="background:#64748b; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.65rem; margin-right:5px; vertical-align:middle;">打ち切り</span>`;
+            } else if (isFin) {
+                statusBadge = `<span style="background:#94a3b8; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.65rem; margin-right:5px; vertical-align:middle;">終了</span>`;
+            } else {
+                statusBadge = `<span style="color:#dc2626; font-size:0.65rem; font-weight:900; margin-right:5px; vertical-align:middle;">●LIVE</span>`;
+            }
 
-            let activeMatches = matches.filter(S => {
+            let winner = '';
+            if (isFin && !isAborted) {
+                if (S.gL > S.gR) winner = 'L';
+                else if (S.gR > S.gL) winner = 'R';
+            }
+            
+            const classL = isFin ? (winner === 'L' ? 'c-L' : 'lose-text') : 'c-L';
+            const classR = isFin ? (winner === 'R' ? 'c-R' : 'lose-text') : 'c-R';
+            const crownL = winner === 'L' ? '<span style="font-size:1.1rem; margin-right:4px;">👑</span>' : '';
+            const crownR = winner === 'R' ? '<span style="font-size:1.1rem; margin-left:4px;">👑</span>' : '';
+
+            const matchIdQuery = S.matchId ? `&matchId=${S.matchId}` : '';
+            const detailUrl = `live.html?court=${S.meta.court}${matchIdQuery}`;
+
+            return `
+            <a href="${detailUrl}" class="${cardClass}">
+                <div class="mc-top">
+                    <span class="mc-court">${statusBadge}${courtName}</span>
+                    <span class="mc-stage">${S.meta.stage || ''} (${S.meta.matchType})</span>
+                </div>
+                <div class="mc-main">
+                    <div class="team-box">
+                        <div class="team-name ${classL}">${crownL}${S.teams.L}</div>
+                        <div class="player-names">${sL}${playersL}</div>
+                    </div>
+                    
+                    <div class="score-box">
+                        <div class="g-num ${classL}">${S.gL}</div>
+                        <div class="p-num">${d.l}</div>
+                        <div class="sep">-</div>
+                        <div class="p-num">${d.r}</div>
+                        <div class="g-num ${classR}">${S.gR}</div>
+                    </div>
+
+                    <div class="team-box" style="text-align: right;">
+                        <div class="team-name ${classR}">${S.teams.R}${crownR}</div>
+                        <div class="player-names">${playersR}${sR}</div>
+                    </div>
+                </div>
+            </a>
+            `;
+        }
+
+        function renderDashboard(matches) {
+            const liveWrap = document.getElementById('live-wrap');
+            const finishedWrap = document.getElementById('finished-wrap');
+            const abortedWrap = document.getElementById('aborted-wrap');
+            
+            const liveSection = document.getElementById('live-section');
+            const finishedSection = document.getElementById('finished-section');
+            const abortedSection = document.getElementById('aborted-section');
+            const emptyMsg = document.getElementById('empty-msg');
+            
+            const now = Date.now();
+            const TIMEOUT_MS = 60 * 60 * 1000; 
+
+            let validMatches = matches.filter(S => {
                 if (!S.lastUpdate) return false; 
                 if (S.isFinished) return true; 
-                return (now - S.lastUpdate) < TIMEOUT_MS;
+                return (now - S.lastUpdate) < TIMEOUT_MS; 
             });
 
-            if (activeMatches.length === 0) {
-                wrap.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--text-dim); font-weight: bold;">現在、表示できる試合データはありません</div>`;
+            if (validMatches.length === 0) {
+                liveSection.style.display = 'none';
+                finishedSection.style.display = 'none';
+                abortedSection.style.display = 'none';
+                emptyMsg.style.display = 'block';
+                emptyMsg.innerHTML = "現在、表示できる試合データはありません";
                 return;
             }
 
-            activeMatches.sort((a, b) => {
+            emptyMsg.style.display = 'none';
+
+            let liveMatches = validMatches.filter(S => !S.isFinished);
+            let finishedMatches = validMatches.filter(S => S.isFinished && !S.isAborted);
+            let abortedMatches = validMatches.filter(S => S.isAborted);
+
+            liveMatches.sort((a, b) => {
                 const numA = parseInt(a.meta.court.split('_')[1]) || 0;
                 const numB = parseInt(b.meta.court.split('_')[1]) || 0;
                 return numA - numB;
             });
 
-            wrap.innerHTML = activeMatches.map(S => {
-                const courtName = getCourtShortName(S.meta.court);
-                const d = getDisp(S.pL, S.pR, S.isFinal);
-                const inf = getServ(S);
-                const isSingles = (S.meta.matchType === 'シングルス');
-                
-                const playersL = isSingles ? S.names.A : `${S.names.A}・${S.names.B}`;
-                const playersR = isSingles ? S.names.C : `${S.names.C}・${S.names.D}`;
-                
-                const isFin = S.isFinished;
-                const cardClass = isFin ? 'm-card finished' : 'm-card';
-                
-                const sL = (!isFin && (inf.s === 'A' || inf.s === 'B')) ? '🎾' : '';
-                const sR = (!isFin && (inf.s === 'C' || inf.s === 'D')) ? '🎾' : '';
-                
-                const statusBadge = isFin
-                    ? `<span style="background:#94a3b8; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.65rem; margin-right:5px; vertical-align:middle;">終了</span>`
-                    : `<span style="color:#dc2626; font-size:0.65rem; font-weight:900; margin-right:5px; vertical-align:middle;">●LIVE</span>`;
+            finishedMatches.sort((a, b) => {
+                return b.lastUpdate - a.lastUpdate;
+            });
+            
+            abortedMatches.sort((a, b) => {
+                return b.lastUpdate - a.lastUpdate;
+            });
 
-                const detailUrl = `live.html?court=${S.meta.court}`;
+            if (liveMatches.length > 0) {
+                liveSection.style.display = 'block';
+                liveWrap.innerHTML = liveMatches.map(S => createMatchCardHTML(S)).join('');
+            } else {
+                liveSection.style.display = 'none';
+            }
 
-                return `
-                <a href="${detailUrl}" class="${cardClass}">
-                    <div class="mc-top">
-                        <span class="mc-court">${statusBadge}${courtName}</span>
-                        <span class="mc-stage">${S.meta.stage || ''} (${S.meta.matchType})</span>
-                    </div>
-                    <div class="mc-main">
-                        <div class="team-box">
-                            <div class="team-name c-L">${S.teams.L}</div>
-                            <div class="player-names">${sL}${playersL}</div>
-                        </div>
-                        
-                        <div class="score-box">
-                            <div class="g-num c-L">${S.gL}</div>
-                            <div class="p-num">${d.l}</div>
-                            <div class="sep">-</div>
-                            <div class="p-num">${d.r}</div>
-                            <div class="g-num c-R">${S.gR}</div>
-                        </div>
-
-                        <div class="team-box" style="text-align: right;">
-                            <div class="team-name c-R">${S.teams.R}</div>
-                            <div class="player-names">${playersR}${sR}</div>
-                        </div>
-                    </div>
-                </a>
-                `;
-            }).join('');
+            if (finishedMatches.length > 0) {
+                finishedSection.style.display = 'block';
+                finishedWrap.innerHTML = finishedMatches.map(S => createMatchCardHTML(S)).join('');
+            } else {
+                finishedSection.style.display = 'none';
+            }
+            
+            if (abortedMatches.length > 0) {
+                abortedSection.style.display = 'block';
+                abortedWrap.innerHTML = abortedMatches.map(S => createMatchCardHTML(S)).join('');
+            } else {
+                abortedSection.style.display = 'none';
+            }
         }
 
         function getDisp(l, r, fin) { 

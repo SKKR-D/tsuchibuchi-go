@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&family=Yuji+Syuku&display=swap" rel="stylesheet">
     <style>
-        /* ── THEME (ハードコート・ブルー ＆ クレー・オレンジ) ── */
+        /* ── THEME ── */
         :root {
             --bg: #f1f5f9; 
             --surface: #ffffff; 
@@ -26,7 +26,6 @@
 
         .scoreboard { width: 100%; max-width: 600px; background: var(--surface); border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; display: flex; flex-direction: column; transition: max-width 0.3s; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
 
-        /* ダッシュボードに戻るボタン */
         .back-dash-btn {
             display: flex; justify-content: center; align-items: center; gap: 8px;
             background: #f1f5f9; color: var(--text); padding: 12px;
@@ -35,36 +34,35 @@
         }
         .back-dash-btn:hover { background: #e2e8f0; }
 
-        /* ── COURT NAVIGATION ── */
         .court-nav { display: flex; overflow-x: auto; gap: 8px; padding: 12px 10px; background: var(--surface); border-bottom: 2px solid var(--border); scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .court-nav::-webkit-scrollbar { display: none; }
         .court-btn { flex-shrink: 0; background: var(--surface); color: var(--text-dim); border: 2px solid var(--border); padding: 8px 16px; border-radius: 20px; font-weight: 900; font-size: 0.9rem; cursor: pointer; transition: 0.2s; font-family: 'Noto Sans JP', sans-serif; }
         .court-btn:hover { background: #f1f5f9; color: var(--text); border-color: #94a3b8; }
         .court-btn.active { background: var(--blue); color: #ffffff; border-color: var(--blue); box-shadow: 0 2px 5px rgba(2, 132, 199, 0.3); }
 
-        /* HEADER */
         .header { background: var(--surface2); padding: 16px 12px; border-bottom: 2px solid var(--border); text-align: center; }
         .live-badge { display: inline-flex; align-items: center; gap: 6px; background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.8rem; border: 1px solid #fca5a5; margin-bottom: 10px; }
         .blink-dot { width: 8px; height: 8px; background: #dc2626; border-radius: 50%; animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         
-        .live-badge.finished { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
+        .live-badge.finished { background: #fef3c7; color: var(--gold); border-color: #fde68a; font-size: 0.9rem; }
+        .live-badge.finished .blink-dot { display: none; }
         
         .match-meta { font-size: 1.4rem; font-weight: 900; color: var(--text-bright); margin-top: 4px; line-height: 1.3; }
         .match-sub { font-size: 1rem; font-weight: 700; color: var(--text-dim); margin-top: 6px; }
 
-        /* GAME COUNT */
         .game-count-area { display: flex; padding: 16px 10px; background: var(--surface); align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border); }
         .gc-team { flex: 1; display: flex; flex-direction: column; align-items: center; }
         .gc-name { font-size: 1.1rem; font-weight: 900; margin-bottom: 4px; color: var(--text-bright); text-align: center; line-height: 1.2; word-break: keep-all; }
         .gc-score { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: 900; line-height: 1; }
+        
         .color-L { color: var(--blue); }
         .color-R { color: var(--red); }
+        .lose-text { color: #94a3b8 !important; }
         
         .gc-center { font-size: 1rem; font-weight: 900; color: var(--text-dim); text-align: center; padding: 0 5px; letter-spacing: 1px; line-height: 1.2; }
         #v-game-num { color: var(--gold); font-size: 1.3rem; margin-bottom: 6px; }
 
-        /* POINTS & PLAYERS */
         .points-wrapper { background: var(--surface2); padding: 16px 5px; display: flex; flex-direction: column; align-items: center; border-bottom: 2px solid var(--border); flex: 1; justify-content: center; }
         .pt-title { color: var(--text-dim); font-size: 1rem; font-weight: 900; letter-spacing: 3px; margin-bottom: 16px; }
         
@@ -83,12 +81,10 @@
 
         .pt-center-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .pt-box { width: 85px; aspect-ratio: 3/4; background: var(--surface); border-radius: 12px; display: flex; justify-content: center; align-items: center; font-family: 'Helvetica World', Helvetica, sans-serif; font-size: 4.5rem; font-weight: 900; border: 3px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        /* 半透明の枠線をテーマ色に合わせる */
         .pt-box.box-L { color: var(--blue); border-color: rgba(2, 132, 199, 0.4); } 
         .pt-box.box-R { color: var(--red); border-color: rgba(234, 88, 12, 0.4); }
         .pt-divider { font-size: 2rem; color: var(--text-dim); font-weight: bold; }
 
-        /* MATCH HISTORY */
         .history-area { padding: 12px; background: var(--surface); border-bottom: 2px solid var(--border); }
         .hist-title { font-size: 0.7rem; color: var(--text-dim); font-weight: 900; margin-bottom: 8px; letter-spacing: 1px; }
         .hist-list { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -96,7 +92,6 @@
         .win-L { border-left: 4px solid var(--blue); }
         .win-R { border-left: 4px solid var(--red); }
 
-        /* FOOTER */
         .footer { padding: 12px; text-align: center; font-size: 0.75rem; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; background: var(--surface2); font-weight: bold; }
         .status-msg { display: flex; align-items: center; gap: 6px; }
         .spinner { width: 12px; height: 12px; border: 2px solid var(--text-dim); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
@@ -122,7 +117,7 @@
         <div class="court-nav" id="v-court-nav"></div>
 
         <div id="loading-screen">
-            <h2 style="font-size:2rem; margin-bottom:4px;">あすへはばたけ</h2>
+            <h2 style="font-size:2rem; margin-bottom:4px;">もえあがれ土淵中</h2>
             <p style="color:var(--text-dim); font-weight: bold; margin-bottom: 20px;">ライブスコアシステム</p>
             <div class="waiting-court-name" id="v-wait-court">--</div>
             <p style="color: var(--text-dim); font-size: 0.9rem; text-align: center; font-weight: bold;" id="v-wait-msg">試合データを取得中...</p>
@@ -193,7 +188,10 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const urlCourt = urlParams.get('court');
+        const urlMatchId = urlParams.get('matchId'); 
+        
         let currentCourtId = urlCourt ? urlCourt : 'court_1';
+        let currentMatchId = urlMatchId; 
         
         let lastDataString = "";
         let fetchTimer = null;
@@ -224,10 +222,10 @@
 
         function changeCourt(courtId, clickedBtn) {
             currentCourtId = courtId;
+            currentMatchId = null; 
             
             document.querySelectorAll('.court-btn').forEach(b => b.classList.remove('active'));
             clickedBtn.classList.add('active');
-            
             clickedBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 
             document.getElementById('main-board').style.display = 'none';
@@ -250,8 +248,26 @@
 
         async function fetchScore() {
             try {
-                const response = await fetch(`${GAS_URL_LIVE}?court=${currentCourtId}`);
-                const data = await response.json();
+                const response = await fetch(`${GAS_URL_LIVE}?all=true`);
+                const allMatches = await response.json();
+
+                let data = null;
+
+                if (currentMatchId) {
+                    data = allMatches.find(m => m.matchId === currentMatchId);
+                } 
+                
+                if (!data) {
+                    let courtMatches = allMatches.filter(m => m.meta && m.meta.court === currentCourtId);
+                    if (courtMatches.length > 0) {
+                        courtMatches.sort((a, b) => b.lastUpdate - a.lastUpdate);
+                        data = courtMatches[0];
+                    }
+                }
+
+                if (!data) {
+                    data = { status: "waiting" };
+                }
 
                 if (data.status === "waiting") {
                     document.getElementById('main-board').style.display = 'none';
@@ -263,7 +279,7 @@
                 }
 
                 const now = Date.now();
-                const TIMEOUT_MS = 30 * 60 * 1000;
+                const TIMEOUT_MS = 60 * 60 * 1000; 
                 
                 if (!data.isFinished && (!data.lastUpdate || (now - data.lastUpdate) > TIMEOUT_MS)) {
                     document.getElementById('main-board').style.display = 'none';
@@ -272,6 +288,11 @@
                     document.getElementById('v-wait-msg').textContent = "試合終了、または通信が途絶えています。";
                     document.getElementById('v-wait-spinner').style.display = 'none';
                     return;
+                }
+
+                if (data.isFinished && fetchTimer) {
+                    clearInterval(fetchTimer);
+                    fetchTimer = null;
                 }
 
                 const currentDataString = JSON.stringify(data);
@@ -298,18 +319,58 @@
             const badge = document.getElementById('v-status-badge');
             const spinner = document.getElementById('v-status-spinner');
             
-            if (S.isFinished) {
+            let winner = '';
+            if (S.isFinished && !S.isAborted) {
+                if (S.gL > S.gR) winner = 'L';
+                else if (S.gR > S.gL) winner = 'R';
+            }
+            
+            if (S.isAborted) {
                 badge.className = 'live-badge finished';
-                badge.textContent = '試合終了';
+                badge.style.backgroundColor = '#e2e8f0';
+                badge.style.color = '#475569';
+                badge.style.borderColor = '#cbd5e1';
+                badge.innerHTML = `🛑 試合打ち切り`;
+                document.getElementById('v-status').textContent = "試合は中断・打ち切りとなりました";
+                document.getElementById('v-status').style.color = "var(--text-dim)";
+                spinner.style.display = 'none';
+                
+                document.getElementById('v-teamL').style.color = "var(--text-dim)";
+                document.getElementById('v-teamR').style.color = "var(--text-dim)";
+                document.getElementById('v-gL').className = "gc-score lose-text";
+                document.getElementById('v-gR').className = "gc-score lose-text";
+                document.getElementById('v-pL').className = "pt-box lose-text";
+                document.getElementById('v-pR').className = "pt-box lose-text";
+
+            } else if (S.isFinished) {
+                const winnerName = winner === 'L' ? S.teams.L : (winner === 'R' ? S.teams.R : '引き分け');
+                badge.className = 'live-badge finished';
+                badge.innerHTML = `👑 WINNER: ${winnerName}`;
                 document.getElementById('v-status').textContent = "試合結果 (更新停止)";
                 document.getElementById('v-status').style.color = "var(--text-dim)";
                 spinner.style.display = 'none';
+                
+                document.getElementById('v-teamL').style.color = winner === 'L' ? "var(--text-bright)" : "var(--text-dim)";
+                document.getElementById('v-teamR').style.color = winner === 'R' ? "var(--text-bright)" : "var(--text-dim)";
+                document.getElementById('v-gL').className = winner === 'L' ? "gc-score color-L" : "gc-score lose-text";
+                document.getElementById('v-gR').className = winner === 'R' ? "gc-score color-R" : "gc-score lose-text";
+                
+                document.getElementById('v-pL').className = "pt-box " + (winner === 'L' ? "box-L" : "lose-text");
+                document.getElementById('v-pR').className = "pt-box " + (winner === 'R' ? "box-R" : "lose-text");
+                
             } else {
                 badge.className = 'live-badge';
                 badge.innerHTML = `<div class="blink-dot"></div>LIVE SCORE`;
                 document.getElementById('v-status').textContent = "自動更新中";
                 document.getElementById('v-status').style.color = "var(--text-dim)";
                 spinner.style.display = 'block';
+                
+                document.getElementById('v-teamL').style.color = "var(--text-bright)";
+                document.getElementById('v-teamR').style.color = "var(--text-bright)";
+                document.getElementById('v-gL').className = "gc-score color-L";
+                document.getElementById('v-gR').className = "gc-score color-R";
+                document.getElementById('v-pL').className = "pt-box box-L";
+                document.getElementById('v-pR').className = "pt-box box-R";
             }
 
             const tourneyName = S.meta.tourney || '大会';
