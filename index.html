@@ -1,616 +1,1027 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>部活動予定</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-:root{--navy:#0a1628;--blue:#1a3a6b;--accent:#e8a020;--white:#fff;--light:#f4f6f9;--gray:#8a96a8;--border:#dde3ed;--text:#1e2a3a}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans JP',sans-serif;background:var(--light);color:var(--text);min-height:100vh}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>土淵中スコアブック(統合・ライブ中継対応版)</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0284c7">
+    <link rel="apple-touch-icon" href="icon.png">
 
-/* HEADER */
-header{background:var(--navy);position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,.4)}
-.header-inner{max-width:960px;margin:0 auto;padding:0 16px;height:56px;display:flex;align-items:center;gap:12px}
-.header-icon{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
-.header-text{flex:1;min-width:0}
-.header-title{font-family:'Oswald',sans-serif;font-size:1.05rem;color:var(--white);letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.header-sub{font-size:.68rem;color:var(--gray);display:block;margin-top:1px}
-#monthSelector{background:var(--accent);color:var(--navy);font-size:.75rem;font-weight:700;padding:6px 14px;border-radius:20px;border:none;cursor:pointer;outline:none;flex-shrink:0;min-width:110px;text-align:center}
-#monthSelector option{background:var(--navy);color:var(--white)}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&family=Yuji+Syuku&display=swap" rel="stylesheet">
+    <style>
+        /* ── COLORS & THEME ── */
+        :root { 
+            --bg: #f1f5f9; 
+            --surface: #ffffff; 
+            --surface2: #e2e8f0; 
+            --border: #94a3b8; 
+            --text: #0f172a; 
+            --text-dim: #475569; 
+            --blue: #0284c7;     
+            --blue-dim: #e0f2fe; 
+            --red: #ea580c;      
+            --red-dim: #ffedd5; 
+            --gold: #d97706;     
+            --gold-bg: #fef3c7; 
+            --green: #16a34a; 
+            --cyan: #0891b2; 
+            --app-bg: #cbd5e1; 
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        body { font-family: 'Noto Sans JP', sans-serif; background: var(--app-bg); color: var(--text); height: 100vh; height: 100dvh; min-height: 100vh; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; }
 
-/* HERO */
-.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 100%);padding:28px 20px 36px;text-align:center;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(60deg,transparent,transparent 28px,rgba(255,255,255,.025) 28px,rgba(255,255,255,.025) 29px)}
-.hero-title{font-family:'Oswald',sans-serif;font-size:clamp(1.8rem,7vw,3rem);font-weight:700;color:var(--white);line-height:1.1;position:relative}
-.hero-title span{color:var(--accent)}
-.hero-label{font-size:.72rem;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-top:4px;position:relative}
-.hero-stats{display:flex;justify-content:center;margin-top:20px;position:relative}
-.stat{text-align:center;padding:0 12px;border-right:1px solid rgba(255,255,255,.15)}
-.stat:last-child{border-right:none}
-.stat-num{font-family:'Oswald',sans-serif;font-size:1.6rem;font-weight:600;color:var(--accent);line-height:1}
-.stat-label{font-size:.6rem;color:rgba(255,255,255,.5);margin-top:2px;letter-spacing:.04em}
+        #offline-banner { display:none; width: 100%; background: #dc2626; color: white; text-align: center; padding: 6px; font-size: 0.8rem; font-weight: bold; z-index: 999; }
 
-/* NOTICE */
-.notice-wrap{max-width:960px;margin:-14px auto 0;padding:0 16px;position:relative;z-index:10}
-.notice-card{background:var(--accent);color:var(--navy);border-radius:10px;padding:10px 16px;font-size:.82rem;font-weight:700;display:flex;align-items:flex-start;gap:10px;box-shadow:0 6px 20px rgba(232,160,32,.35)}
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; padding: 16px; }
+        .modal-overlay.hidden { display: none; }
+        .modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 500px; margin-bottom: 16px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); }
+        
+        .step-bar { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all .3s; }
+        .step-dot.active { background: var(--gold); transform: scale(1.3); }
+        
+        .match-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .full-width { grid-column: span 2; }
+        .input-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px; display: block; font-weight: bold; }
+        
+        .name-input { width: 100%; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.95rem; font-family: inherit; }
+        
+        .option-group { display: flex; gap: 6px; margin-bottom: 12px; }
+        .opt-btn { flex: 1; padding: 12px 4px; background: var(--surface2); border: 2px solid var(--border); border-radius: 8px; font-weight: 700; font-size: 0.9rem; color: var(--text); cursor: pointer; transition: 0.2s; }
+        .opt-btn:hover { filter: brightness(0.95); }
+        .opt-btn.sel-gold { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
+        .opt-btn.sel-blue { background: var(--blue); border-color: var(--blue); color: #fff; }
+        .opt-btn.sel-red { background: var(--red); border-color: var(--red); color: #fff; }
+        .opt-btn.sel-green { background: var(--green); border-color: var(--green); color: #fff; }
+        
+        .confirm-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue), #0369a1); border: none; border-radius: 10px; color: #fff; font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; margin-top: 8px; cursor: pointer; transition: 0.2s; }
+        .confirm-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3); }
+        .confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* MAIN */
-.main{max-width:960px;margin:0 auto;padding:20px 16px 60px}
-.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;margin-top:24px}
-.sec-line{width:4px;height:20px;background:var(--accent);border-radius:2px}
-.sec-title{font-family:'Oswald',sans-serif;font-size:.95rem;letter-spacing:.08em;color:var(--navy)}
+        .result-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--gold); padding-bottom: 8px; margin-bottom: 8px; }
+        .rh-title { font-size: 0.75rem; color: var(--text-dim); font-weight: 700; }
+        .rh-winner { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; font-weight: 900; color: var(--gold); }
+        .rh-score { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; font-weight: 900; color: var(--text); }
+        .compact-chart-wrap { height: 70px; margin-bottom: 8px; border: 1px solid var(--border); background: var(--surface2); border-radius: 6px; position: relative; }
+        #stats-flow-chart { width: 100%; height: 100%; display: block; }
+        
+        .compact-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 8px; }
+        .compact-table th { background: var(--surface2); padding: 4px; border: 1px solid var(--border); color: var(--text-dim); }
+        .compact-table td { padding: 4px; border: 1px solid var(--border); text-align: center; font-weight: 700; }
+        .ct-name { text-align: left; padding-left: 6px; max-width: 80px; overflow: hidden; white-space: nowrap; }
+        
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+        .detail-grid.singles-mode { grid-template-columns: 1fr; }
+        .d-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px; overflow: hidden; }
+        .dc-head { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 900; margin-bottom: 4px; border-bottom: 1px solid var(--border); padding-bottom: 2px; }
+        .dc-body { font-size: 0.65rem; line-height: 1.3; min-height: 3.6em; }
+        .chip { display: inline-block; padding: 1px 5px; border-radius: 4px; margin: 1px; font-size: 0.6rem; }
+        .cp { background: #e8f5e9; color: #16a34a; border: 1px solid #bbf7d0; }
+        .cm { background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; }
+        
+        .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .share-btn { padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 6px; color: var(--text); cursor: pointer; }
+        .share-btn:hover:not(:disabled) { background: var(--surface2); }
+        .share-btn-primary { grid-column: span 2; background: linear-gradient(135deg, var(--green), #15803d); color: white; font-size: 1rem; padding: 14px; border: none; }
+        .share-btn-primary:hover:not(:disabled) { box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3); transform: translateY(-1px); }
+        .share-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        details.flow-details { margin-bottom: 8px; border: 1px solid var(--border); border-radius: 6px; }
+        details.flow-details summary { padding: 8px; font-size: 0.75rem; font-weight: 700; background: var(--surface2); list-style: none; cursor: pointer; text-align: center; }
+        .flow-content { padding: 8px; max-height: 150px; overflow-y: auto; }
+        .game-flow-row { display: flex; font-size: 0.7rem; margin-bottom: 4px; align-items: center; }
+        .gfr-label { width: 40px; font-weight: bold; flex-shrink: 0; }
+        .gfr-dots { display: flex; flex-wrap: wrap; gap: 2px; }
+        .dot-s { width: 12px; height: 12px; border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #fff; }
+        .dot-L { background: var(--blue); }
+        .dot-R { background: var(--red); }
 
-/* BUTTONS */
-.btn-wrap{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 18px;border-radius:10px;font-size:.88rem;font-weight:700;text-decoration:none;transition:opacity .15s;flex:1;min-width:160px;justify-content:center}
-.btn:hover{opacity:.85}
-.btn-absent{background:#e05252;color:#fff}
-.btn-car{background:#4a7fd4;color:#fff}
+        .app { width: 100%; max-width: 600px; height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: var(--bg); position: relative; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); overflow-y: auto; overflow-x: hidden; }
+        .header { padding: 16px 12px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; min-height: 100px; }
+        .game-score-display { font-family: 'Century Gothic', sans-serif; font-size: clamp(2rem, 8vw, 4rem); font-weight: 900; }
+        .gs-left { color: var(--blue); }
+        .gs-right { color: var(--red); }
+        
+        .score-area { flex: 1; display: flex; gap: 6px; padding: 6px; min-height: 0; }
+        .team-panel { flex: 1; border-radius: 12px; display: flex; flex-direction: column; border: 2px solid transparent; background: var(--surface); position: relative; }
+        .team-panel.left { border-color: var(--blue); }
+        .team-panel.right { border-color: var(--red); }
+        
+        .panel-top { padding: 6px; text-align: center; background: rgba(0, 0, 0, 0.03); font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+        .seamless-input { border:none; background:transparent; width:100%; text-align:center; font-family:inherit; font-weight:700; font-size:0.9rem; color:inherit; outline:none; padding:0; margin:0; }
+        .seamless-input:focus { background: rgba(255,255,255,0.5); border-radius:4px; }
+        
+        .point-display { flex: 1; display: flex; align-items: center; justify-content: center; font-family: 'Helvetica World', Helvetica, sans-serif; font-size: clamp(3rem, 35cqi, 12rem); container-type: inline-size; line-height: 1; font-weight: 900; margin: 10px 0; }
+        .left .point-display { color: var(--blue); }
+        .right .point-display { color: var(--red); }
+        
+        .players-box { display: flex; flex-direction: column; gap: 4px; padding: 6px; background: var(--surface2); flex: 1; justify-content: flex-end;}
+        .p-row { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; height: 56px; }
+        .p-info { width: 35%; padding: 4px; display: flex; flex-direction: column; justify-content: center; font-size: 0.75rem; border-right: 1px solid var(--border); position: relative; }
+        .p-role { font-size: 0.6rem; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 4px; position: absolute; top: 2px; left: 2px; font-weight: bold; }
+        .role-s { background: var(--gold); color: #fff; }
+        .role-r { background: var(--cyan); color: #fff; }
+        
+        .p-name-input { border:none; background:transparent; width:100%; font-family:inherit; font-weight:700; font-size:0.8rem; color:var(--text); outline:none; margin-left:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .p-name-input:focus { background: rgba(0,0,0,0.05); border-radius:2px; }
 
-/* STATUS */
-.status-box{background:var(--white);border-radius:12px;padding:40px 20px;text-align:center;color:var(--gray);font-size:.88rem;box-shadow:0 2px 10px rgba(10,22,40,.07)}
-.spinner{display:inline-block;width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-
-/* BADGES */
-.type-badge{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:5px;white-space:nowrap;flex-shrink:0}
-.badge-match    {background:#fdeaea;color:#b33030}
-.badge-scrimmage{background:#fff8dc;color:#8a6000}
-.badge-practice {background:#e6f7ee;color:#227a4a}
-.badge-event    {background:#e5eeff;color:#2555a0}
-.badge-rest     {background:#f0f0f0;color:#666}
-.badge-other    {background:#f5e8ee;color:#8a3055}
-.target-badge{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:5px;white-space:nowrap;flex-shrink:0}
-.target-all   {background:#e8f5e9;color:#2e7d32}
-.target-female{background:#fce4ec;color:#ad1457}
-.target-male  {background:#e3f2fd;color:#1565c0}
-.target-limit {background:#fff3e0;color:#e65100}
-.meta-label{font-weight:700;color:var(--navy);margin-right:2px;font-size:.72rem}
-.meta-pill{font-size:.73rem;color:var(--gray);display:inline-flex;align-items:center}
-.card-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.card-detail{margin-top:8px;padding:8px 11px;background:var(--white);border-radius:7px;font-size:.79rem;color:#4a5a6a;line-height:1.65;border:1px solid var(--border)}
-.dow-sun{background:#ffe5e5;color:#c0392b}
-.dow-sat{background:#e5eeff;color:#2563b0}
-.dow-wk {background:var(--light);color:var(--gray)}
-
-/* 凡例 */
-.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;color:var(--text)}
-.legend-dot{width:14px;height:6px;border-radius:3px;flex-shrink:0}
-
-/* CALENDAR */
-.cal-wrap{background:var(--white);border-radius:14px;box-shadow:0 2px 10px rgba(10,22,40,.07);overflow:hidden}
-.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);background:var(--navy)}
-.cal-dow{text-align:center;font-size:.68rem;font-weight:700;color:rgba(255,255,255,.6);padding:9px 0}
-.cal-dow.sun{color:#ff8a8a}.cal-dow.sat{color:#8ab4ff}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border)}
-.cal-cell{background:var(--white);min-height:58px;padding:6px 4px 4px;cursor:default;position:relative;transition:background .12s}
-.cal-cell.empty{background:#f8f9fb;pointer-events:none}
-.cal-cell.has-event{cursor:pointer}
-.cal-cell.has-event:hover{background:#f0f4ff}
-.cal-cell.today{background:#fff8e6}
-.cal-cell.today .cal-dn{color:#8a5a00;font-weight:700}
-.cal-cell.selected{background:#fff3d0}
-.cal-cell.selected::after{content:'';position:absolute;inset:0;border:2px solid var(--accent);pointer-events:none}
-.cal-cell.sun .cal-dn{color:#c0392b}
-.cal-cell.sat .cal-dn{color:#2563b0}
-.cal-cell.today.sun .cal-dn{color:#8a5a00}
-.cal-cell.today.sat .cal-dn{color:#8a5a00}
-.cal-dn{font-family:'Oswald',sans-serif;font-size:.88rem;font-weight:600;color:var(--navy);width:22px;height:22px;display:flex;align-items:center;justify-content:center}
-.cal-badges{display:flex;flex-wrap:wrap;gap:2px;margin-top:3px}
-.cal-badge{height:6px;border-radius:3px;flex:1;min-width:5px}
-.cal-badge.match    {background:#e05252}
-.cal-badge.scrimmage{background:#d4a017}
-.cal-badge.practice {background:#3a9e6a}
-.cal-badge.event    {background:#4a7fd4}
-.cal-badge.rest     {background:var(--gray)}
-.cal-badge.other    {background:#b0768a}
-
-/* 詳細パネル */
-.cal-detail{background:var(--white);border-radius:12px;margin-top:10px;display:none;box-shadow:0 2px 10px rgba(10,22,40,.07);overflow:hidden}
-.cal-detail.show{display:block;animation:fadeUp .22s ease both}
-.cal-detail-date{font-family:'Oswald',sans-serif;font-size:.95rem;color:var(--navy);padding:13px 16px 8px;font-weight:600;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-.cal-detail-close{margin-left:auto;background:none;border:none;color:var(--gray);font-size:1.1rem;cursor:pointer;line-height:1;padding:2px 4px}
-.cal-detail-close:hover{color:var(--text)}
-.detail-cards{padding:8px 12px 12px;display:flex;flex-direction:column;gap:8px}
-.card{background:var(--light);border-radius:10px;padding:12px 14px;border-left:4px solid var(--border)}
-.card.match    {border-left-color:#e05252}
-.card.scrimmage{border-left-color:#d4a017}
-.card.practice {border-left-color:#3a9e6a}
-.card.event    {border-left-color:#4a7fd4}
-.card.rest     {border-left-color:var(--gray)}
-.card.other    {border-left-color:#b0768a}
-.card-top{display:flex;gap:7px;align-items:flex-start;flex-wrap:wrap;margin-bottom:5px}
-
-/* LIST VIEW（PC） */
-.list-view{display:none;flex-direction:column;background:var(--white);border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(10,22,40,.07)}
-.list-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border);transition:background .12s}
-.list-row:last-child{border-bottom:none}
-.list-row:hover{background:#fafbff}
-.list-date-col{min-width:72px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:3px solid var(--border);flex-shrink:0}
-.list-date-col.match    {border-right-color:#e05252}
-.list-date-col.scrimmage{border-right-color:#d4a017}
-.list-date-col.practice {border-right-color:#3a9e6a}
-.list-date-col.event    {border-right-color:#4a7fd4}
-.list-date-col.rest     {border-right-color:var(--gray)}
-.list-date-col.other    {border-right-color:#b0768a}
-.list-day{font-family:'Oswald',sans-serif;font-size:1.55rem;font-weight:700;color:var(--navy);line-height:1}
-.list-dow{font-size:.67rem;font-weight:700;padding:2px 5px;border-radius:4px;margin-top:3px;display:inline-block}
-.list-content{flex:1;padding:14px 16px;min-width:0}
-.list-top{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:5px}
-.list-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:5px}
-.list-today .list-date-col{background:#fff8e6}
-.list-today .list-day{color:var(--accent)}
-
-footer{text-align:center;padding:20px;font-size:.7rem;color:var(--gray);border-top:1px solid var(--border)}
-
-/* RESPONSIVE */
-@media(min-width:769px){
-  .cal-wrap{display:none}.cal-detail{display:none!important}.legend{display:none}
-  .list-view{display:flex}
-}
-@media(max-width:768px){
-  .list-view{display:none!important}
-  .stat{padding:0 10px}
-  .stat-label{font-size:.58rem}
-}
-</style>
+        .active-server { background: var(--red-dim) !important; outline: 2px solid var(--red) !important; border-color: transparent !important; }
+        .active-receiver { background: var(--blue-dim) !important; outline: 2px solid var(--blue) !important; border-color: transparent !important; }
+        
+        .p-btns { flex: 1; display: flex; }
+        .act-btn { flex: 1; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; transition: 0.1s; }
+        .act-btn:active { opacity: 0.7; }
+        .act-btn:hover { filter: brightness(1.1); }
+        .btn-p { color: #fff; }
+        .left .btn-p { background: var(--blue); }
+        .right .btn-p { background: var(--red); }
+        .btn-m { background: var(--surface); color: var(--text-dim); border-left: 1px solid var(--border); }
+        
+        .bottom-area { flex-shrink: 0; padding: 0 8px 8px; }
+        .chart-box { height: 50px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; position: relative; }
+        #flow-chart { width: 100%; height: 100%; display: block; }
+        
+        .fault-btn { width: 100%; padding: 12px; background: var(--surface); border: 2px solid var(--gold); border-radius: 10px; color: var(--gold); font-weight: 700; font-family: 'Orbitron', monospace; cursor: pointer; transition: 0.2s; }
+        .fault-btn:hover { background: var(--gold-bg); }
+        .fault-btn.warn { background: var(--red); color: #fff; border-color: var(--red); }
+        .fault-btn.warn:hover { filter: brightness(1.1); }
+        
+        .submenu-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: .2s; }
+        .submenu-overlay.open { opacity: 1; pointer-events: auto; }
+        .submenu-sheet { width: 100%; max-width: 600px; background: var(--surface); border-radius: 20px 20px 0 0; padding: 16px; max-height: 70vh; overflow-y: auto; transform: translateY(100%); transition: .3s; }
+        .submenu-overlay.open .submenu-sheet { transform: translateY(0); }
+        .sm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .sm-btn { padding: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; font-weight: 700; text-align: center; cursor: pointer; transition: 0.2s; }
+        .sm-btn:hover { filter: brightness(0.95); transform: scale(1.02); }
+        .sm-back { grid-column: span 2; padding: 10px; background: transparent; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; }
+        
+        @media (max-width: 600px) { body { background: var(--bg); } .app { border-radius: 0; box-shadow: none; } }
+    </style>
 </head>
 <body>
+    <div id="offline-banner">⚠️ 現在オフラインです。データは端末に一時保存されます。</div>
 
-<!-- ★ 設定欄 ★ -->
-<script>
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHN9gczb9ynaiPe_yfZXXumYbHj_5jZQMQ0sAIXq_O_jPlTcuxUE1xHC6jLbkYuBX1sZk34y-8ots4/pub?gid=0&single=true&output=csv";
+    <div id="modal" class="modal-overlay">
+        <div class="modal-card">
+            
+            <div id="step-0">
+                <h1 style="text-align: center; background: linear-gradient(135deg, #ff7b00, #ffc107); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: 'S Motoya Daikai', 'Sモトヤ大楷', 'Yuji Syuku', serif; font-size: clamp(1.5rem, 11vw, 3.2rem); white-space: nowrap; font-weight: 900; margin-bottom: 5px; letter-spacing: 0px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); line-height: 1.2;">もえあがれ土淵中</h1>
+                <p style="text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-bottom:20px;">統合版スコアシステム</p>
+                
+                <p class="input-label">📌 性別</p>
+                <div class="option-group" id="gender-opts">
+                    <button class="opt-btn" onclick="selGender('男子')">男子</button>
+                    <button class="opt-btn" onclick="selGender('女子')">女子</button>
+                </div>
+                
+                <p class="input-label">📌 種目</p>
+                <div class="option-group" id="type-opts">
+                    <button class="opt-btn" onclick="selMatchType('シングルス')">シングルス</button>
+                    <button class="opt-btn" onclick="selMatchType('ダブルス')">ダブルス</button>
+                </div>
+                
+                <button class="confirm-btn" id="btn-next-0" onclick="goToStep1()" disabled>設定へ進む</button>
+            </div>
 
-const CONFIG = {
-  clubName:      "土淵中ソフトテニス部",
-  schoolName:    "部活動予定",
-  absentFormUrl: "https://forms.gle/6E1xasgJGUYhdnDa7",
-  carFormUrl:    "https://forms.gle/JTFdHq1Ct47sanJ96",};
+            <div id="step-1" style="display:none;">
+                <div class="step-bar"> <div class="step-dot active"></div> <div class="step-dot"></div> </div>
+                <div style="text-align:center; font-weight:bold; color:var(--blue); margin-bottom:10px;" id="disp-mode-label"></div>
+                
+                <p class="input-label">🎾 会場・コート指定</p>
+                <div class="match-info-grid">
+                    <div class="full-width">
+                        <select class="name-input" id="meta-court" style="font-weight:bold; color:var(--blue);">
+                            <option value="court_1">1コート</option>
+                            <option value="court_2">2コート</option>
+                            <option value="court_3">3コート</option>
+                            <option value="court_4">4コート</option>
+                            <option value="court_5">5コート</option>
+                            <option value="court_6">6コート</option>
+                            <option value="court_7">7コート</option>
+                            <option value="court_8">8コート</option>
+                            <option value="court_9">9コート</option>
+                            <option value="court_10">10コート</option>
+                            <option value="court_11">11コート</option>
+                            <option value="court_12">12コート</option>
+                            <option value="court_13">13コート</option>
+                            <option value="court_14">14コート</option>
+                            <option value="court_15">15コート</option>
+                            <option value="court_16">16コート</option>
+                            <option value="court_17">17コート</option>
+                            <option value="court_18">18コート</option>
+                        </select>
+                    </div>
+                </div>
 
-const COL = { target:1, date:2, startTime:3, endTime:4, type:5, location:6, detail:8 };
-</script>
+                <p class="input-label">大会情報</p>
+                <div class="match-info-grid">
+                    <div class="full-width"><input class="name-input" id="meta-tourney" placeholder="大会名"></div>
+                    <div class="full-width"><input class="name-input" id="meta-stage" placeholder="回戦 (例: 決勝)"></div>
+                </div>
 
-<header>
-  <div class="header-inner">
-    <div class="header-icon">🎾</div>
-    <div class="header-text">
-      <div class="header-title" id="clubNameHeader"></div>
-      <span class="header-sub" id="schoolNameSub"></span>
+                <p class="input-label">スコア記入者</p>
+                <div class="match-info-grid">
+                    <div class="full-width"><input class="name-input" id="meta-scorer" placeholder="記入者名"></div>
+                </div>
+
+                <p class="input-label">選手登録</p>
+                <div class="match-info-grid">
+                    <div class="full-width" style="color:var(--blue); font-weight:bold; font-size:0.8rem;">🔵 自チーム (土淵中)</div>
+                    <div class="full-width" id="wrap-nA"><select class="name-input" id="n-A"></select></div>
+                    <div class="full-width" id="wrap-nB"><select class="name-input" id="n-B"></select></div>
+                    
+                    <div class="full-width" style="color:var(--red); font-weight:bold; font-size:0.8rem; margin-top:4px;">🔴 相手チーム <input id="team-r-name" placeholder="チーム名" style="width:100px; font-size:0.8rem; border:none; background:transparent; color: var(--text);"></div>
+                    <div class="full-width" id="wrap-nC"><input class="name-input" id="n-C" value="選手C" placeholder="選手C"></div>
+                    <div class="full-width" id="wrap-nD"><input class="name-input" id="n-D" value="選手D" placeholder="選手D"></div>
+                </div>
+                
+                <p class="input-label">ゲーム数</p>
+                <div class="option-group" id="match-opts">
+                    <button class="opt-btn" onclick="selMatch(5)">5ゲーム</button>
+                    <button class="opt-btn" onclick="selMatch(7)">7ゲーム</button>
+                </div>
+                
+                <p class="input-label">第1ゲーム サーバー</p>
+                <div class="option-group" id="serve-team-opts">
+                    <button class="opt-btn" onclick="selServTeam(0)">🔵 土淵中S</button>
+                    <button class="opt-btn" onclick="selServTeam(1)">🔴 相手S</button>
+                </div>
+                
+                <button class="confirm-btn" id="btn-next-1" onclick="confirmStep1()" disabled>次へ</button>
+                <button class="opt-btn" onclick="step(0)" style="width:100%; margin-top:10px; border:none; background:transparent;">← 種目選択に戻る</button>
+            </div>
+
+            <div id="step-2" style="display:none;">
+                <div class="step-bar"> <div class="step-dot"></div> <div class="step-dot active"></div> </div>
+                <div style="text-align:center; font-weight:bold; color:var(--blue); font-size:0.9rem; margin-bottom:4px;" id="disp-court-s2"></div>
+                <p id="pos-confirm-title" style="text-align:center; margin-bottom:10px; font-size:0.9rem;">第1ゲーム ポジション確認</p>
+                
+                <p class="input-label">🎾 サーバー</p>
+                <div class="option-group" id="server-opts"></div>
+                <p class="input-label">↗ レシーバー</p>
+                <div class="option-group" id="receiver-opts"></div>
+                <div style="background:var(--surface2); padding:10px; border-radius:8px; text-align:center; font-size:0.8rem; margin:10px 0;">
+                    <div id="court-diag" style="display:flex; justify-content:center; gap:10px; font-weight:bold;"></div>
+                </div>
+                <button class="confirm-btn" onclick="confirmStep2()">ゲーム開始</button>
+                <button class="opt-btn" onclick="step(1)" style="width:100%; margin-top:10px; border:none; background:transparent;">← 設定に戻る</button>
+            </div>
+
+            <div id="step-3" style="display:none;">
+                <div class="result-header">
+                    <div>
+                        <div style="font-size:0.75rem; color:var(--blue); font-weight:bold; margin-bottom:4px;" id="disp-court-s3"></div>
+                        <div class="rh-title">WINNER</div>
+                        <div class="rh-winner" id="winner-name">土淵中</div>
+                    </div>
+                    <div class="rh-score" id="winner-score">4 - 2</div>
+                </div>
+                <div class="compact-chart-wrap"><canvas id="stats-flow-chart"></canvas></div>
+                
+                <div style="background:var(--surface2); padding:8px; border-radius:8px; margin-bottom:8px; border:1px solid var(--border);">
+                    <div style="font-size:0.7rem; color:var(--text-dim); font-weight:bold; margin-bottom:4px;">✏️ 相手チーム・選手名の修正（送信前ならいつでも可能）</div>
+                    <div style="display:flex; gap:4px; margin-bottom:4px;">
+                        <input class="name-input" style="padding:6px; font-size:0.8rem;" id="res-edit-teamR" placeholder="相手チーム名" onchange="updateResultName('team','R',this.value)">
+                    </div>
+                    <div style="display:flex; gap:4px;">
+                        <input class="name-input" style="padding:6px; font-size:0.8rem;" id="res-edit-nmC" placeholder="選手C" onchange="updateResultName('player','C',this.value)">
+                        <input class="name-input" style="padding:6px; font-size:0.8rem;" id="res-edit-nmD" placeholder="選手D" onchange="updateResultName('player','D',this.value)">
+                    </div>
+                </div>
+                <table class="compact-table" id="res-score-tbl"></table>
+                <table class="compact-table">
+                    <thead><tr style="background:var(--surface2);"><th>選手</th><th>得点</th><th>ミス</th><th>1st%</th></tr></thead>
+                    <tbody id="res-stats-tbl"></tbody>
+                </table>
+                <div class="detail-grid" id="detail-cards"></div>
+                <details class="flow-details">
+                    <summary>スコア詳細を見る</summary>
+                    <div class="flow-content" id="game-flow-list"></div>
+                </details>
+                
+                <div class="share-row">
+                    <button class="share-btn" id="btn-sync" onclick="syncUnsentData()" style="display:none; grid-column: span 2; background: var(--gold); color: white; border: none; font-weight: bold; padding: 14px; border-radius: 8px;">☁ 未送信データを一括送信</button>
+                    
+                    <button class="share-btn share-btn-primary" id="btn-send-integrated" onclick="sendToCloud()">☁ スプレッドシートに記録</button>
+                    <button class="share-btn" onclick="downloadJSON()">💾 バックアップ保存</button>
+                    <button class="share-btn" onclick="resetMatch()">🔄 新しい試合を入力</button>
+                </div>
+            </div>
+        </div>
     </div>
-    <select id="monthSelector" onchange="onMonthChange()">
-      <option value="">読み込み中…</option>
-    </select>
-  </div>
-</header>
 
-<div class="hero">
-  <div class="hero-title"><span id="heroMon">…</span>月予定</div>
-  <div class="hero-label">UPCOMING SCHEDULE</div>
-  <div class="hero-stats">
-    <div class="stat"><div class="stat-num" id="statPractice">-</div><div class="stat-label">練習日</div></div>
-    <div class="stat"><div class="stat-num" id="statMatch">-</div><div class="stat-label">大会</div></div>
-    <div class="stat"><div class="stat-num" id="statScrimmage">-</div><div class="stat-label">練習試合</div></div>
-    <div class="stat"><div class="stat-num" id="statParents">-</div><div class="stat-label">保護者会練習</div></div>
-  </div>
-</div>
+    <div class="app" id="main-app">
+        <div class="header">
+            <div style="display:flex; flex-direction:column; justify-content:center;">
+                <div style="font-size:0.8rem; font-weight:bold; color:var(--blue);" id="disp-court-main"></div>
+                <div style="font-size:1.2rem; font-weight:bold; margin-top:4px;" id="game-info">1ゲーム目</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <div style="font-size:0.8rem; font-weight:bold; color:var(--text-dim); margin-bottom: 4px;">ゲームカウント</div>
+                <div class="game-score-display" style="line-height:1;margin-top:-10px;"><span class="gs-left" id="gs-L">0</span>-<span class="gs-right" id="gs-R">0</span></div>
+            </div>
+            
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button onclick="abortMatch()" style="background:none; border:none; font-size:1.6rem; cursor:pointer;" title="試合を打ち切る">🛑</button>
+                <button onclick="undo()" style="background:none; border:none; font-size:1.6rem; cursor:pointer;" title="1つ戻る">↩️</button>
+            </div>
+        </div>
 
-<div class="notice-wrap" id="noticeWrap" style="display:none">
-  <div class="notice-card"><span>📢</span><span id="noticeText"></span></div>
-</div>
+        <div class="score-area">
+            <div class="team-panel left">
+                <div class="panel-top" id="tname-L">土淵中</div>
+                <div style="text-align:center; font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-top:4px;">ポイント</div>
+                <div class="point-display" id="pt-L">0</div>
+                <div class="players-box">
+                    <div class="p-row" id="row-A">
+                        <div class="p-info"><span class="p-role" id="role-A"></span><input class="p-name-input" id="nm-A" readonly></div>
+                        <div class="p-btns"><button class="act-btn btn-p" onclick="act('L','A','p')">ポイント</button><button class="act-btn btn-m" onclick="act('L','A','m')">ミス</button></div>
+                    </div>
+                    <div class="p-row" id="row-B">
+                        <div class="p-info"><span class="p-role" id="role-B"></span><input class="p-name-input" id="nm-B" readonly></div>
+                        <div class="p-btns"><button class="act-btn btn-p" onclick="act('L','B','p')">ポイント</button><button class="act-btn btn-m" onclick="act('L','B','m')">ミス</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="team-panel right">
+                <input class="panel-top seamless-input" id="in-tname-R" value="相手" onchange="updateName('team','R',this.value)">
+                <div style="text-align:center; font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-top:4px;">ポイント</div>
+                <div class="point-display" id="pt-R">0</div>
+                <div class="players-box">
+                    <div class="p-row" id="row-C">
+                        <div class="p-info"><span class="p-role" id="role-C"></span><input class="p-name-input" id="nm-C" onchange="updateName('player','C',this.value)"></div>
+                        <div class="p-btns"><button class="act-btn btn-p" onclick="act('R','C','p')">ポイント</button><button class="act-btn btn-m" onclick="act('R','C','m')">ミス</button></div>
+                    </div>
+                    <div class="p-row" id="row-D">
+                        <div class="p-info"><span class="p-role" id="role-D"></span><input class="p-name-input" id="nm-D" onchange="updateName('player','D',this.value)"></div>
+                        <div class="p-btns"><button class="act-btn btn-p" onclick="act('R','D','p')">ポイント</button><button class="act-btn btn-m" onclick="act('R','D','m')">ミス</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<div class="main">
-  <div class="btn-wrap" id="btnWrap" style="display:none">
-    <a class="btn btn-absent" id="btnAbsent" href="#" target="_blank">📝 欠席・遅刻連絡</a>
-    <a class="btn btn-car"    id="btnCar"    href="#" target="_blank">🚗 配車連絡</a>
-  </div>
-
-  <div class="sec-head">
-    <div class="sec-line"></div>
-    <div class="sec-title">SCHEDULE — 今月の予定</div>
-  </div>
-
-  <!-- 凡例（スマホのみ表示） -->
-  <div class="legend">
-    <span class="legend-item"><span class="legend-dot" style="background:#3a9e6a"></span>部活動</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#e05252"></span>大会</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#d4a017"></span>練習試合</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#4a7fd4"></span>保護者会練習</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#8a96a8"></span>休養</span>
-  </div>
-
-  <!-- スマホ：カレンダー -->
-  <div class="cal-wrap">
-    <div class="cal-dow-row">
-      <div class="cal-dow sun">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div>
-      <div class="cal-dow">水</div><div class="cal-dow">木</div><div class="cal-dow">金</div>
-      <div class="cal-dow sat">土</div>
+        <div class="bottom-area">
+            <div class="chart-box"><canvas id="flow-chart"></canvas></div>
+            <button class="fault-btn" id="fault-btn" onclick="handleFault()">FAULT</button>
+        </div>
     </div>
-    <div class="cal-grid" id="calGrid">
-      <div style="grid-column:1/-1">
-        <div class="status-box" style="border-radius:0"><div class="spinner"></div><div>データを読み込んでいます…</div></div>
-      </div>
+
+    <div class="submenu-overlay" id="submenu">
+        <div class="submenu-sheet">
+            <div style="text-align:center; font-weight:bold; margin-bottom:10px;" id="sm-title">詳細</div>
+            <div class="sm-grid" id="sm-body"></div>
+        </div>
     </div>
-  </div>
-  <div class="cal-detail" id="calDetail">
-    <div class="cal-detail-date" id="calDetailDate">
-      <button class="cal-detail-close" onclick="closeDetail()">✕</button>
-    </div>
-    <div class="detail-cards" id="detailCards"></div>
-  </div>
 
-  <!-- PC：リスト -->
-  <div class="list-view" id="listView">
-    <div class="status-box" style="border-radius:14px"><div class="spinner"></div><div>データを読み込んでいます…</div></div>
-  </div>
-</div>
-</div>
-<footer style="text-align:center;padding:16px;font-size:.7rem;color:var(--gray);border-top:1px solid var(--border)">© 土淵中ソフトテニス部</footer>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    console.log('SW registered: ', registration);
+                }).catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+            });
+        }
 
-<script>
-const DOW_JP  = ["日","月","火","水","木","金","土"];
-const DOW_CLS = ["dow-sun","dow-wk","dow-wk","dow-wk","dow-wk","dow-wk","dow-sat"];
+        function checkNetwork() {
+            const banner = document.getElementById('offline-banner');
+            if (navigator.onLine) {
+                banner.style.display = 'none';
+            } else {
+                banner.style.display = 'block';
+            }
+            updateUnsentCount();
+        }
+        window.addEventListener('online', checkNetwork);
+        window.addEventListener('offline', checkNetwork);
 
-const TYPE_MAP = {
-  "部活動":"practice","大会":"match","練習試合":"scrimmage",
-  "保護者会練習":"event","部活動休養日":"rest"
-};
-const TYPE_LABEL = {
-  practice:"部活動", match:"大会", scrimmage:"練習試合",
-  event:"保護者会練習", rest:"休養", other:"その他"
-};
-const TYPE_BADGE = {
-  practice:"badge-practice", match:"badge-match", scrimmage:"badge-scrimmage",
-  event:"badge-event", rest:"badge-rest", other:"badge-other"
-};
-const TARGET_CLS = {
-  "全員":"target-all","女子のみ":"target-female","男子のみ":"target-male","限定対象":"target-limit"
-};
+        const GAS_URL_INTEGRATED = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec";
+        const GAS_URL_LIVE = "https://script.google.com/macros/s/AKfycbxJElyH86BpJK_8LNZydja3uitSCKtGYwI8ll-koOD0skjc_yk58w5RkOlWLyHUKOeZ7g/exec";
 
-function detectType(val) {
-  // 全角スペース・改行・タブも除去して完全一致を試みる
-  const t = (val || "").replace(/[\s　]/g, "").trim();
-  if (TYPE_MAP[t]) return TYPE_MAP[t];
-  // 元の値でも完全一致を試みる（念のため）
-  const t2 = (val || "").trim();
-  if (TYPE_MAP[t2]) return TYPE_MAP[t2];
-  // 部分一致フォールバック
-  const s = t2;
-  if (/大会|選手権|地区大|春季|秋季|新人戦/.test(s)) return "match";
-  if (/練習試合/.test(s)) return "scrimmage";
-  if (/保護者|合同|交流/.test(s)) return "event";
-  if (/休養|休み|オフ/.test(s)) return "rest";
-  if (/部活|練習/.test(s)) return "practice";
-  return "other";
-}
-
-function parseDate(str) {
-  if (!str) return null;
-  const m = str.match(/(\d{4}).(\d{1,2}).(\d{1,2})/);
-  if (!m) return null;
-  const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
-  return isNaN(d.getTime()) ? null : d;
-}
-
-function esc(s) {
-  return String(s || "")
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-function parseCSV(text) {
-  const rows = [];
-  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    const cols = []; let cur = "", inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"' && !inQ) { inQ = true; }
-      else if (c === '"' && inQ) { if (line[i+1] === '"') { cur += '"'; i++; } else inQ = false; }
-      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ""; }
-      else { cur += c; }
-    }
-    cols.push(cur.trim());
-    rows.push(cols);
-  }
-  return rows;
-}
-
-function buildBadgesHtml(item) {
-  const type = detectType(item.type);
-  const tcls = TARGET_CLS[item.target] || "target-all";
-  return '<span class="type-badge ' + TYPE_BADGE[type] + '">' + TYPE_LABEL[type] + '</span>'
-    + (item.target ? '<span class="target-badge ' + tcls + '">' + esc(item.target) + '</span>' : "");
-}
-
-function buildMetaHtml(item, cls) {
-  const c = cls || "card-meta";
-  const parts = [];
-  if (item.startTime) parts.push('<span class="meta-pill"><span class="meta-label">【集合時間】</span>' + esc(item.startTime) + '</span>');
-  if (item.endTime)   parts.push('<span class="meta-pill"><span class="meta-label">【解散時間】</span>' + esc(item.endTime) + '</span>');
-  if (item.location)  parts.push('<span class="meta-pill"><span class="meta-label">【場所】</span>' + esc(item.location) + '</span>');
-  return parts.length ? '<div class="' + c + '">' + parts.join("") + '</div>' : "";
-}
-
-function buildCardHtml(item) {
-  const type = detectType(item.type);
-  const detail = item.detail
-    ? '<div class="card-detail">' + esc(item.detail).replace(/\n/g, "<br>") + '</div>' : "";
-  return '<div class="card ' + type + '">'
-    + '<div class="card-top">' + buildBadgesHtml(item) + '</div>'
-    + buildMetaHtml(item, "card-meta")
-    + detail
-    + '</div>';
-}
-
-async function fetchWithTimeout(url, ms) {
-  const ctrl = new AbortController();
-  const tid  = setTimeout(function() { ctrl.abort(); }, ms);
-  try {
-    const r = await fetch(url, { signal: ctrl.signal });
-    clearTimeout(tid); return r;
-  } catch(e) { clearTimeout(tid); throw e; }
-}
-
-async function getCSV() {
-  try {
-    const r = await fetchWithTimeout(SHEET_CSV_URL, 8000);
-    if (r.ok) { const t = await r.text(); if (t && t.includes(",")) return t; }
-  } catch(e) { console.warn("direct:", e.message); }
-  const proxies = [
-    "https://corsproxy.io/?" + encodeURIComponent(SHEET_CSV_URL),
-    "https://api.allorigins.win/get?url=" + encodeURIComponent(SHEET_CSV_URL),
-  ];
-  for (const url of proxies) {
-    try {
-      const r = await fetchWithTimeout(url, 8000);
-      if (!r.ok) continue;
-      const t = await r.text();
-      try { const j = JSON.parse(t); if (j.contents && j.contents.includes(",")) return j.contents; } catch(e) {}
-      if (t && t.includes(",")) return t;
-    } catch(e) { console.warn("proxy:", e.message); }
-  }
-  throw new Error("データを取得できませんでした");
-}
-
-function renderMonth(monthKey) {
-  const parts = monthKey.split("-");
-  const y  = parseInt(parts[0]);
-  const mo = parseInt(parts[1]);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-
-  const items = (window._allItems || []).filter(function(item) {
-    const d = parseDate(item.date);
-    return d && d.getFullYear() === y && (d.getMonth() + 1) === mo;
-  });
-
-  document.getElementById("heroMon").textContent = mo;
-  document.getElementById("statPractice").textContent  = items.filter(function(i){ return detectType(i.type) === "practice"; }).length;
-  document.getElementById("statMatch").textContent     = items.filter(function(i){ return detectType(i.type) === "match"; }).length;
-  document.getElementById("statScrimmage").textContent = items.filter(function(i){ return detectType(i.type) === "scrimmage"; }).length;
-  document.getElementById("statParents").textContent   = items.filter(function(i){ return detectType(i.type) === "event"; }).length;
-
-  const events = items.filter(function(i) {
-    return detectType(i.type) === "match" || detectType(i.type) === "scrimmage";
-  }).sort(function(a, b) { return (parseDate(a.date) || 0) - (parseDate(b.date) || 0); });
-  if (events.length > 0) {
-    const ne = events[0];
-    const d  = parseDate(ne.date);
-    const ds = d ? (d.getMonth()+1) + "月" + d.getDate() + "日（" + DOW_JP[d.getDay()] + "）" : ne.date;
-    document.getElementById("noticeText").textContent =
-      "📅 " + TYPE_LABEL[detectType(ne.type)] + "：" + ds + (ne.startTime ? " 集合 " + ne.startTime : "");
-    document.getElementById("noticeWrap").style.display = "block";
-  } else {
-    document.getElementById("noticeWrap").style.display = "none";
-  }
-
-  renderCalendar(y, mo, items, today);
-  renderList(items, today);
-  closeDetail();
-}
-
-function renderCalendar(y, mo, items, today) {
-  const dayMap = {};
-  items.forEach(function(item) {
-    const d = parseDate(item.date);
-    if (!d) return;
-    const k = d.getDate();
-    if (!dayMap[k]) dayMap[k] = [];
-    dayMap[k].push(item);
-  });
-
-  const firstDow = new Date(y, mo - 1, 1).getDay();
-  const lastDate = new Date(y, mo, 0).getDate();
-  let html = "";
-
-  for (let i = 0; i < firstDow; i++) {
-    html += '<div class="cal-cell empty"></div>';
-  }
-  for (let d = 1; d <= lastDate; d++) {
-    const date   = new Date(y, mo - 1, d);
-    const dow    = date.getDay();
-    const isT    = date.getTime() === today.getTime();
-    const evs    = dayMap[d] || [];
-    const hasEv  = evs.length > 0;
-    const dowCls = dow === 0 ? " sun" : dow === 6 ? " sat" : "";
-    const todCls = isT ? " today" : "";
-    const evCls  = hasEv ? " has-event" : "";
-    const click  = hasEv ? ' onclick="selectDay(' + y + ',' + mo + ',' + d + ',this)"' : '';
-    const badges = evs.map(function(ev) {
-      return '<div class="cal-badge ' + detectType(ev.type) + '"></div>';
-    }).join("");
-    html += '<div class="cal-cell' + dowCls + todCls + evCls + '"' + click + '>'
-      + '<div class="cal-dn">' + d + '</div>'
-      + '<div class="cal-badges">' + badges + '</div>'
-      + '</div>';
-  }
-  const rem = (firstDow + lastDate) % 7;
-  if (rem > 0) {
-    for (let i = 0; i < 7 - rem; i++) {
-      html += '<div class="cal-cell empty"></div>';
-    }
-  }
-  document.getElementById("calGrid").innerHTML = html;
-}
-
-function selectDay(y, mo, d, el) {
-  document.querySelectorAll(".cal-cell.selected").forEach(function(c) { c.classList.remove("selected"); });
-  el.classList.add("selected");
-
-  const key = y + "-" + mo + "-" + d;
-  const evs = (window._allItems || []).filter(function(item) {
-    const dd = parseDate(item.date);
-    if (!dd) return false;
-    return (dd.getFullYear() + "-" + (dd.getMonth()+1) + "-" + dd.getDate()) === key;
-  });
-
-  const dow = DOW_JP[new Date(y, mo - 1, d).getDay()];
-  const dateLabel = document.getElementById("calDetailDate");
-  dateLabel.innerHTML = mo + "月" + d + "日（" + dow + "）の予定"
-    + '<button class="cal-detail-close" onclick="closeDetail()">✕</button>';
-
-  document.getElementById("detailCards").innerHTML = evs.length
-    ? evs.map(buildCardHtml).join("")
-    : '<div style="font-size:.84rem;color:var(--gray);padding:8px 0">この日の予定はありません</div>';
-
-  const det = document.getElementById("calDetail");
-  det.classList.add("show");
-  setTimeout(function() { det.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 50);
-}
-
-function closeDetail() {
-  document.getElementById("calDetail").classList.remove("show");
-  document.querySelectorAll(".cal-cell.selected").forEach(function(c) { c.classList.remove("selected"); });
-}
-
-function renderList(items, today) {
-  const listView = document.getElementById("listView");
-  if (items.length === 0) {
-    listView.innerHTML = '<div class="status-box" style="border-radius:14px">この月の予定はありません</div>';
-    return;
-  }
-  const sorted = items.slice().sort(function(a, b) {
-    return (parseDate(a.date) || 0) - (parseDate(b.date) || 0);
-  });
-  listView.innerHTML = sorted.map(function(item) {
-    const date  = parseDate(item.date);
-    const day   = date ? date.getDate() : "?";
-    const dow   = date ? DOW_JP[date.getDay()] : "?";
-    const dcls  = date ? DOW_CLS[date.getDay()] : "dow-wk";
-    const type  = detectType(item.type);
-    const isT   = date && date.getTime() === today.getTime();
-    const detail = item.detail
-      ? '<div class="card-detail">' + esc(item.detail).replace(/\n/g, "<br>") + '</div>' : "";
-    return '<div class="list-row' + (isT ? " list-today" : "") + '">'
-      + '<div class="list-date-col ' + type + '">'
-      + '<div class="list-day">' + day + '</div>'
-      + '<div class="list-dow ' + dcls + '">' + dow + '</div>'
-      + '</div>'
-      + '<div class="list-content">'
-      + '<div class="list-top">' + buildBadgesHtml(item) + '</div>'
-      + buildMetaHtml(item, "list-meta")
-      + detail
-      + '</div></div>';
-  }).join("");
-}
-
-function init() {
-  document.getElementById("clubNameHeader").textContent = CONFIG.clubName;
-  document.getElementById("schoolNameSub").textContent  = CONFIG.schoolName;
-  if (CONFIG.absentFormUrl || CONFIG.carFormUrl) {
-    document.getElementById("btnWrap").style.display = "flex";
-    if (CONFIG.absentFormUrl) document.getElementById("btnAbsent").href = CONFIG.absentFormUrl;
-    if (CONFIG.carFormUrl)    document.getElementById("btnCar").href    = CONFIG.carFormUrl;
-  }
-  fetchData();
-}
-
-async function fetchData() {
-  try {
-    const csv  = await getCSV();
-    const rows = parseCSV(csv);
-    if (rows.length < 2) throw new Error("シートにデータがありません");
-
-    const allItems = rows.slice(1)
-      .filter(function(r) { return r.length > COL.date && r[COL.date]; })
-      .map(function(r) {
-        return {
-          target:    r[COL.target]    || "",
-          date:      r[COL.date]      || "",
-          startTime: r[COL.startTime] || "",
-          endTime:   r[COL.endTime]   || "",
-          type:      r[COL.type]      || "",
-          location:  r[COL.location]  || "",
-          detail:    r[COL.detail]    || "",
+        const ROSTER = {
+            '男子': [
+                '坂倉 陽', '田川 遼', '菅野 稜真', '大森 太陽'
+            ],
+            '女子': [
+                '今井 香里', '吉田 那乃葉', '佐々木 美緒', '谷地 望愛', '荒木関 唯香', 
+                '齊藤 美柚', '根本 陽真莉', '村上 心優', '野崎 莉子', '高橋 芽衣'
+            ]
         };
-      });
 
-    if (allItems.length === 0) throw new Error("データが空です");
+        function generateMatchId() {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+        }
 
-    // ★ デバッグ（確認後削除）
-    const dbg = document.createElement("div");
-    dbg.style.cssText = "background:#0d1b2a;color:#7ec8e3;font-family:monospace;font-size:11px;padding:12px 16px;border-radius:8px;margin:12px 0;white-space:pre-wrap;word-break:break-all;line-height:1.7";
-    const r0 = rows[1] || [];
-    dbg.textContent = [
-      "総列数: " + r0.length,
-      "ヘッダー: " + (rows[0] || []).join(" | "),
-      "---",
-      "先頭行の生データ: " + r0.join(" | "),
-      "---",
-      "target(1):[" + (r0[1]||"") + "]",
-      "date(2):[" + (r0[2]||"") + "]",
-      "type(5):[" + (r0[5]||"") + "]",
-      "location(6):[" + (r0[6]||"") + "]",
-      "detail(8):[" + (r0[8]||"(空)") + "]",
-      "detail(9):[" + (r0[9]||"(空)") + "]",
-      "detail(10):[" + (r0[10]||"(空)") + "]",
-    ].join("\n");
-    document.querySelector(".main").insertBefore(dbg, document.querySelector(".sec-head"));
+        let S = {
+            matchId: generateMatchId(), 
+            maxG: 5, winG: 3, gL: 0, gR: 0, pL: 0, pR: 0, totalP: 0, fault: 0, isFinal: false,
+            startTeam: null, curServTeam: null, sOrder: [], rOrder: [],
+            meta: { gender: '', matchType: '', tourney: '', stage: '', scorer: '', court: 'court_1' },
+            names: { A: '選手A', B: '選手B', C: '選手C', D: '選手D' },
+            teams: { L: '土淵中', R: '相手' },
+            stats: { A: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} }, B: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} }, C: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} }, D: { p: 0, m: 0, fi: 0, st: 0, pt: {}, mt: {} } },
+            hist: [], log: []
+        };
+        let historyStack = [];
+        let setupStep = 0;
+        let isMatchStarted = false;
 
-    const monthSet = {};
-    allItems.forEach(function(i) {
-      const d = parseDate(i.date);
-      if (d) monthSet[d.getFullYear() + "-" + (d.getMonth()+1)] = true;
-    });
-    const months = Object.keys(monthSet).sort();
+        window.onload = () => {
+            checkNetwork();
+        };
 
-    const sel = document.getElementById("monthSelector");
-    sel.innerHTML = months.map(function(m) {
-      const p = m.split("-");
-      return '<option value="' + m + '">' + p[0] + '年' + p[1] + '月</option>';
-    }).join("");
+        window.addEventListener('beforeunload', function (e) {
+            if (isMatchStarted) { e.preventDefault(); e.returnValue = ''; }
+        });
 
-    const today  = new Date(); today.setHours(0, 0, 0, 0);
-    const todayM = today.getFullYear() + "-" + (today.getMonth() + 1);
-    sel.value = months.indexOf(todayM) >= 0 ? todayM : months[0];
+        window.addEventListener('pagehide', function (e) {
+            if (isMatchStarted && navigator.onLine) clearLiveScore();
+        });
 
-    window._allItems = allItems;
-    renderMonth(sel.value);
+        function getCourtFullName(id) {
+            if(!id) return '';
+            return `${id.split('_')[1]}コート`;
+        }
 
-  } catch(e) {
-    console.error(e);
-    const errHtml = '<div class="status-box" style="border-radius:14px">'
-      + '<div style="font-size:1.4rem;margin-bottom:8px">⚠️</div>'
-      + '<div style="margin-bottom:4px">データの取得に失敗しました</div>'
-      + '<div style="font-size:.75rem;margin-bottom:12px;color:#e05252">' + esc(e.message) + '</div>'
-      + '<button onclick="fetchData()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--accent);color:var(--navy);font-weight:700;cursor:pointer">再試行</button>'
-      + '</div>';
-    document.getElementById("calGrid").innerHTML = '<div style="grid-column:1/-1">' + errHtml + '</div>';
-    document.getElementById("listView").innerHTML = errHtml;
-  }
-}
+        function clearLiveScore() {
+            if (!S || !S.meta || !S.meta.court || !navigator.onLine) return;
+            const clearData = { meta: { court: S.meta.court }, matchId: S.matchId, clear: true };
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(GAS_URL_LIVE, JSON.stringify(clearData));
+            } else {
+                fetch(GAS_URL_LIVE, { method: 'POST', mode: 'no-cors', body: JSON.stringify(clearData) });
+            }
+        }
 
-function onMonthChange() {
-  const sel = document.getElementById("monthSelector");
-  if (sel.value) renderMonth(sel.value);
-}
+        function sendToLive(force = false) {
+            if (!isMatchStarted && !force) return; 
+            if (!navigator.onLine) return; 
+            S.lastUpdate = Date.now();
+            fetch(GAS_URL_LIVE, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(S)
+            }).catch(e => console.log("Live update error", e));
+        }
 
-window.addEventListener("DOMContentLoaded", init);
-</script>
+        setInterval(() => {
+            if (isMatchStarted) sendToLive();
+        }, 60000);
+
+        function selGender(g) { S.meta.gender = g; upBtns('gender-opts', g === '男子' ? 0 : 1); checkS0(); }
+        function selMatchType(t) { S.meta.matchType = t; upBtns('type-opts', t === 'シングルス' ? 0 : 1); checkS0(); }
+        function checkS0() { document.getElementById('btn-next-0').disabled = !(S.meta.gender && S.meta.matchType); }
+        
+        async function lockActiveCourts() {
+            const courtSelect = document.getElementById('meta-court');
+            try {
+                const response = await fetch(GAS_URL_LIVE + "?action=getActiveCourts");
+                const activeCourts = await response.json(); 
+
+                Array.from(courtSelect.options).forEach(opt => {
+                    if (activeCourts.includes(opt.value)) {
+                        opt.disabled = true;
+                        opt.text = "⚠️使用中: " + getCourtFullName(opt.value);
+                        opt.style.color = "red";
+                    } else {
+                        opt.disabled = false;
+                        opt.text = getCourtFullName(opt.value);
+                        opt.style.color = "var(--blue)";
+                    }
+                });
+            } catch (error) {
+                console.log("コート使用状況の取得に失敗しました", error);
+            }
+        }
+
+        function goToStep1() {
+            const isSingles = (S.meta.matchType === 'シングルス');
+            document.getElementById('disp-mode-label').textContent = `【 ${S.meta.gender} ${S.meta.matchType} 】`;
+
+            const roster = ROSTER[S.meta.gender] || [];
+            ['A', 'B'].forEach(p => {
+                const selectEl = document.getElementById('n-' + p);
+                if (selectEl) {
+                    let defaultText = p === 'A' ? (isSingles ? '選手を選択してください' : '選手Aを選択してください') : '選手Bを選択してください';
+                    selectEl.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+                    roster.forEach(name => {
+                        selectEl.innerHTML += `<option value="${name}">${name}</option>`;
+                    });
+                }
+            });
+
+            document.getElementById('wrap-nB').style.display = isSingles ? 'none' : 'block';
+            document.getElementById('wrap-nD').style.display = isSingles ? 'none' : 'block';
+            document.getElementById('n-C').placeholder = isSingles ? '選手名' : '選手C';
+            
+            document.getElementById('btn-next-1').textContent = isSingles ? "ゲーム開始" : "ポジション設定へ";
+            step(1);
+            lockActiveCourts();
+        }
+
+        function selMatch(n) { S.maxG = n; S.winG = (n === 7) ? 4 : 3; upBtns('match-opts', n === 5 ? 0 : 1); checkS1(); }
+        function selServTeam(t) { S.startTeam = t; S.curServTeam = t; upBtns('serve-team-opts', t); checkS1(); }
+        function checkS1() { document.getElementById('btn-next-1').disabled = !(S.maxG && S.startTeam !== null); }
+        function upBtns(id, idx) { const el = document.getElementById(id); if (!el) return; el.querySelectorAll('.opt-btn').forEach((b, i) => b.className = `opt-btn ${i === idx ? (idx === 0 ? 'sel-blue' : (id.includes('serv') ? 'sel-red' : (id.includes('opts') ? 'sel-green' : 'sel-gold'))) : ''}`); }
+
+        function confirmStep1() {
+            const nameA = document.getElementById('n-A').value;
+            const nameB = document.getElementById('n-B').value;
+            if (!nameA) { alert((S.meta.matchType==='シングルス'?'選手':'選手A') + "を選択してください。"); return; }
+            if (S.meta.matchType === 'ダブルス' && !nameB) { alert("選手Bを選択してください。"); return; }
+
+            const courtSelect = document.getElementById('meta-court');
+            const courtName = courtSelect.options[courtSelect.selectedIndex].text;
+            if (!confirm(`【⚠️重要確認】\n選択したコートは「${courtName}」です。\n\n他のタブレットとコート番号が被っていませんか？\n被るとライブ中継の表示がバグります！\n\n本当によろしいですか？`)) {
+                return; 
+            }
+
+            S.meta.court = document.getElementById('meta-court').value;
+            S.meta.tourney = document.getElementById('meta-tourney').value;
+            S.meta.stage = document.getElementById('meta-stage').value;
+            
+            const courtNameFullName = getCourtFullName(S.meta.court);
+            const stageText = S.meta.stage ? ` / ${S.meta.stage}` : '';
+            const headerInfo = courtNameFullName + stageText;
+
+            if(document.getElementById('disp-court-s2')) document.getElementById('disp-court-s2').textContent = headerInfo;
+            if(document.getElementById('disp-court-s3')) document.getElementById('disp-court-s3').textContent = headerInfo;
+            if(document.getElementById('disp-court-main')) document.getElementById('disp-court-main').textContent = headerInfo;
+
+            S.meta.scorer = document.getElementById('meta-scorer').value;
+            S.teams.R = document.getElementById('team-r-name').value || '相手';
+            
+            S.names.A = nameA;
+            S.names.C = document.getElementById('n-C').value || '選手C';
+            if (S.meta.matchType === 'ダブルス') { 
+                S.names.B = nameB;
+                S.names.D = document.getElementById('n-D').value || '選手D';
+            }
+
+            document.getElementById('in-tname-R').value = S.teams.R;
+            document.getElementById('nm-C').value = S.names.C;
+            if(S.meta.matchType === 'ダブルス') document.getElementById('nm-D').value = S.names.D;
+
+            if (S.meta.matchType === 'ダブルス') step(2); else startGame();
+        }
+
+        function buildPos() {
+            document.getElementById('pos-confirm-title').textContent = S.isFinal ? 'ファイナルゲーム ポジション確認' : `第${S.gL + S.gR + 1}ゲーム ポジション確認`;
+
+            const sSide = S.curServTeam === 0 ? ['A', 'B'] : ['C', 'D'];
+            const rSide = S.curServTeam === 0 ? ['C', 'D'] : ['A', 'B'];
+            S.sOrder = [sSide[0], sSide[1]]; S.rOrder = [rSide[0], rSide[1]];
+            const mkBtn = (id, list, def) => {
+                const el = document.getElementById(id); el.innerHTML = '';
+                list.forEach(p => {
+                    const b = document.createElement('button'); b.className = `opt-btn ${p === def ? 'sel-gold' : ''}`; b.textContent = S.names[p];
+                    b.onclick = () => { if (id.includes('server')) S.sOrder = [p, list.find(x => x !== p)]; else S.rOrder = [p, list.find(x => x !== p)]; mkBtn(id, list, p); updDiag(); };
+                    el.appendChild(b);
+                });
+            };
+            mkBtn('server-opts', sSide, sSide[0]); mkBtn('receiver-opts', rSide, rSide[0]);
+            updDiag();
+        }
+        function updDiag() { document.getElementById('court-diag').textContent = `S:${S.names[S.sOrder[0]]} / R:${S.names[S.rOrder[0]]}`; }
+        
+        function confirmStep2() { startGame(); }
+
+        function step(n) {
+            document.querySelectorAll('[id^="step-"]').forEach(el => el.style.display = 'none');
+            setupStep = n; document.getElementById('step-' + setupStep).style.display = 'block';
+            if (n === 2) buildPos();
+        }
+
+        function startGame() {
+            isMatchStarted = true; document.getElementById('modal').classList.add('hidden');
+            const isSingles = (S.meta.matchType === 'シングルス');
+            document.getElementById('row-B').style.display = isSingles ? 'none' : 'flex';
+            document.getElementById('row-D').style.display = isSingles ? 'none' : 'flex';
+            update();
+            sendToLive(); 
+        }
+
+        function updateName(type, id, val) {
+            if (type === 'team') S.teams[id] = val;
+            else { S.names[id] = val; if(document.getElementById('n-' + id)) document.getElementById('n-' + id).value = val; }
+        }
+
+        function getServ() {
+            if (S.meta.matchType === 'シングルス') {
+                if (!S.isFinal) { return { s: S.curServTeam === 0 ? 'A' : 'C', r: S.curServTeam === 0 ? 'C' : 'A', t: S.curServTeam }; }
+                else {
+                    const isFirstTeamServe = Math.floor(S.totalP / 2) % 2 === 0;
+                    const actTeam = isFirstTeamServe ? S.curServTeam : 1 - S.curServTeam;
+                    return { s: actTeam === 0 ? 'A' : 'C', r: actTeam === 0 ? 'C' : 'A', t: actTeam };
+                }
+            } else {
+                if (!S.sOrder || S.sOrder.length === 0) return { s: 'A', r: 'C', t: 0 }; 
+                if (!S.isFinal) { return { s: S.sOrder[Math.floor(S.totalP / 2) % 2], r: S.rOrder[S.totalP % 2], t: S.curServTeam }; }
+                else {
+                    const blk = Math.floor(S.totalP / 2) % 4, pb = S.totalP % 2;
+                    if (blk === 0) return { s: S.sOrder[0], r: S.rOrder[pb], t: S.curServTeam };
+                    if (blk === 1) return { s: S.rOrder[0], r: S.sOrder[pb], t: 1 - S.curServTeam };
+                    if (blk === 2) return { s: S.sOrder[1], r: S.rOrder[pb], t: S.curServTeam };
+                    return { s: S.rOrder[1], r: S.sOrder[pb], t: 1 - S.curServTeam };
+                }
+            }
+        }
+
+        let _act = {};
+        function act(side, p, type) { _act = { side, p, type }; showSM(type, p); }
+        
+        function commit(sub) {
+            historyStack.push(JSON.stringify(S));
+            const { side, p, type } = _act; const inf = getServ();
+            
+            S.stats[inf.s].st++; 
+            if (S.fault === 0) { 
+                S.stats[inf.s].fi++; 
+            }
+            
+            if (type === 'p') { 
+                S.stats[p].p++; if (sub) S.stats[p].pt[sub] = (S.stats[p].pt[sub] || 0) + 1; 
+                S.hist.push({ w: side, s: inf.t, f: (S.fault === 0) }); side === 'L' ? S.pL++ : S.pR++; 
+            } else { 
+                S.stats[p].m++; 
+                if (sub) { S.stats[p].mt[sub] = (S.stats[p].mt[sub] || 0) + 1; if (sub.startsWith('recv_')) S.stats[p].mt['recv'] = (S.stats[p].mt['recv'] || 0) + 1; }
+                S.hist.push({ w: side === 'L' ? 'R' : 'L', s: inf.t, f: (S.fault === 0) }); side === 'L' ? S.pR++ : S.pL++; 
+            }
+            S.fault = 0; S.totalP++; 
+            document.getElementById('submenu').classList.remove('open'); 
+            
+            if (!checkEnd()) {
+                update();
+                sendToLive(); 
+            }
+        }
+
+        function handleFault() {
+            const inf = getServ();
+            if (S.fault === 0) { 
+                S.fault = 1; 
+                document.getElementById('fault-btn').textContent = "2nd SERVICE"; 
+                document.getElementById('fault-btn').classList.add('warn'); 
+            }
+            else { 
+                historyStack.push(JSON.stringify(S)); 
+                S.fault = 0; 
+                
+                S.stats[inf.s].st++; 
+                S.stats[inf.s].m++; 
+                S.stats[inf.s].mt['df'] = (S.stats[inf.s].mt['df'] || 0) + 1; 
+                S.hist.push({ w: inf.t === 0 ? 'R' : 'L', s: inf.t, f: false }); 
+                inf.t === 0 ? S.pR++ : S.pL++; 
+                S.totalP++; 
+                
+                if (!checkEnd()) {
+                    update(); 
+                    sendToLive(); 
+                }
+            }
+        }
+
+        function checkEnd() {
+            const L = S.pL, R = S.pR, fin = S.isFinal;
+            const border = fin ? 7 : 4; 
+            const win = (L >= border && L - R >= 2) ? 'L' : (R >= border && R - L >= 2) ? 'R' : null;
+            
+            if (win) {
+                S.log.push({ n: S.gL + S.gR + 1, L: S.pL, R: S.pR, w: win, flow: [...S.hist], fin });
+                win === 'L' ? S.gL++ : S.gR++; 
+
+                update(); 
+
+                setTimeout(() => {
+                    if (S.gL === S.winG || S.gR === S.winG) {
+                        showResult();
+                    } else { 
+                        S.pL = 0; S.pR = 0; S.totalP = 0; S.hist = [];
+                        S.curServTeam = 1 - S.curServTeam; 
+                        if ((S.gL + S.gR) === S.maxG - 1) S.isFinal = true; 
+                        
+                        alert((S.gL + S.gR) % 2 !== 0 ? 'チェンジサイズ' : 'チェンジサービス'); 
+                        
+                        if (S.meta.matchType === 'ダブルス') { 
+                            step(2); 
+                            document.getElementById('modal').classList.remove('hidden'); 
+                        } else { 
+                            update(); 
+                            sendToLive(); 
+                        }
+                    }
+                }, 100);
+                return true;
+            }
+            return false;
+        }
+
+        function undo() { 
+            if (historyStack.length) { 
+                S = JSON.parse(historyStack.pop()); 
+                update(); 
+                sendToLive(); 
+            } 
+        }
+
+        function update() {
+            const inf = getServ();
+            document.getElementById('gs-L').textContent = S.gL; document.getElementById('gs-R').textContent = S.gR;
+            const d = getDisp(S.pL, S.pR, S.isFinal);
+            document.getElementById('pt-L').textContent = d.l; document.getElementById('pt-R').textContent = d.r;
+            document.getElementById('game-info').textContent = S.isFinal ? 'ファイナル' : `${S.gL + S.gR + 1}ゲーム目`;
+            
+            const activePlayers = S.meta.matchType === 'シングルス' ? ['A', 'C'] : ['A', 'B', 'C', 'D'];
+            activePlayers.forEach(p => {
+                document.getElementById('nm-' + p).value = S.names[p];
+                document.getElementById('role-' + p).className = `p-role ${p === inf.s ? 'role-s' : (p === inf.r ? 'role-r' : '')}`;
+                document.getElementById('role-' + p).textContent = p === inf.s ? 'S' : (p === inf.r ? 'R' : '');
+                const row = document.getElementById('row-' + p);
+                row.classList.remove('active-server', 'active-receiver');
+                if (p === inf.s) row.classList.add('active-server');
+                if (p === inf.r) row.classList.add('active-receiver');
+            });
+            
+            document.getElementById('in-tname-R').value = S.teams.R;
+            if (S.fault === 0) { document.getElementById('fault-btn').textContent = "FAULT"; document.getElementById('fault-btn').classList.remove('warn'); }
+            drawChart('flow-chart', S.hist, S.isFinal);
+        }
+
+        function getDisp(l, r, fin) { const border = fin ? 6 : 3; if (l < border || r < border) return { l, r }; if (l === r) return { l: 'D', r: 'D' }; if (l > r) return { l: 'A', r: 'D' }; return { l: 'D', r: 'A' }; }
+
+        function showResult() {
+            S.isFinished = true;
+            sendToLive(true);   
+
+            isMatchStarted = false; 
+            
+            renderResultUI();
+            
+            step(3); document.getElementById('modal').classList.remove('hidden');
+            setTimeout(() => { const allPts = S.log.flatMap(g => g.flow); drawChart('stats-flow-chart', allPts, false); }, 100);
+            
+            updateUnsentCount();
+        }
+
+        function renderResultUI() {
+            const winName = S.gL > S.gR ? S.teams.L : S.teams.R;
+            document.getElementById('winner-name').textContent = winName;
+            document.getElementById('winner-score').textContent = `${S.gL} - ${S.gR}`;
+            
+            document.getElementById('res-edit-teamR').value = S.teams.R;
+            document.getElementById('res-edit-nmC').value = S.names.C;
+            const editNmD = document.getElementById('res-edit-nmD');
+            if (S.meta.matchType === 'シングルス') {
+                editNmD.style.display = 'none';
+            } else {
+                editNmD.style.display = 'block';
+                editNmD.value = S.names.D;
+            }
+            
+            const tbl = document.getElementById('res-score-tbl');
+            let h = `<tr><th></th>${S.log.map((g, i) => `<th>G${i + 1}</th>`).join('')}<th>計</th></tr>`;
+            h += `<tr><td class="ct-name" style="color:var(--blue)">${S.teams.L}</td>${S.log.map(g => `<td>${g.L}</td>`).join('')}<td>${S.gL}</td></tr>`;
+            h += `<tr><td class="ct-name" style="color:var(--red)">${S.teams.R}</td>${S.log.map(g => `<td>${g.R}</td>`).join('')}<td>${S.gR}</td></tr>`;
+            tbl.innerHTML = h;
+            
+            const isSingles = (S.meta.matchType === 'シングルス');
+            const players = isSingles ? ['A', 'C'] : ['A', 'B', 'C', 'D'];
+            
+            const stTbl = document.getElementById('res-stats-tbl'); stTbl.innerHTML = '';
+            const cards = document.getElementById('detail-cards'); cards.innerHTML = '';
+            cards.className = `detail-grid ${isSingles ? 'singles-mode' : ''}`;
+            
+            players.forEach(p => {
+                const s = S.stats[p];
+                const rate = s.st > 0 ? Math.round(s.fi / s.st * 100) + '%' : '-';
+                stTbl.innerHTML += `<tr><td class="ct-name">${S.names[p]}</td><td>${s.p}</td><td>${s.m}</td><td>${rate}</td></tr>`;
+                
+                const topP = Object.entries(s.pt).map(([k, v]) => `<span class="chip cp">${getLbl(k)}:${v}</span>`).join('');
+                const topM = Object.entries(s.mt).map(([k, v]) => `<span class="chip cm">${getLbl(k)}:${v}</span>`).join('');
+                cards.innerHTML += `<div class="d-card"><div class="dc-head"><span style="color:${'AB'.includes(p) ? 'var(--blue)' : 'var(--red)'}">${S.names[p]}</span><span>+${s.p} / -${s.m}</span></div><div class="dc-body">${topP || '-'}<br>${topM || '-'}</div></div>`;
+            });
+            
+            const flowDiv = document.getElementById('game-flow-list'); flowDiv.innerHTML = '';
+            S.log.forEach((g, i) => {
+                const pts = g.flow.map(x => {
+                    const winner = typeof x === 'string' ? x : x.w;
+                    return `<div class="dot-s ${winner === 'L' ? 'dot-L' : 'dot-R'}">${winner}</div>`;
+                }).join('');
+                flowDiv.innerHTML += `<div class="game-flow-row"><div class="gfr-label">G${i + 1}</div><div class="gfr-dots">${pts}</div></div>`;
+            });
+        }
+
+        function updateResultName(type, id, val) {
+            updateName(type, id, val); 
+            
+            if (type === 'team') {
+                const inTnameR = document.getElementById('in-tname-R');
+                if(inTnameR) inTnameR.value = val;
+            } else {
+                const nmInput = document.getElementById('nm-' + id);
+                if(nmInput) nmInput.value = val;
+            }
+
+            renderResultUI(); 
+            sendToLive(true); 
+        }
+
+        const MENUS = {
+            p_server: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' }, { k: 'ace', l: 'SA', i: '🎯', sub: 'p_ace_type' } ],
+            p_receiver: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' }, { k: 'ace', l: 'RA', i: '⚡', sub: 'r_ace_shot' } ],
+            p_standard: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' } ],
+            p_ace_type: [ { k: 'overhead', l: 'オーバー', i: '⬆' }, { k: 'undercut', l: 'カット', i: '⬇' }, { k: 'other_input', l: 'その他', i: '🖊', custom: true } ],
+            r_ace_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'r_ace_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'r_ace_course' }, { k: 'twist', l: 'ツイスト', i: '🌀', sub: 'r_ace_course' } ],
+            r_ace_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
+            p_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'p_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'p_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'p_volley_type' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'p_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'p_course' } ],
+            p_volley_type: [ { k: 'high', l: 'ハイボレー', i: '⤴', sub: 'p_course' }, { k: 'low', l: 'ローボレー', i: '⤵', sub: 'p_course' }, { k: 'poach', l: 'ポーチ', i: '⚡', sub: 'p_course' }, { k: 'def', l: '守り', i: '🛡', sub: 'p_course' } ],
+            p_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
+            m: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'm_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'm_shot' }, { k: 'recv', l: 'Rミス', i: '🎾', sub: 'm_recv_hand' } ],
+            m_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'm_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'm_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'm_volley_type' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'm_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'm_course' } ],
+            m_volley_type: [ { k: 'high', l: 'ハイボレー', i: '⤴', sub: 'm_volley_err' }, { k: 'low', l: 'ローボレー', i: '⤵', sub: 'm_volley_err' }, { k: 'poach', l: 'ポーチ', i: '⚡', sub: 'm_volley_err' }, { k: 'def', l: '守り', i: '🛡', sub: 'm_volley_err' } ],
+            m_volley_err: [ { k: 'out', l: 'アウト', i: '➡', sub: 'm_volley_course' }, { k: 'net', l: 'ネット', i: '🔴', sub: 'm_volley_course' }, { k: 'tip', l: 'チップ', i: '💫', sub: 'm_volley_course' }, { k: 'swing', l: '空振り', i: '💨', sub: 'm_volley_course' } ],
+            m_volley_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
+            m_course: [ { k: 'cross', l: 'クロス', i: '↖', sub: 'm_err' }, { k: 'rev', l: '逆クロス', i: '↗', sub: 'm_err' }, { k: 'ctr', l: 'センター', i: '•', sub: 'm_err' }, { k: 'str', l: 'ストレート', i: '↑', sub: 'm_err' } ],
+            m_err: [ { k: 'bout', l: 'Bアウト', i: '⬆' }, { k: 'sout', l: 'Sアウト', i: '➡' }, { k: 'net', l: 'ネット', i: '🔴' } ],
+            m_recv_hand: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'm_recv_type' }, { k: 'b', l: 'バック', i: '🟪', sub: 'm_recv_type' } ],
+            m_recv_type: [ { k: 'lob', l: 'ロブ', i: '☁', sub: 'm_recv_course' }, { k: 'shoot', l: 'シュート', i: '⚡', sub: 'm_recv_course' }, { k: 'twist', l: 'ツイスト', i: '🌀', sub: 'm_recv_course' } ], 
+            m_recv_course: [ { k: 'str', l: 'ストレート', i: '↑', sub: 'm_recv_err' }, { k: 'cross', l: 'クロス', i: '↖', sub: 'm_recv_err' }, { k: 'rev', l: '逆クロス', i: '↗', sub: 'm_recv_err' }, { k: 'ctr', l: 'センター', i: '•', sub: 'm_recv_err' } ],
+            m_recv_err: [ { k: 'net', l: 'ネット', i: '🔴' }, { k: 'out', l: 'アウト', i: '➡' } ],
+        };
+
+        function showSM(type, p, prefix = '') {
+            const sm = document.getElementById('sm-body'); sm.innerHTML = '';
+            let list; const inf = getServ(); const isServer = (p === inf.s); const isReceiver = (p === inf.r);
+            if (type === 'p') { list = isServer ? MENUS['p_server'] : (isReceiver ? MENUS['p_receiver'] : MENUS['p_standard']); }
+            else if (MENUS[type]) { list = MENUS[type]; }
+            else { list = type.startsWith('p_detail_') ? MENUS['p_shot'] : (type.startsWith('m_detail_') ? MENUS['m_shot'] : MENUS['p_server']); }
+            
+            document.getElementById('sm-title').textContent = type.startsWith('p') ? 'ポイント内容' : 'ミス内容';
+            list.forEach(item => {
+                if (item.k === 'recv' && !isReceiver) return; 
+                const b = document.createElement('button'); b.className = 'sm-btn';
+                b.innerHTML = `<div style="font-size:1.5rem">${item.i}</div><div style="font-size:0.75rem">${item.l}</div>`;
+                b.onclick = () => { 
+                    if (item.custom) { const val = prompt("内容を入力してください"); if (val) commit(prefix + "other_" + val); }
+                    else if (item.sub) { let nextPre = prefix; if (item.k === 'recv') nextPre = 'recv_'; else nextPre += item.k + '_'; showSM(item.sub, p, nextPre); }
+                    else { commit(prefix + item.k); } 
+                };
+                sm.appendChild(b);
+            });
+            const back = document.createElement('button'); back.className = 'sm-back'; 
+            if (type === 'p' || type === 'm') { back.textContent = 'キャンセル (閉じる)'; back.onclick = () => { document.getElementById('submenu').classList.remove('open'); }; }
+            else { back.textContent = '戻る'; back.onclick = () => { showSM(type.startsWith('p') || type.startsWith('r_ace') ? 'p' : 'm', p); }; }
+            sm.appendChild(back);
+            document.getElementById('submenu').classList.add('open');
+        }
+
+        function getLbl(k) {
+            if (k === 'ace') return 'SA'; if (k === 'df') return 'DF';
+            const parts = k.split('_');
+            const dict = { recv: 'R', f: 'F', b: 'B', shoot: 'S', lob: 'L', twist: 'Tw', drop: 'Dr', volley: 'V', smash: 'Sm', str: 'St', cross: 'Cr', rev: 'Rx', ctr: 'Ct', net: 'Nt', out: 'Ot', sout: 'S.Ot', bout: 'B.Ot', back: 'Bk', overhead: 'Ov', undercut: 'Un', other: 'Etc', high: 'Hi', low: 'Lw', poach: 'Po', def: 'Df', tip: 'Tip', swing: 'Sw' };
+            let validParts = parts;
+            if (parts[0] === 'recv' && parts.length > 1) { validParts = parts.slice(1); return 'R-' + validParts.map(p => dict[p] || p).join('-'); }
+            return validParts.map(p => dict[p] || p).join('-');
+        }
+
+        function drawChart(id, hist, fin) {
+            const cvs = document.getElementById(id); if (!cvs) return;
+            const ctx = cvs.getContext('2d'); const dpr = window.devicePixelRatio || 1; const rect = cvs.getBoundingClientRect();
+            cvs.width = rect.width * dpr; cvs.height = rect.height * dpr; ctx.scale(dpr, dpr);
+            const w = rect.width; const h = rect.height; const pts = [0]; let c = 0; 
+            hist.forEach(x => { 
+                const winner = typeof x === 'string' ? x : x.w;
+                c += (winner === 'L' ? 1 : -1); 
+                pts.push(c); 
+            });
+            const absMax = Math.max(fin ? 9 : 5, ...pts.map(Math.abs)); 
+            const mid = h / 2; const sc = (mid - 6) / absMax; const step = (w - 10) / (pts.length || 1);
+            ctx.beginPath(); ctx.strokeStyle = '#ccc'; ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
+            ctx.beginPath(); ctx.strokeStyle = '#888'; ctx.lineWidth = 2;
+            pts.forEach((y, x) => { x === 0 ? ctx.moveTo(5, mid - y * sc) : ctx.lineTo(5 + x * step, mid - y * sc); });
+            ctx.stroke();
+        }
+
+        function downloadJSON() { const b = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'match_data.json'; a.click(); }
+        
+        function resetMatch() { 
+            if (confirm('本当に入力データをリセットして最初からやり直しますか？')) {
+                if(navigator.onLine && !S.isFinished) {
+                    clearLiveScore(); 
+                }
+                location.reload();
+            }
+        }
+        
+        function saveLocally(matchData) {
+            let unsent = JSON.parse(localStorage.getItem('tsuchibuchi_unsent') || '[]');
+            unsent.push(matchData);
+            localStorage.setItem('tsuchibuchi_unsent', JSON.stringify(unsent));
+            updateUnsentCount();
+        }
+
+        function updateUnsentCount() {
+            let unsent = JSON.parse(localStorage.getItem('tsuchibuchi_unsent') || '[]');
+            let btn = document.getElementById('btn-sync');
+            if(btn) {
+                if(unsent.length > 0) {
+                    btn.style.display = 'block';
+                    btn.innerHTML = `☁ 未送信データを一括送信 (${unsent.length}件)`;
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+        }
+
+        function sendToCloud() {
+            const btn = document.getElementById('btn-send-integrated');
+            btn.innerHTML = "送信中...";
+            btn.disabled = true;
+
+            if (!navigator.onLine) {
+                saveLocally(S);
+                alert("電波がありません！\\nデータはタブレットに安全に保存しました。\\n後で電波の良い場所で「一括送信」を押してください。");
+                btn.innerHTML = "✓ 端末に保存済";
+                return;
+            }
+
+            fetch(GAS_URL_INTEGRATED, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(S)
+            })
+            .then(() => {
+                alert(`☁ スプレッドシートに記録しました！\n（${S.meta.gender} / ${S.meta.matchType}）`);
+                btn.innerHTML = "✓ 送信完了";
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                saveLocally(S);
+                alert("送信に失敗しました。端末内に一時保存します。");
+                btn.innerHTML = "✓ 端末に保存済";
+            });
+        }
+
+        async function syncUnsentData() {
+            if (!navigator.onLine) {
+                alert("現在オフラインです。電波の良い場所で再度お試しください。");
+                return;
+            }
+            
+            let unsent = JSON.parse(localStorage.getItem('tsuchibuchi_unsent') || '[]');
+            if(unsent.length === 0) return;
+            
+            let btn = document.getElementById('btn-sync');
+            btn.innerHTML = "送信中...";
+            btn.disabled = true;
+            
+            let successCount = 0;
+            let failedData = [];
+            
+            for(let i=0; i<unsent.length; i++) {
+                try {
+                    await fetch(GAS_URL_INTEGRATED, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(unsent[i])
+                    });
+                    successCount++;
+                } catch(e) {
+                    failedData.push(unsent[i]);
+                }
+            }
+            
+            localStorage.setItem('tsuchibuchi_unsent', JSON.stringify(failedData));
+            updateUnsentCount();
+            
+            alert(`${successCount}件の試合データを送信しました！`);
+            if(failedData.length > 0) {
+                alert(`${failedData.length}件の送信に失敗しました。後で再試行してください。`);
+                btn.disabled = false;
+            }
+        }
+
+        function abortMatch() {
+            if (!isMatchStarted) return;
+            if (confirm('【警告】本当にこの試合を「打ち切り」として終了しますか？\n（ダッシュボード等には「打ち切り」と表示され、このコートは空き状態になります）')) {
+                S.isFinished = true;
+                S.isAborted = true; 
+                
+                sendToLive(true); 
+                isMatchStarted = false;
+                
+                alert('試合を打ち切りました。最初の画面に戻ります。');
+                location.reload(); 
+            }
+        }
+    </script>
 </body>
 </html>
