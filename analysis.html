@@ -14,30 +14,38 @@
             --text-main: #333333;
             --text-muted: #6c757d;
             --border-color: #dee2e6;
-            --color-good: #0c63e4;
-            --color-warn: #dc3545;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
 
+        /* ヘッダー周り */
         .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--border-color); flex-wrap: wrap; gap: 10px; }
         .header h1 { font-size: 1.6rem; color: var(--primary-color); margin: 0; }
         .header-controls { display: flex; gap: 15px; align-items: center; }
 
-        .filter-area select { padding: 6px 12px; font-size: 0.95rem; border-radius: 4px; border: 1px solid var(--border-color); background-color: var(--card-bg); cursor: pointer; }
+        .filter-area { display: flex; align-items: center; font-size: 1rem; font-weight: bold; }
+        .filter-area label { margin-right: 8px; color: var(--text-main); }
+        .filter-area select { padding: 6px 12px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; background-color: var(--card-bg); cursor: pointer; }
+        
         .system-date { font-size: 0.9rem; color: var(--text-muted); background-color: var(--card-bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border-color); }
 
+        /* セクションタイトル */
         .section-title { font-size: 1.25rem; color: var(--secondary-color); margin: 30px 0 15px 0; padding-left: 10px; border-left: 5px solid var(--primary-color); }
+        
+        /* グリッドレイアウト */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; }
         .card { background-color: var(--card-bg); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; overflow-x: auto; }
-        .card-title { font-size: 1.1rem; margin-bottom: 16px; font-weight: bold; text-align: center; }
+        .card-title { font-size: 1.1rem; margin-bottom: 16px; font-weight: bold; text-align: center; color: var(--text-main); }
 
+        /* グラフとテーブル */
         .chart-container { position: relative; height: 250px; width: 100%; margin-bottom: 15px; }
         .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: auto; min-width: 400px; }
-        .data-table th, .data-table td { padding: 8px 4px; text-align: center; border-bottom: 1px solid var(--border-color); }
-        .data-table th { background-color: #f8f9fa; color: var(--text-muted); white-space: nowrap; }
-        .frac { font-size: 0.75rem; color: var(--text-muted); background-color: #f1f3f5; padding: 2px 4px; border-radius: 8px; margin-left: 4px; }
+        .data-table th, .data-table td { padding: 10px 4px; text-align: center; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .data-table th { background-color: #f8f9fa; color: var(--text-muted); font-weight: bold; white-space: nowrap; }
+        
+        .frac { font-size: 0.75rem; color: var(--text-muted); background-color: #f1f3f5; padding: 2px 6px; border-radius: 12px; margin-left: 6px; white-space: nowrap; }
+        .bold-val { font-weight: bold; font-size: 0.95rem; }
 
         @media screen and (max-width: 600px) {
             body { padding: 10px; }
@@ -53,6 +61,7 @@
         <h1>分析データ一覧</h1>
         <div class="header-controls">
             <div class="filter-area">
+                <label for="dateFilter">表示データ：</label>
                 <select id="dateFilter">
                     <option value="all">すべてのデータ</option>
                 </select>
@@ -92,26 +101,26 @@
             </table>
         </div>
         <div class="card">
-            <h2 class="card-title">④ レシーブミスの内訳</h2>
-            <div class="chart-container" id="recvPieContainer" style="display: flex; justify-content: space-around; flex-wrap: wrap;"></div>
+            <h2 class="card-title">④ 1stレシーブミスの打球コース内訳</h2>
+            <div class="chart-container" id="recvPieContainer" style="display: flex; justify-content: space-around; flex-wrap: wrap; height: auto; min-height: 250px;"></div>
             <table class="data-table" id="recvPieTable">
                 <thead><tr><th>ペア</th><th>フォア側ミス</th><th>バック側ミス</th><th>指定なし</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
         <div class="card">
-            <h2 class="card-title">⑤ 【後衛】ストローク内訳</h2>
+            <h2 class="card-title">⑤ 【後衛】ストローク・プレー内訳</h2>
             <div class="chart-container"><canvas id="backcourtStrokeChart"></canvas></div>
             <table class="data-table" id="backcourtStrokeTable">
-                <thead><tr><th>選手</th><th>フォア</th><th>バック</th><th>ロブ/ドロップ</th></tr></thead>
+                <thead><tr><th>選手</th><th>フォアシュート</th><th>バックシュート</th><th>ロブ / ドロップ</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
         <div class="card">
-            <h2 class="card-title">⑥ 【前衛】プレーエリア内訳</h2>
+            <h2 class="card-title">⑥ 【前衛】プレーエリアの内訳</h2>
             <div class="chart-container"><canvas id="netPlayerPlayChart"></canvas></div>
             <table class="data-table" id="netPlayerPlayTable">
-                <thead><tr><th>選手</th><th>ボレー</th><th>スマッシュ</th><th>その他</th></tr></thead>
+                <thead><tr><th>選手</th><th>ボレー</th><th>スマッシュ</th><th>ストローク等</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -120,13 +129,27 @@
     <script>
         let rawMatchData = [];
         let charts = {};
-        const chartColors = ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6'];
+        
+        // プロトタイプ画像に合わせたカラーパレット
+        const colors = {
+            blue: '#3498db', red: '#e74c3c', orange: '#f39c12', 
+            purple: '#9b59b6', green: '#2ecc71', grey: '#bdc3c7', yellow: '#f1c40f'
+        };
+
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec"; 
 
         document.addEventListener('DOMContentLoaded', () => {
             initCharts();
+            fetchData();
+            document.getElementById('dateFilter').addEventListener('change', updateDashboard);
+        });
+
+        function fetchData() {
             fetch(GAS_WEB_APP_URL + "?action=getMatchData")
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error('ネットワークエラー');
+                    return res.json();
+                })
                 .then(data => {
                     rawMatchData = data;
                     setupFilters();
@@ -135,14 +158,15 @@
                 })
                 .catch(err => {
                     document.getElementById('currentDateDisplay').textContent = "取得エラー";
+                    console.error("データ取得エラー:", err);
                 });
-            document.getElementById('dateFilter').addEventListener('change', updateDashboard);
-        });
+        }
 
         function updateTimestamp() {
             const now = new Date();
+            const pad = num => String(num).padStart(2,'0');
             document.getElementById('currentDateDisplay').textContent = 
-                `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} 同期完了`;
+                `${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())} 同期完了`;
         }
 
         function setupFilters() {
@@ -150,18 +174,40 @@
             const dates = [...new Set(rawMatchData.map(m => m.date).filter(Boolean))].sort().reverse();
             dates.forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d; opt.textContent = d;
+                opt.value = d; 
+                opt.textContent = `${d} の試合`;
                 select.appendChild(opt);
             });
         }
 
         function initCharts() {
+            Chart.defaults.font.family = "'Helvetica Neue', Arial, sans-serif";
             const opts = { responsive: true, maintainAspectRatio: false };
-            charts.winRate = new Chart(document.getElementById('winRateChart'), { type: 'bar', data: { labels: ['1stサ', '2ndレ', '1stレ', '2ndサ'], datasets: [] }, options: { ...opts, scales: { y: { beginAtZero: true, max: 100 } } } });
-            charts.errorType = new Chart(document.getElementById('errorTypeChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } } });
-            charts.individual = new Chart(document.getElementById('individualStatsChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: opts });
-            charts.backcourt = new Chart(document.getElementById('backcourtStrokeChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } } });
-            charts.netPlayer = new Chart(document.getElementById('netPlayerPlayChart'), { type: 'bar', data: { labels: [], datasets: [] }, options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } } });
+            const stackedOpts = { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } };
+
+            // ① 局面別
+            charts.winRate = new Chart(document.getElementById('winRateChart'), { 
+                type: 'bar', 
+                data: { labels: ['1stサーブ時', '2ndレシーブ時', '1stレシーブ時', '2ndサーブ時'], datasets: [] }, 
+                options: { ...opts, scales: { y: { beginAtZero: true, max: 100 } } } 
+            });
+            // ② 失点原因
+            charts.errorType = new Chart(document.getElementById('errorTypeChart'), { 
+                type: 'bar', data: { labels: [], datasets: [] }, options: stackedOpts 
+            });
+            // ③ 個人別得失点
+            charts.individual = new Chart(document.getElementById('individualStatsChart'), { 
+                type: 'bar', data: { labels: [], datasets: [] }, options: opts 
+            });
+            // ⑤ 後衛ストローク
+            charts.backcourt = new Chart(document.getElementById('backcourtStrokeChart'), { 
+                type: 'bar', data: { labels: [], datasets: [] }, options: stackedOpts 
+            });
+            // ⑥ 前衛ネットプレー
+            charts.netPlayer = new Chart(document.getElementById('netPlayerPlayChart'), { 
+                type: 'bar', data: { labels: [], datasets: [] }, options: stackedOpts 
+            });
+            
             charts.recvPies = [];
         }
 
@@ -171,10 +217,16 @@
             if (filtered.length === 0) return;
 
             let pairs = {}, players = {};
+
             filtered.forEach(m => {
                 const nameA = m.names?.A || "選手A", nameB = m.names?.B || "選手B";
                 const pKey = `${nameA}・${nameB}`;
-                if (!pairs[pKey]) pairs[pKey] = { s1: {w:0,t:0}, s2: {w:0,t:0}, r1: {w:0,t:0}, r2: {w:0,t:0}, errors: {net:0,out:0,df:0,other:0,total:0}, recv: {f:0,b:0,u:0} };
+                if (!pairs[pKey]) {
+                    pairs[pKey] = { 
+                        s1: {w:0,t:0}, s2: {w:0,t:0}, r1: {w:0,t:0}, r2: {w:0,t:0}, 
+                        errors: {net:0,out:0,df:0,other:0,total:0}, recv: {f:0,b:0,u:0} 
+                    };
+                }
 
                 if (m.log) {
                     m.log.forEach(g => g.flow.forEach(pt => {
@@ -190,26 +242,43 @@
                     }));
                 }
 
-                ['A', 'B'].forEach((pos, idx) => {
-                    const st = m.stats?.[pos]; if (!st) return;
-                    const name = pos === 'A' ? nameA : nameB;
-                    const isF = (idx === 1);
-                    if (!players[name]) players[name] = { label: isF?'(前)':'(後)', isF, p:0, m:0, fs:0, bs:0, ld:0, vo:0, sm:0, ot:0 };
-                    players[name].p += st.p||0; players[name].m += st.m||0;
+                ['A', 'B', 'C', 'D'].forEach((pos, idx) => {
+                    const st = m.stats?.[pos]; 
+                    if (!st) return;
+                    
+                    let name = m.names?.[pos] || `選手${pos}`;
+                    const isF = (idx % 2 !== 0); // B, Dを前衛とする
+                    
+                    if (!players[name]) {
+                        players[name] = { label: isF ? '(前)' : '(後)', isF, p:0, m:0, fs:0, bs:0, ld:0, vo:0, sm:0, ot:0 };
+                    }
+                    players[name].p += st.p || 0; 
+                    players[name].m += st.m || 0;
+                    
                     const acts = {...(st.mt||{}), ...(st.pt||{})};
+                    
+                    // ペアのミスカウントはA・Bペアのみ対象とする（簡易化）
+                    let currentPairKey = (pos === 'A' || pos === 'B') ? `${m.names?.A||'A'}・${m.names?.B||'B'}` : `${m.names?.C||'C'}・${m.names?.D||'D'}`;
+                    
+                    if(!pairs[currentPairKey]) {
+                        pairs[currentPairKey] = { s1: {w:0,t:0}, s2: {w:0,t:0}, r1: {w:0,t:0}, r2: {w:0,t:0}, errors: {net:0,out:0,df:0,other:0,total:0}, recv: {f:0,b:0,u:0} };
+                    }
+
                     for (let [k, c] of Object.entries(acts)) {
                         if (st.mt?.[k]) {
-                            pairs[pKey].errors.total += c;
-                            if (k === 'df') pairs[pKey].errors.df += c;
-                            else if (k.includes('net')) pairs[pKey].errors.net += c;
-                            else if (k.includes('out')||k.includes('bout')||k.includes('sout')) pairs[pKey].errors.out += c;
-                            else pairs[pKey].errors.other += c;
+                            pairs[currentPairKey].errors.total += c;
+                            if (k === 'df') pairs[currentPairKey].errors.df += c;
+                            else if (k.includes('net')) pairs[currentPairKey].errors.net += c;
+                            else if (k.includes('out')||k.includes('bout')||k.includes('sout')) pairs[currentPairKey].errors.out += c;
+                            else pairs[currentPairKey].errors.other += c;
+                            
                             if (k.startsWith('recv')) {
-                                if (k.includes('_f_')) pairs[pKey].recv.f += c;
-                                else if (k.includes('_b_')) pairs[pKey].recv.b += c;
-                                else pairs[pKey].recv.u += c;
+                                if (k.includes('_f_')) pairs[currentPairKey].recv.f += c;
+                                else if (k.includes('_b_')) pairs[currentPairKey].recv.b += c;
+                                else pairs[currentPairKey].recv.u += c;
                             }
                         }
+                        // 個人スタッツ分類
                         if (k.includes('shoot')||k.includes('twist')) { if(k.startsWith('f_')) players[name].fs+=c; if(k.startsWith('b_')) players[name].bs+=c; if(isF) players[name].ot+=c; }
                         if (k.includes('lob')||k.includes('drop')) { players[name].ld+=c; if(isF) players[name].ot+=c; }
                         if (isF) { if(k.includes('volley')) players[name].vo+=c; if(k.includes('smash')||k.includes('overhead')) players[name].sm+=c; }
@@ -220,43 +289,114 @@
         }
 
         function renderCharts(pairs, players) {
-            const pKeys = Object.keys(pairs), plKeys = Object.keys(players);
-            const calc = (w,t) => t>0 ? (w/t*100).toFixed(1) : 0;
+            // データが0件のペア・選手を除外
+            const pKeys = Object.keys(pairs).filter(k => pairs[k].s1.t > 0 || pairs[k].errors.total > 0 || pairs[k].recv.f > 0);
+            const plKeys = Object.keys(players).filter(k => players[k].p > 0 || players[k].m > 0);
+            
+            const calc = (w,t) => t > 0 ? (w/t*100).toFixed(1) : 0;
+            const pairColors = [colors.blue, colors.red, colors.green, colors.orange];
 
-            charts.winRate.data.datasets = pKeys.map((k,i) => ({ label: k, backgroundColor: chartColors[i%5], data: [calc(pairs[k].s1.w,pairs[k].s1.t), calc(pairs[k].s2.w,pairs[k].s2.t), calc(pairs[k].r1.w,pairs[k].r1.t), calc(pairs[k].r2.w,pairs[k].r2.t)] }));
+            // ① 局面別得点率
+            charts.winRate.data.datasets = pKeys.map((k,i) => ({ 
+                label: k, 
+                backgroundColor: pairColors[i % pairColors.length], 
+                data: [calc(pairs[k].s1.w,pairs[k].s1.t), calc(pairs[k].s2.w,pairs[k].s2.t), calc(pairs[k].r1.w,pairs[k].r1.t), calc(pairs[k].r2.w,pairs[k].r2.t)] 
+            }));
             charts.winRate.update();
 
+            document.querySelector('#winRateTable tbody').innerHTML = pKeys.map(k => {
+                const fmt = (w,t) => t > 0 ? `<span class="bold-val">${calc(w,t)}%</span> <span class="frac">${w}/${t}</span>` : '-';
+                return `<tr><td>${k}</td><td>${fmt(pairs[k].s1.w,pairs[k].s1.t)}</td><td>${fmt(pairs[k].s2.w,pairs[k].s2.t)}</td><td>${fmt(pairs[k].r1.w,pairs[k].r1.t)}</td><td>${fmt(pairs[k].r2.w,pairs[k].r2.t)}</td></tr>`;
+            }).join('');
+
+            // ② 失点原因比率
             charts.errorType.data.labels = pKeys;
             charts.errorType.data.datasets = [
-                { label: 'ネット', backgroundColor: '#f39c12', data: pKeys.map(k => calc(pairs[k].errors.net, pairs[k].errors.total)) },
-                { label: 'アウト', backgroundColor: '#9b59b6', data: pKeys.map(k => calc(pairs[k].errors.out, pairs[k].errors.total)) },
-                { label: 'DF', backgroundColor: '#e74c3c', data: pKeys.map(k => calc(pairs[k].errors.df, pairs[k].errors.total)) }
+                { label: 'ネット', backgroundColor: colors.orange, data: pKeys.map(k => calc(pairs[k].errors.net, pairs[k].errors.total)) },
+                { label: 'アウト', backgroundColor: colors.purple, data: pKeys.map(k => calc(pairs[k].errors.out, pairs[k].errors.total)) },
+                { label: 'DF', backgroundColor: colors.red, data: pKeys.map(k => calc(pairs[k].errors.df, pairs[k].errors.total)) },
+                { label: 'その他', backgroundColor: colors.grey, data: pKeys.map(k => calc(pairs[k].errors.other, pairs[k].errors.total)) }
             ];
             charts.errorType.update();
 
+            document.querySelector('#errorTypeTable tbody').innerHTML = pKeys.map(k => {
+                const tot = pairs[k].errors.total;
+                const fmt = val => tot > 0 ? `<span class="bold-val">${calc(val, tot)}%</span> <span class="frac">${val}</span>` : '-';
+                return `<tr><td>${k}</td><td>${fmt(pairs[k].errors.net)}</td><td>${fmt(pairs[k].errors.out)}</td><td>${fmt(pairs[k].errors.df)}</td><td>${fmt(pairs[k].errors.other)}</td></tr>`;
+            }).join('');
+
+            // ③ 個人別得失点
             charts.individual.data.labels = plKeys.map(k => k + players[k].label);
-            charts.individual.data.datasets = [{ label: '得点', backgroundColor: '#2ecc71', data: plKeys.map(k => players[k].p) }, { label: '失点', backgroundColor: '#e74c3c', data: plKeys.map(k => players[k].m) }];
+            charts.individual.data.datasets = [
+                { label: '得点', backgroundColor: colors.green, data: plKeys.map(k => players[k].p) }, 
+                { label: '失点', backgroundColor: colors.red, data: plKeys.map(k => players[k].m) }
+            ];
             charts.individual.update();
 
+            document.querySelector('#individualStatsTable tbody').innerHTML = plKeys.map(k => 
+                `<tr><td>${k} ${players[k].label==='(前)'?'(前衛)':'(後衛)'}</td><td>${players[k].p}</td><td>${players[k].m}</td></tr>`
+            ).join('');
+
+            // ④ レシーブミスドーナツ
+            const pieContainer = document.getElementById('recvPieContainer');
+            pieContainer.innerHTML = '';
+            charts.recvPies.forEach(c => c.destroy());
+            charts.recvPies = [];
+
+            pKeys.forEach(k => {
+                const d = pairs[k].recv;
+                if (d.f === 0 && d.b === 0 && d.u === 0) return;
+                
+                const wrapper = document.createElement('div');
+                wrapper.style.width = '45%'; 
+                wrapper.style.minWidth = '150px';
+                
+                const canvas = document.createElement('canvas');
+                wrapper.appendChild(canvas);
+                pieContainer.appendChild(wrapper);
+
+                const pie = new Chart(canvas, {
+                    type: 'doughnut',
+                    data: { labels: ['フォア', 'バック', '不明'], datasets: [{ backgroundColor: [colors.red, colors.blue, colors.grey], data: [d.f, d.b, d.u] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, title: { display: true, text: k } } }
+                });
+                charts.recvPies.push(pie);
+            });
+
+            document.querySelector('#recvPieTable tbody').innerHTML = pKeys.map(k => 
+                `<tr><td>${k}</td><td><span class="bold-val">${pairs[k].recv.f}件</span></td><td>${pairs[k].recv.b}件</td><td>${pairs[k].recv.u}件</td></tr>`
+            ).join('');
+
+            // ⑤ ⑥ ストローク・ネット内訳
             const back = plKeys.filter(k => !players[k].isF);
             charts.backcourt.data.labels = back;
             charts.backcourt.data.datasets = [
-                { label: 'フォア', backgroundColor: '#e74c3c', data: back.map(k => calc(players[k].fs, players[k].fs+players[k].bs+players[k].ld)) },
-                { label: 'バック', backgroundColor: '#3498db', data: back.map(k => calc(players[k].bs, players[k].fs+players[k].bs+players[k].ld)) },
-                { label: 'ロブ', backgroundColor: '#f1c40f', data: back.map(k => calc(players[k].ld, players[k].fs+players[k].bs+players[k].ld)) }
+                { label: 'フォアシュート', backgroundColor: colors.red, data: back.map(k => calc(players[k].fs, players[k].fs+players[k].bs+players[k].ld)) },
+                { label: 'バックシュート', backgroundColor: colors.blue, data: back.map(k => calc(players[k].bs, players[k].fs+players[k].bs+players[k].ld)) },
+                { label: 'ロブ / ドロップ', backgroundColor: colors.yellow, data: back.map(k => calc(players[k].ld, players[k].fs+players[k].bs+players[k].ld)) }
             ];
             charts.backcourt.update();
+
+            document.querySelector('#backcourtStrokeTable tbody').innerHTML = back.map(k => {
+                const t = players[k].fs + players[k].bs + players[k].ld;
+                const fmt = v => t > 0 ? `<span class="bold-val">${calc(v,t)}%</span>` : '-';
+                return `<tr><td>${k}</td><td>${fmt(players[k].fs)}</td><td>${fmt(players[k].bs)}</td><td>${fmt(players[k].ld)}</td></tr>`;
+            }).join('');
 
             const front = plKeys.filter(k => players[k].isF);
             charts.netPlayer.data.labels = front;
             charts.netPlayer.data.datasets = [
-                { label: 'ボレー', backgroundColor: '#2ecc71', data: front.map(k => calc(players[k].vo, players[k].vo+players[k].sm+players[k].ot)) },
-                { label: 'スマッシュ', backgroundColor: '#9b59b6', data: front.map(k => calc(players[k].sm, players[k].vo+players[k].sm+players[k].ot)) },
-                { label: 'その他', backgroundColor: '#bdc3c7', data: front.map(k => calc(players[k].ot, players[k].vo+players[k].sm+players[k].ot)) }
+                { label: 'ボレー', backgroundColor: colors.green, data: front.map(k => calc(players[k].vo, players[k].vo+players[k].sm+players[k].ot)) },
+                { label: 'スマッシュ', backgroundColor: colors.purple, data: front.map(k => calc(players[k].sm, players[k].vo+players[k].sm+players[k].ot)) },
+                { label: 'ストローク等', backgroundColor: colors.grey, data: front.map(k => calc(players[k].ot, players[k].vo+players[k].sm+players[k].ot)) }
             ];
             charts.netPlayer.update();
 
-            document.querySelector('#winRateTable tbody').innerHTML = pKeys.map(k => `<tr><td>${k}</td><td>${calc(pairs[k].s1.w,pairs[k].s1.t)}%</td><td>${calc(pairs[k].s2.w,pairs[k].s2.t)}%</td><td>${calc(pairs[k].r1.w,pairs[k].r1.t)}%</td><td>${calc(pairs[k].r2.w,pairs[k].r2.t)}%</td></tr>`).join('');
+            document.querySelector('#netPlayerPlayTable tbody').innerHTML = front.map(k => {
+                const t = players[k].vo + players[k].sm + players[k].ot;
+                const fmt = v => t > 0 ? `<span class="bold-val">${calc(v,t)}%</span>` : '-';
+                return `<tr><td>${k}</td><td>${fmt(players[k].vo)}</td><td>${fmt(players[k].sm)}</td><td>${fmt(players[k].ot)}</td></tr>`;
+            }).join('');
         }
     </script>
 </body>
