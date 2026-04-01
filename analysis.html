@@ -55,10 +55,11 @@
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
         .card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; overflow-x: auto; }
         .card-title { font-size: 1.05rem; margin-bottom: 16px; font-weight: bold; color: var(--secondary-color); display: flex; align-items: center; justify-content: space-between;}
-        .card-badge { font-size: 0.7rem; background: var(--bg-color); padding: 3px 8px; border-radius: 10px; color: var(--text-muted); }
+        .card-badge { font-size: 0.7rem; background: var(--bg-color); padding: 3px 8px; border-radius: 10px; color: var(--text-muted); white-space: nowrap; }
 
-        .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; min-width: 350px; }
-        .radar-container { height: 350px; display: flex; justify-content: center; }
+        /* 🌟 修正：グラフコンテナの横幅固定を解除し、柔軟にリサイズさせる */
+        .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; }
+        .radar-container { position: relative; height: 350px; width: 100%; }
         
         /* ヒートマップ用スタイル */
         .heatmap-container { display: flex; justify-content: center; align-items: center; background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; position: relative; overflow: hidden; }
@@ -67,13 +68,15 @@
         .legend-group { display: flex; flex-wrap: wrap; gap: 12px; background: #fff; padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .legend-item { display: flex; align-items: center; gap: 4px; }
 
-        /* ドーナツグラフ（レシーブミス）用コンテナ */
-        #recvPieContainer { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; height: auto; min-height: 250px; }
-        .pie-wrapper { width: 45%; min-width: 160px; display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; }
+        /* ドーナツグラフ用コンテナ */
+        #recvPieContainer { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; height: auto; min-height: 200px; margin-bottom: 15px;}
+        .pie-wrapper { width: 45%; min-width: 140px; display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; }
         .pie-title { font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; color: var(--text-main); text-align: center; }
 
-        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: auto; min-width: 350px;}
-        .data-table th, .data-table td { padding: 10px 4px; text-align: center; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        /* 🌟 修正：テーブルの横幅固定を解除 */
+        .table-wrapper { width: 100%; overflow-x: auto; margin-top: auto; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: max-content; }
+        .data-table th, .data-table td { padding: 10px 6px; text-align: center; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         .data-table th { background-color: #f8fafc; color: var(--text-muted); font-weight: bold; white-space: nowrap; }
         
         .frac { font-size: 0.75rem; color: var(--text-muted); margin-left: 2px; }
@@ -156,7 +159,7 @@
                         <div class="legend-item">▲ ロブ</div>
                         <div class="legend-item">■ ボレー</div>
                         <div class="legend-item">★ スマッシュ</div>
-                        <div class="legend-item">◆ その他(落とす等)</div>
+                        <div class="legend-item">◆ その他</div>
                     </div>
                 </div>
             </div>
@@ -169,61 +172,70 @@
             <div class="card">
                 <h2 class="card-title">③ ボリューム分析 <span class="card-badge">得失点関与数</span></h2>
                 <div class="chart-container"><canvas id="volumeChart"></canvas></div>
-                <table class="data-table" id="volumeTable">
-                    <thead><tr><th>対象</th><th>得点獲得数</th><th>失点記録数</th><th>差引(＋/−)</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">※試合中、どれだけボールに触って結果を出したか（仕事量）を表します。</p>
+                <div class="table-wrapper">
+                    <table class="data-table" id="volumeTable">
+                        <thead><tr><th>対象</th><th>得点</th><th>失点</th><th>差引(＋/−)</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="card">
                 <h2 class="card-title">④ レシーブミスの内訳 <span class="card-badge">コース分析</span></h2>
                 <div id="recvPieContainer"></div>
-                <table class="data-table" id="recvPieTable">
-                    <thead><tr><th>対象</th><th>フォア側ミス</th><th>バック側ミス</th><th>不明/その他</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table class="data-table" id="recvPieTable">
+                        <thead><tr><th>対象</th><th>フォア側</th><th>バック側</th><th>不明/他</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="card" style="grid-column: 1 / -1;">
                 <h2 class="card-title">⑤ プレースタイル内訳 <span class="card-badge">得点ショット比率</span></h2>
                 <div class="chart-container"><canvas id="playStyleChart"></canvas></div>
-                <table class="data-table" id="playStyleTable">
-                    <thead><tr><th>対象</th><th>Fシュート</th><th>Bシュート</th><th>ロブ等</th><th>ボレー</th><th>スマッシュ</th><th>その他</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">※得点全体を100%とした時の、ショットの構成比です（前衛・後衛のスタイルが一目でわかります）</p>
+                <div class="table-wrapper">
+                    <table class="data-table" id="playStyleTable">
+                        <thead><tr><th>対象</th><th>Fシュート</th><th>Bシュート</th><th>ロブ等</th><th>ボレー</th><th>スマッシュ</th><th>その他</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="card">
+            <div class="card" style="grid-column: 1 / -1;">
                 <h2 class="card-title">① 局面別の主導権 <span class="card-badge">得点率</span></h2>
                 <div class="chart-container"><canvas id="winRateChart"></canvas></div>
-                <table class="data-table" id="winRateTable">
-                    <thead>
-                        <tr>
-                            <th rowspan="2" style="vertical-align: middle;">対象</th>
-                            <th colspan="2" class="th-attack">⚔️ 攻めスタート (優位)</th>
-                            <th colspan="2" class="th-defense">🛡️ 守りスタート (劣位)</th>
-                        </tr>
-                        <tr>
-                            <th style="background-color: var(--attack-bg);">1stサーブ</th>
-                            <th style="background-color: var(--attack-bg);">2ndレシーブ</th>
-                            <th style="background-color: var(--defense-bg);">1stレシーブ</th>
-                            <th style="background-color: var(--defense-bg);">2ndサーブ</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table class="data-table" id="winRateTable">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align: middle;">対象</th>
+                                <th colspan="2" class="th-attack">⚔️ 攻めスタート (優位)</th>
+                                <th colspan="2" class="th-defense">🛡️ 守りスタート (劣位)</th>
+                            </tr>
+                            <tr>
+                                <th style="background-color: var(--attack-bg);">1stサーブ</th>
+                                <th style="background-color: var(--attack-bg);">2ndレシーブ</th>
+                                <th style="background-color: var(--defense-bg);">1stレシーブ</th>
+                                <th style="background-color: var(--defense-bg);">2ndサーブ</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="card">
+            <div class="card" style="grid-column: 1 / -1;">
                 <h2 class="card-title">② エラーの質 <span class="card-badge">失点原因（発生回数）</span></h2>
                 <div class="chart-container"><canvas id="errorTypeChart"></canvas></div>
-                <table class="data-table" id="errorTypeTable">
-                    <thead><tr><th>対象</th><th>ネット</th><th>アウト</th><th>DF</th><th>レシーブ</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table class="data-table" id="errorTypeTable">
+                        <thead><tr><th>対象</th><th>ネット</th><th>アウト</th><th>DF</th><th>レシーブ</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
+
         </div>
     </div>
 
@@ -233,7 +245,6 @@
             entities: [], 
             state: { filterDate: 'all', filterMatches: [], targetType: 'pair', selectedTargets: [] },
             charts: {},
-            // テーマカラー設定（プレースタイル内訳などに使用）
             colors: [
                 { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   
                 { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.2)' },   
@@ -242,14 +253,9 @@
                 { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)' },   
                 { border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.2)' }   
             ],
-            // ショット別の専用カラー
             shotColors: {
-                f_shoot: '#ef4444', // 赤
-                b_shoot: '#3b82f6', // 青
-                lob_drop: '#eab308',// 黄
-                volley: '#10b981',  // 緑
-                smash: '#8b5cf6',   // 紫
-                other: '#94a3b8'    // 灰
+                f_shoot: '#ef4444', b_shoot: '#3b82f6', lob_drop: '#eab308',
+                volley: '#10b981', smash: '#8b5cf6', other: '#94a3b8'
             },
             
             init() {
@@ -270,7 +276,7 @@
                         this.setupDateFilter();
                         this.onDateFilterChange(); 
                         const now = new Date();
-                        document.getElementById('currentDateDisplay').textContent = `✓ ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 同期完了 (${this.rawData.length}試合)`;
+                        document.getElementById('currentDateDisplay').textContent = `✓ ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 同期完了`;
                     })
                     .catch(err => {
                         document.getElementById('currentDateDisplay').textContent = "⚠️ 取得エラー";
@@ -344,13 +350,11 @@
                     options: { ...opts, scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } } }
                 });
 
-                // 🌟 追加：③ ボリュームグラフ（Bar）
                 this.charts.volume = new Chart(document.getElementById('volumeChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
                     options: { ...opts, scales: { y: { beginAtZero: true } } }
                 });
 
-                // 🌟 追加：⑤⑥ プレースタイルグラフ（100% Stacked Bar）
                 this.charts.playStyle = new Chart(document.getElementById('playStyleChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
                     options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } }
@@ -367,7 +371,7 @@
                     options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true } } }
                 });
 
-                this.charts.recvPies = []; // ドーナツグラフ保管用
+                this.charts.recvPies = []; 
             },
 
             processData() {
@@ -385,10 +389,9 @@
                         entityMap[name] = { 
                             name: name, side: side, p: 0, m: 0, fi: 0, st: 0,
                             err_net: 0, err_out: 0, err_df: 0, err_recv: 0, err_other: 0,
-                            // 🌟 拡張：レシーブミスの詳細とショットの詳細
                             err_recv_f: 0, err_recv_b: 0, err_recv_u: 0,
                             pt_f_shoot: 0, pt_b_shoot: 0, pt_lob_drop: 0, pt_volley: 0, pt_smash: 0, pt_other: 0,
-                            pt_stroke: 0, pt_net: 0, // レーダー用合算
+                            pt_stroke: 0, pt_net: 0, 
                             s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0,
                             raw_pt: {}, raw_mt: {}
                         };
@@ -430,7 +433,6 @@
                                     else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
                                     else if(err.startsWith('recv')) {
                                         e.err_recv += val;
-                                        // 🌟 拡張：レシーブの左右判定
                                         if(err.includes('_f_')) e.err_recv_f += val;
                                         else if(err.includes('_b_')) e.err_recv_b += val;
                                         else e.err_recv_u += val;
@@ -443,7 +445,6 @@
                                     let val = st.pt[pt];
                                     e.raw_pt[pt] = (e.raw_pt[pt] || 0) + val; 
                                     
-                                    // 🌟 拡張：プレースタイル内訳の判定
                                     if(pt.startsWith('f_shoot') || pt.startsWith('f_twist')) e.pt_f_shoot += val;
                                     else if(pt.startsWith('b_shoot') || pt.startsWith('b_twist')) e.pt_b_shoot += val;
                                     else if(pt.includes('lob') || pt.includes('drop')) e.pt_lob_drop += val;
@@ -451,7 +452,6 @@
                                     else if(pt.includes('smash') || pt.includes('overhead')) e.pt_smash += val;
                                     else e.pt_other += val;
 
-                                    // レーダー用
                                     if(pt.includes('shoot') || pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_stroke += val;
                                     if(pt.includes('volley') || pt.includes('smash') || pt.includes('overhead')) e.pt_net += val;
                                 }
@@ -618,7 +618,7 @@
 
                 this.drawHeatmap(displayEntities);
 
-                // 🌟 追加：③ ボリューム分析（得失点）
+                // ③ ボリューム分析
                 this.charts.volume.data.labels = labels;
                 this.charts.volume.data.datasets = [
                     { label: '得点', backgroundColor: '#10b981', data: displayEntities.map(e => e.p) },
@@ -633,22 +633,31 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val">${e.p}</span></td><td><span class="bold-val">${e.m}</span></td><td>${diffFmt}</td></tr>`;
                 }).join('');
 
-                // 🌟 追加：④ レシーブミスの打球コース内訳（ドーナツ）
+                // 🌟 修正：ドーナツグラフ無限増殖バグを封印したラッパー処理
                 const pieContainer = document.getElementById('recvPieContainer');
                 pieContainer.innerHTML = '';
                 this.charts.recvPies.forEach(c => c.destroy());
                 this.charts.recvPies = [];
 
                 displayEntities.forEach(e => {
-                    if (e.err_recv === 0) return; // レシーブミスが無い場合はスキップ
+                    if (e.err_recv === 0) return; 
                     
                     const wrapper = document.createElement('div');
                     wrapper.className = 'pie-wrapper';
                     const title = document.createElement('div');
                     title.className = 'pie-title'; title.textContent = e.name;
-                    const canvas = document.createElement('canvas');
                     
-                    wrapper.appendChild(title); wrapper.appendChild(canvas);
+                    // 🚨 ここが重要！無限リサイズを防ぐ相対指定ラッパー
+                    const canvasWrapper = document.createElement('div');
+                    canvasWrapper.style.position = 'relative';
+                    canvasWrapper.style.height = '180px';
+                    canvasWrapper.style.width = '100%';
+                    
+                    const canvas = document.createElement('canvas');
+                    canvasWrapper.appendChild(canvas);
+                    
+                    wrapper.appendChild(title); 
+                    wrapper.appendChild(canvasWrapper);
                     pieContainer.appendChild(wrapper);
 
                     const pie = new Chart(canvas, {
@@ -667,7 +676,7 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val" style="color:${this.shotColors.f_shoot}">${e.err_recv_f}</span>件</td><td><span class="bold-val" style="color:${this.shotColors.b_shoot}">${e.err_recv_b}</span>件</td><td>${e.err_recv_u}件</td></tr>`;
                 }).join('');
 
-                // 🌟 追加：⑤⑥ プレースタイル内訳（100% Stacked）
+                // ⑤⑥ プレースタイル内訳
                 this.charts.playStyle.data.labels = labels;
                 this.charts.playStyle.data.datasets = [
                     { label: 'Fシュート', backgroundColor: this.shotColors.f_shoot, data: displayEntities.map(e => this.calcRate(e.pt_f_shoot, e.p)) },
@@ -675,7 +684,7 @@
                     { label: 'ロブ/ドロップ', backgroundColor: this.shotColors.lob_drop, data: displayEntities.map(e => this.calcRate(e.pt_lob_drop, e.p)) },
                     { label: 'ボレー', backgroundColor: this.shotColors.volley, data: displayEntities.map(e => this.calcRate(e.pt_volley, e.p)) },
                     { label: 'スマッシュ', backgroundColor: this.shotColors.smash, data: displayEntities.map(e => this.calcRate(e.pt_smash, e.p)) },
-                    { label: 'その他(SA等)', backgroundColor: this.shotColors.other, data: displayEntities.map(e => this.calcRate(e.pt_other, e.p)) }
+                    { label: 'その他', backgroundColor: this.shotColors.other, data: displayEntities.map(e => this.calcRate(e.pt_other, e.p)) }
                 ];
                 this.charts.playStyle.update();
 
@@ -714,7 +723,7 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
                 }).join('');
 
-                // 🌟 レーダーチャート
+                // レーダーチャート
                 this.charts.radar.data.datasets = displayEntities.map((e, i) => {
                     const serve = this.calcRate(e.fi, e.st); 
                     const stroke = this.calcRate(e.pt_stroke, e.p); 
