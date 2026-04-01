@@ -33,17 +33,20 @@
         .cp-select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2); }
 
         .match-filter-container { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; max-height: 110px; overflow-y: auto; font-size: 0.85rem; }
-        .match-filter-container label { display: block; margin-bottom: 4px; cursor: pointer; color: var(--text-main); }
-        .match-filter-container input[type="checkbox"] { margin-right: 6px; accent-color: var(--primary-color); }
+        .match-filter-container label { display: block; margin-bottom: 4px; cursor: pointer; color: var(--text-main); padding: 4px; border-radius: 4px;}
+        .match-filter-container label:hover { background: #e2e8f0; }
+        .match-filter-container input[type="checkbox"] { margin-right: 6px; accent-color: var(--primary-color); transform: scale(1.1); }
 
         .btn-group { display: flex; gap: 5px; background: #e2e8f0; padding: 4px; border-radius: 8px; }
         .btn-toggle { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 6px; font-weight: bold; color: var(--text-muted); cursor: pointer; transition: 0.2s; font-size: 0.9rem;}
         .btn-toggle.active { background: var(--card-bg); color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        .target-selection-area { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed var(--border-color); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-        .vs-badge { background: var(--secondary-color); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        /* マルチセレクト用に再設計されたエリア */
+        .target-selection-area { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed var(--border-color); display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+        .target-col { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+        .target-col .match-filter-container { max-height: 150px; background: var(--card-bg); border-color: #e2e8f0;}
 
-        .section-title { font-size: 1.2rem; color: var(--secondary-color); margin: 30px 0 15px 0; padding-left: 12px; border-left: 6px solid var(--accent-color); font-weight: 900; }
+        .section-title { font-size: 1.2rem; color: var(--secondary-color); margin: 30px 0 15px 0; padding-left: 12px; border-left: 6px solid var(--accent-color); font-weight: 900; display: flex; align-items: center; justify-content: space-between;}
         
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
         .card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; overflow-x: auto; }
@@ -62,8 +65,6 @@
 
         @media screen and (max-width: 600px) {
             .dashboard-grid { grid-template-columns: 1fr; }
-            .target-selection-area { flex-direction: column; align-items: stretch; }
-            .vs-badge { align-self: center; }
         }
     </style>
 </head>
@@ -97,35 +98,26 @@
                     <button class="btn-toggle" onclick="app.setTargetType('team')">チーム</button>
                 </div>
             </div>
-
-            <div class="cp-group">
-                <span class="cp-label">⚔️ 比較モード (vs Whom)</span>
-                <div class="btn-group" id="compare-mode-group">
-                    <button class="btn-toggle active" onclick="app.setCompareMode('none')">単独</button>
-                    <button class="btn-toggle" onclick="app.setCompareMode('teammate')">味方比較</button>
-                    <button class="btn-toggle" onclick="app.setCompareMode('opponent')">相手比較</button>
-                </div>
+            
             </div>
-        </div>
 
         <div class="target-selection-area">
-            <div style="flex: 1;">
-                <span class="cp-label">🔵 メイン対象</span>
-                <select class="cp-select" id="main-target" onchange="app.renderCharts()"></select>
+            <div class="target-col">
+                <span class="cp-label">🔵 自チーム（表示対象）</span>
+                <div class="match-filter-container" id="target-list-L"></div>
             </div>
-            
-            <div id="sub-target-container" style="flex: 1; display: none; align-items: center; gap: 10px;">
-                <span class="vs-badge">VS</span>
-                <div style="flex: 1;">
-                    <span class="cp-label" id="sub-target-label">🔴 比較対象</span>
-                    <select class="cp-select" id="sub-target" onchange="app.renderCharts()"></select>
-                </div>
+            <div class="target-col">
+                <span class="cp-label">🔴 相手チーム（表示対象）</span>
+                <div class="match-filter-container" id="target-list-R"></div>
             </div>
         </div>
     </div>
 
     <div id="dashboard-content">
-        <div class="section-title" id="dynamic-section-title">分析結果</div>
+        <div class="section-title">
+            <span id="dynamic-section-title">分析結果</span>
+            <span style="font-size: 0.8rem; font-weight: normal; color: gray;">※グラフが重なりすぎる場合は選択数を3〜4つに絞ってください</span>
+        </div>
         
         <div class="dashboard-grid">
             <div class="card" id="radar-card" style="grid-column: 1 / -1;">
@@ -158,11 +150,17 @@
         const app = {
             rawData: [], 
             entities: [], 
-            state: { filterDate: 'all', filterMatches: [], targetType: 'pair', compareMode: 'none' },
+            // selectedTargets配列で、「現在チェックがついている対象」を管理します
+            state: { filterDate: 'all', filterMatches: [], targetType: 'pair', selectedTargets: [] },
             charts: {},
+            // 複数選択に対応できるよう、カラーパレットを6色に拡張
             colors: [
-                { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   
-                { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.2)' }    
+                { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   // ブルー
+                { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.2)' },   // オレンジ
+                { border: '#16a34a', bg: 'rgba(22, 163, 74, 0.2)' },   // グリーン
+                { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.2)' },  // パープル
+                { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)' },   // レッド
+                { border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.2)' }   // シアン
             ],
             
             init() {
@@ -213,7 +211,6 @@
 
                 dateFiltered.forEach((m, idx) => {
                     const lbl = document.createElement('label');
-                    lbl.style.marginLeft = '10px';
                     const title = `${idx + 1}試合目: vs ${m.teams?.R || '相手'} (${m.gL}-${m.gR})`;
                     lbl.innerHTML = `<input type="checkbox" class="match-cb" value="${m._uid}" checked onchange="app.onMatchSelectionChange()"> ${title}`;
                     container.appendChild(lbl);
@@ -241,29 +238,18 @@
 
                 allCheckbox.checked = allChecked;
                 this.state.filterMatches = selected; 
-
                 this.processData(); 
             },
 
-            setTargetType(type) { this.state.targetType = type; this.updateUI(); this.processData(); },
-            setCompareMode(mode) { this.state.compareMode = mode; this.updateUI(); this.updateSelectors(); },
-            
-            updateUI() {
-                ['target-type-group', 'compare-mode-group'].forEach(groupId => {
-                    const activeVal = groupId.includes('target') ? this.state.targetType : this.state.compareMode;
-                    document.querySelectorAll(`#${groupId} .btn-toggle`).forEach(btn => {
-                        btn.classList.remove('active');
-                        if(btn.getAttribute('onclick').includes(activeVal)) btn.classList.add('active');
-                    });
+            setTargetType(type) { 
+                this.state.targetType = type; 
+                this.state.selectedTargets = []; // 単位が変わったら選択状態をリセット
+                
+                document.querySelectorAll(`#target-type-group .btn-toggle`).forEach(btn => {
+                    btn.classList.remove('active');
+                    if(btn.getAttribute('onclick').includes(type)) btn.classList.add('active');
                 });
-
-                const subContainer = document.getElementById('sub-target-container');
-                if (this.state.compareMode === 'none') {
-                    subContainer.style.display = 'none';
-                } else {
-                    subContainer.style.display = 'flex';
-                    document.getElementById('sub-target-label').textContent = this.state.compareMode === 'teammate' ? '🔵 比較(味方)' : '🔴 比較(相手)';
-                }
+                this.processData(); 
             },
 
             initCharts() {
@@ -280,7 +266,6 @@
                     options: { ...opts, scales: { y: { max: 100 } } }
                 });
 
-                // 【変更点】エラー内訳のY軸から max: 100 を削除し、自動スケール（回数ベース）に変更
                 this.charts.errorType = new Chart(document.getElementById('errorTypeChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
                     options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true } } }
@@ -375,61 +360,55 @@
                 });
 
                 this.entities = Object.values(entityMap);
-                this.updateSelectors();
+                this.updateTargetCheckboxes();
             },
 
-            updateSelectors() {
-                const mainSelect = document.getElementById('main-target');
-                const subSelect = document.getElementById('sub-target');
-                
-                mainSelect.innerHTML = '';
-                subSelect.innerHTML = '';
+            // 🌟 新設：マルチセレクト用チェックボックスの生成
+            updateTargetCheckboxes() {
+                const containerL = document.getElementById('target-list-L');
+                const containerR = document.getElementById('target-list-R');
+                containerL.innerHTML = ''; containerR.innerHTML = '';
 
                 const lSide = this.entities.filter(e => e.side === 'L').sort((a,b) => (b.p+b.m) - (a.p+a.m));
                 const rSide = this.entities.filter(e => e.side === 'R').sort((a,b) => (b.p+b.m) - (a.p+a.m));
 
-                lSide.forEach(e => {
-                    const opt = document.createElement('option');
-                    opt.value = e.name; opt.textContent = e.name;
-                    mainSelect.appendChild(opt);
-                });
-
-                let subList = [];
-                if (this.state.compareMode === 'teammate') subList = lSide;
-                else if (this.state.compareMode === 'opponent') subList = rSide;
-
-                subList.forEach(e => {
-                    const opt = document.createElement('option');
-                    opt.value = e.name; opt.textContent = e.name;
-                    subSelect.appendChild(opt);
-                });
-
-                if (this.state.compareMode === 'teammate' && subSelect.options.length > 1) {
-                    subSelect.selectedIndex = 1;
+                // 初回読み込み時や単位切り替え時、誰も選ばれていなければ自チームの一番上の人を自動選択
+                if (this.state.selectedTargets.length === 0 && lSide.length > 0) {
+                    this.state.selectedTargets.push(lSide[0].name);
                 }
 
+                const createCB = (e, container) => {
+                    const lbl = document.createElement('label');
+                    const isChecked = this.state.selectedTargets.includes(e.name) ? 'checked' : '';
+                    lbl.innerHTML = `<input type="checkbox" class="target-cb" value="${e.name}" ${isChecked} onchange="app.onTargetChange()"> <b>${e.name}</b>`;
+                    container.appendChild(lbl);
+                };
+
+                lSide.forEach(e => createCB(e, containerL));
+                rSide.forEach(e => createCB(e, containerR));
+
+                this.renderCharts();
+            },
+
+            // ターゲット（分析対象）のチェックボックスが押された時の処理
+            onTargetChange() {
+                const cbs = document.querySelectorAll('.target-cb:checked');
+                this.state.selectedTargets = Array.from(cbs).map(cb => cb.value);
                 this.renderCharts();
             },
 
             calcRate(w, t) { return t > 0 ? Math.round((w/t)*100) : 0; },
             
             renderCharts() {
-                const mainName = document.getElementById('main-target').value;
-                const subName = document.getElementById('sub-target').value;
-
-                let displayEntities = [];
-                const mainEnt = this.entities.find(e => e.name === mainName);
-                if (mainEnt) displayEntities.push(mainEnt);
-
-                if (this.state.compareMode !== 'none') {
-                    const subEnt = this.entities.find(e => e.name === subName);
-                    if (subEnt) displayEntities.push(subEnt);
-                }
+                // チェックされている対象だけを抽出
+                const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
 
                 if(displayEntities.length === 0) {
                     this.charts.winRate.data.datasets = []; this.charts.winRate.update();
                     this.charts.errorType.data.datasets = []; this.charts.errorType.update();
                     this.charts.radar.data.datasets = []; this.charts.radar.update();
+                    document.querySelector('#winRateTable tbody').innerHTML = '';
+                    document.querySelector('#errorTypeTable tbody').innerHTML = '';
                     return;
                 }
 
@@ -448,12 +427,13 @@
                 }));
                 this.charts.winRate.update();
 
-                document.querySelector('#winRateTable tbody').innerHTML = displayEntities.map(e => {
+                document.querySelector('#winRateTable tbody').innerHTML = displayEntities.map((e, i) => {
+                    const color = this.colors[i % this.colors.length].border;
                     const f = (w,t) => t>0 ? `<span class="bold-val">${this.calcRate(w,t)}%</span><br><span class="frac">${w}/${t}</span>` : '-';
-                    return `<tr><td>${e.name}</td><td>${f(e.s1w,e.s1t)}</td><td>${f(e.s2w,e.s2t)}</td><td>${f(e.r1w,e.r1t)}</td><td>${f(e.r2w,e.r2t)}</td></tr>`;
+                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.s1w,e.s1t)}</td><td>${f(e.s2w,e.s2t)}</td><td>${f(e.r1w,e.r1t)}</td><td>${f(e.r2w,e.r2t)}</td></tr>`;
                 }).join('');
 
-                // 【変更点】② エラー内訳（回数ベースで描画）
+                // ② エラー内訳（回数ベース）
                 this.charts.errorType.data.labels = labels;
                 this.charts.errorType.data.datasets = [
                     { label: 'ネット', backgroundColor: '#ea580c', data: displayEntities.map(e => e.err_net) },
@@ -463,10 +443,10 @@
                 ];
                 this.charts.errorType.update();
 
-                // 【変更点】表の表示も回数ベース（〇〇回）に変更
-                document.querySelector('#errorTypeTable tbody').innerHTML = displayEntities.map(e => {
+                document.querySelector('#errorTypeTable tbody').innerHTML = displayEntities.map((e, i) => {
+                    const color = this.colors[i % this.colors.length].border;
                     const f = v => `<span class="bold-val">${v}</span><span class="frac">回</span>`;
-                    return `<tr><td>${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
+                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
                 }).join('');
 
                 // ③ レーダーチャート
