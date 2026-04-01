@@ -25,7 +25,6 @@
         .cp-header h1 { font-size: 1.5rem; color: var(--secondary-color); font-weight: 900; margin: 0; }
         .system-status { font-size: 0.85rem; color: #16a34a; font-weight: bold; background: #dcfce7; padding: 6px 12px; border-radius: 20px; }
 
-        /* フィルター部分を3カラムに変更 */
         .cp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
         .cp-group { display: flex; flex-direction: column; gap: 6px; }
         .cp-label { font-size: 0.8rem; font-weight: bold; color: var(--text-muted); text-transform: uppercase; }
@@ -33,7 +32,6 @@
         .cp-select { padding: 8px; font-size: 0.95rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #f8fafc; cursor: pointer; color: var(--text-main); font-weight: bold; width: 100%; }
         .cp-select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2); }
 
-        /* 新設：試合選択チェックボックスエリア */
         .match-filter-container { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; max-height: 110px; overflow-y: auto; font-size: 0.85rem; }
         .match-filter-container label { display: block; margin-bottom: 4px; cursor: pointer; color: var(--text-main); }
         .match-filter-container input[type="checkbox"] { margin-right: 6px; accent-color: var(--primary-color); }
@@ -146,7 +144,7 @@
             </div>
 
             <div class="card">
-                <h2 class="card-title">② エラーの質 <span class="card-badge">失点原因</span></h2>
+                <h2 class="card-title">② エラーの質 <span class="card-badge">失点原因（発生回数）</span></h2>
                 <div class="chart-container"><canvas id="errorTypeChart"></canvas></div>
                 <table class="data-table" id="errorTypeTable">
                     <thead><tr><th>対象</th><th>ネット</th><th>アウト</th><th>DF</th><th>レシーブ</th></tr></thead>
@@ -175,18 +173,14 @@
             },
 
             fetchData() {
-                // ※あなたのGASのURL
                 const url = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec?action=getMatchData";
                 fetch(url)
                     .then(res => res.json())
                     .then(response => {
                         this.rawData = response.data || response; 
-                        
-                        // 各試合にユニークなIDを付与（フィルター用）
                         this.rawData.forEach((m, idx) => { m._uid = m.matchId || `match_${idx}`; });
-
                         this.setupDateFilter();
-                        this.onDateFilterChange(); // 初期フィルター構築とデータ処理へ
+                        this.onDateFilterChange(); 
                         const now = new Date();
                         document.getElementById('currentDateDisplay').textContent = `✓ ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 同期完了 (${this.rawData.length}試合)`;
                     })
@@ -196,7 +190,6 @@
                     });
             },
 
-            // 1. 日付フィルターのセットアップ
             setupDateFilter() {
                 const select = document.getElementById('filter-date');
                 const dates = [...new Set(this.rawData.map(m => m.matchDate || m.date).filter(Boolean))];
@@ -207,21 +200,17 @@
                 });
             },
 
-            // 2. 日付が変更されたら、試合チェックボックスを作り直す
             onDateFilterChange() {
                 this.state.filterDate = document.getElementById('filter-date').value;
                 const container = document.getElementById('match-filter-container');
                 container.innerHTML = '';
 
-                // 日付で絞り込んだ試合一覧
                 const dateFiltered = this.rawData.filter(m => this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate);
                 
-                // 「すべて選択」チェックボックス
                 const allLabel = document.createElement('label');
                 allLabel.innerHTML = `<input type="checkbox" id="match-filter-all" checked onchange="app.toggleAllMatches(this)"> <b>すべての試合 (${dateFiltered.length}件)</b>`;
                 container.appendChild(allLabel);
 
-                // 個別の試合チェックボックス
                 dateFiltered.forEach((m, idx) => {
                     const lbl = document.createElement('label');
                     lbl.style.marginLeft = '10px';
@@ -230,16 +219,14 @@
                     container.appendChild(lbl);
                 });
 
-                this.onMatchSelectionChange(); // 状態を更新して集計へ
+                this.onMatchSelectionChange(); 
             },
 
-            // すべて選択/解除のトグル
             toggleAllMatches(checkbox) {
                 document.querySelectorAll('.match-cb').forEach(cb => cb.checked = checkbox.checked);
                 this.onMatchSelectionChange();
             },
 
-            // 試合チェックボックスの状態が変わった時の処理
             onMatchSelectionChange() {
                 const checkboxes = document.querySelectorAll('.match-cb');
                 const allCheckbox = document.getElementById('match-filter-all');
@@ -253,9 +240,9 @@
                 });
 
                 allCheckbox.checked = allChecked;
-                this.state.filterMatches = selected; // 選ばれた試合IDを保存
+                this.state.filterMatches = selected; 
 
-                this.processData(); // 集計エンジン始動
+                this.processData(); 
             },
 
             setTargetType(type) { this.state.targetType = type; this.updateUI(); this.processData(); },
@@ -293,15 +280,14 @@
                     options: { ...opts, scales: { y: { max: 100 } } }
                 });
 
+                // 【変更点】エラー内訳のY軸から max: 100 を削除し、自動スケール（回数ベース）に変更
                 this.charts.errorType = new Chart(document.getElementById('errorTypeChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
-                    options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } }
+                    options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true } } }
                 });
             },
 
-            // 🌟 バグ修正完了：真のダイナミック集計エンジン
             processData() {
-                // 1. 日付と試合IDでデータを絞り込み
                 const filtered = this.rawData.filter(m => {
                     const passDate = (this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate);
                     const passMatch = this.state.filterMatches.includes(m._uid);
@@ -324,14 +310,13 @@
                 };
 
                 filtered.forEach(m => {
-                    let updates = []; // 箱と、合算するプレイヤー配列のペア
+                    let updates = []; 
 
-                    // 【修正点】「個人」の時にA君の箱にB君のデータが混ざらないように分離
                     if (this.state.targetType === 'pair') {
                         if(m.names?.A && m.names?.B) updates.push({ key: `${m.names.A}・${m.names.B}`, side: 'L', players: ['A', 'B'] });
                         if(m.names?.C && m.names?.D) updates.push({ key: `${m.names.C}・${m.names.D}`, side: 'R', players: ['C', 'D'] });
                     } else if (this.state.targetType === 'player') {
-                        if(m.names?.A) updates.push({ key: m.names.A, side: 'L', players: ['A'] }); // A君にはA君だけ！
+                        if(m.names?.A) updates.push({ key: m.names.A, side: 'L', players: ['A'] }); 
                         if(m.names?.B && m.meta?.matchType !== 'シングルス') updates.push({ key: m.names.B, side: 'L', players: ['B'] });
                         if(m.names?.C) updates.push({ key: m.names.C, side: 'R', players: ['C'] });
                         if(m.names?.D && m.meta?.matchType !== 'シングルス') updates.push({ key: m.names.D, side: 'R', players: ['D'] });
@@ -343,7 +328,6 @@
                     updates.forEach(upd => {
                         let e = getEntity(upd.key, upd.side);
                         
-                        // スタッツの合算
                         upd.players.forEach(pKey => {
                             const st = m.stats?.[pKey];
                             if(!st) return;
@@ -368,7 +352,6 @@
                             }
                         });
 
-                        // 局面（ゲームフロー）の合算
                         if (m.log) {
                             m.log.forEach(g => {
                                 if(!g.flow) return;
@@ -444,7 +427,6 @@
                 }
 
                 if(displayEntities.length === 0) {
-                    // 描画データがない場合はグラフをクリア
                     this.charts.winRate.data.datasets = []; this.charts.winRate.update();
                     this.charts.errorType.data.datasets = []; this.charts.errorType.update();
                     this.charts.radar.data.datasets = []; this.charts.radar.update();
@@ -471,18 +453,19 @@
                     return `<tr><td>${e.name}</td><td>${f(e.s1w,e.s1t)}</td><td>${f(e.s2w,e.s2t)}</td><td>${f(e.r1w,e.r1t)}</td><td>${f(e.r2w,e.r2t)}</td></tr>`;
                 }).join('');
 
-                // ② エラー内訳
+                // 【変更点】② エラー内訳（回数ベースで描画）
                 this.charts.errorType.data.labels = labels;
                 this.charts.errorType.data.datasets = [
-                    { label: 'ネット', backgroundColor: '#ea580c', data: displayEntities.map(e => this.calcRate(e.err_net, e.m)) },
-                    { label: 'アウト', backgroundColor: '#8b5cf6', data: displayEntities.map(e => this.calcRate(e.err_out, e.m)) },
-                    { label: 'DF', backgroundColor: '#ef4444', data: displayEntities.map(e => this.calcRate(e.err_df, e.m)) },
-                    { label: 'レシーブ', backgroundColor: '#3b82f6', data: displayEntities.map(e => this.calcRate(e.err_recv, e.m)) }
+                    { label: 'ネット', backgroundColor: '#ea580c', data: displayEntities.map(e => e.err_net) },
+                    { label: 'アウト', backgroundColor: '#8b5cf6', data: displayEntities.map(e => e.err_out) },
+                    { label: 'DF', backgroundColor: '#ef4444', data: displayEntities.map(e => e.err_df) },
+                    { label: 'レシーブ', backgroundColor: '#3b82f6', data: displayEntities.map(e => e.err_recv) }
                 ];
                 this.charts.errorType.update();
 
+                // 【変更点】表の表示も回数ベース（〇〇回）に変更
                 document.querySelector('#errorTypeTable tbody').innerHTML = displayEntities.map(e => {
-                    const f = v => e.m>0 ? `<span class="bold-val">${this.calcRate(v,e.m)}%</span> <span class="frac">${v}</span>` : '-';
+                    const f = v => `<span class="bold-val">${v}</span><span class="frac">回</span>`;
                     return `<tr><td>${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
                 }).join('');
 
