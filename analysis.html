@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>分析ダッシュボード | 土淵中ソフトテニス</title>
+    <title>戦術分析ダッシュボード | ソフトテニス</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary-color: #0284c7; /* アプリに合わせたブルー */
+            --primary-color: #0284c7; 
             --secondary-color: #0f172a;
-            --accent-color: #ea580c; /* アプリに合わせたオレンジ/レッド */
+            --accent-color: #ea580c; 
             --bg-color: #f1f5f9;
             --card-bg: #ffffff;
             --text-main: #1e293b;
@@ -20,11 +20,10 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
 
-        /* ── 新設：コントロールパネル（アナリストの操作盤） ── */
         .control-panel { background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 24px; border-top: 5px solid var(--primary-color); }
-        .cp-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
-        .cp-header h1 { font-size: 1.5rem; color: var(--secondary-color); font-weight: 900; letter-spacing: 1px; }
-        .system-status { font-size: 0.85rem; color: #16a34a; font-weight: bold; background: #dcfce7; padding: 4px 12px; border-radius: 20px; }
+        .cp-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .cp-header h1 { font-size: 1.5rem; color: var(--secondary-color); font-weight: 900; letter-spacing: 1px; margin: 0; }
+        .system-status { font-size: 0.85rem; color: #16a34a; font-weight: bold; background: #dcfce7; padding: 6px 12px; border-radius: 20px; }
 
         .cp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         .cp-group { display: flex; flex-direction: column; gap: 8px; }
@@ -37,27 +36,23 @@
         .btn-toggle { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 6px; font-weight: bold; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
         .btn-toggle.active { background: var(--card-bg); color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* セクションタイトル */
         .section-title { font-size: 1.2rem; color: var(--secondary-color); margin: 30px 0 15px 0; padding-left: 12px; border-left: 6px solid var(--accent-color); font-weight: 900; }
         
-        /* グリッドレイアウト */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
-        .card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
+        .card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; overflow-x: auto; }
         .card-title { font-size: 1.05rem; margin-bottom: 16px; font-weight: bold; color: var(--secondary-color); display: flex; align-items: center; justify-content: space-between;}
         .card-badge { font-size: 0.7rem; background: var(--bg-color); padding: 3px 8px; border-radius: 10px; color: var(--text-muted); }
 
-        /* グラフとテーブル */
-        .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; }
+        .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; min-width: 350px; }
         .radar-container { height: 350px; display: flex; justify-content: center; }
         
-        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: auto; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: auto; min-width: 350px;}
         .data-table th, .data-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         .data-table th { background-color: #f8fafc; color: var(--text-muted); font-weight: bold; white-space: nowrap; }
         .data-table tr:hover { background-color: #f1f5f9; }
         
         .frac { font-size: 0.75rem; color: var(--text-muted); margin-left: 4px; }
         .bold-val { font-weight: 900; font-size: 1rem; color: var(--primary-color); }
-        .val-red { color: var(--accent-color); }
 
         @media screen and (max-width: 600px) {
             body { padding: 10px; }
@@ -86,30 +81,29 @@
                 <div class="btn-group" id="target-type-group">
                     <button class="btn-toggle active" onclick="app.setTargetType('pair')">ペア</button>
                     <button class="btn-toggle" onclick="app.setTargetType('player')">個人</button>
-                    <button class="btn-toggle" onclick="app.setTargetType('team')">チーム全体</button>
+                    <button class="btn-toggle" onclick="app.setTargetType('team')">チーム</button>
                 </div>
             </div>
 
             <div class="cp-group">
                 <span class="cp-label">⚔️ 比較モード (vs Whom)</span>
                 <div class="btn-group" id="compare-mode-group">
-                    <button class="btn-toggle active" onclick="app.setCompareMode('none')">比較なし</button>
-                    <button class="btn-toggle" onclick="app.setCompareMode('teammate')">チームメイト</button>
-                    <button class="btn-toggle" onclick="app.setCompareMode('opponent')">対戦相手</button>
+                    <button class="btn-toggle active" onclick="app.setCompareMode('none')">単独</button>
+                    <button class="btn-toggle" onclick="app.setCompareMode('teammate')">味方比較</button>
+                    <button class="btn-toggle" onclick="app.setCompareMode('opponent')">相手比較</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="dashboard-content">
-        
         <div class="section-title" id="dynamic-section-title">ペア総合分析</div>
         
         <div class="dashboard-grid">
             <div class="card" id="radar-card" style="grid-column: 1 / -1;">
                 <h2 class="card-title">🌟 プレースタイル・戦力比較 <span class="card-badge">レーダー分析</span></h2>
                 <div class="chart-container radar-container"><canvas id="radarChart"></canvas></div>
-                <p style="text-align:center; font-size:0.8rem; color:gray;">※ポイント決定力、ミス回避力、サーブ力などを偏差値化して比較します。</p>
+                <p style="text-align:center; font-size:0.8rem; color:gray;">※集計データに基づく偏差値（1stサーブ、攻撃力、守備力、レシーブ、展開力）</p>
             </div>
 
             <div class="card">
@@ -125,7 +119,7 @@
                 <h2 class="card-title">② エラーの質 <span class="card-badge">失点原因</span></h2>
                 <div class="chart-container"><canvas id="errorTypeChart"></canvas></div>
                 <table class="data-table" id="errorTypeTable">
-                    <thead><tr><th>対象</th><th>ネット</th><th>アウト</th><th>レシーブミス</th></tr></thead>
+                    <thead><tr><th>対象</th><th>ネット</th><th>アウト</th><th>DF</th><th>レシーブ</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -133,20 +127,16 @@
     </div>
 
     <script>
-        // --- アナリストが設計したシステムコア（状態管理） ---
         const app = {
-            data: [], // GASから取得した生の配列
-            state: {
-                filterDate: 'all',
-                targetType: 'pair', // 'pair', 'player', 'team'
-                compareMode: 'none' // 'none', 'teammate', 'opponent'
-            },
+            data: [], 
+            state: { filterDate: 'all', targetType: 'pair', compareMode: 'none' },
             charts: {},
-            colors: {
-                blue: '#0284c7', red: '#ea580c', green: '#16a34a', 
-                purple: '#8b5cf6', orange: '#f59e0b', grey: '#94a3b8',
-                blueLight: 'rgba(2, 132, 199, 0.2)', redLight: 'rgba(234, 88, 12, 0.2)'
-            },
+            colors: [
+                { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   // Blue (Self/Team 1)
+                { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.2)' },   // Orange/Red (Opponent/Team 2)
+                { border: '#16a34a', bg: 'rgba(22, 163, 74, 0.2)' },   // Green (Team 3)
+                { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.2)' }   // Purple (Team 4)
+            ],
             
             init() {
                 Chart.defaults.font.family = "'Noto Sans JP', sans-serif";
@@ -156,19 +146,16 @@
             },
 
             fetchData() {
-                // ※あなたのGASのWebアプリURLに書き換えてください
+                // ※あなたのGASのWebアプリURLをここに設定してください
                 const url = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec?action=getMatchData";
                 fetch(url)
                     .then(res => res.json())
                     .then(response => {
-                        // 新しいAPIフォーマットに対応
                         this.data = response.data || response; 
                         this.setupDateFilter();
                         this.updateView();
-                        
                         const now = new Date();
-                        document.getElementById('currentDateDisplay').textContent = 
-                            `✓ ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 同期完了 (${this.data.length}試合)`;
+                        document.getElementById('currentDateDisplay').textContent = `✓ ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 同期完了 (${this.data.length}試合)`;
                     })
                     .catch(err => {
                         document.getElementById('currentDateDisplay').textContent = "⚠️ 取得エラー";
@@ -188,38 +175,21 @@
                 });
             },
 
-            // UI操作による状態更新
-            setTargetType(type) {
-                this.state.targetType = type;
-                this.updateActiveButtons('target-type-group', type);
-                this.updateView();
-            },
-
-            setCompareMode(mode) {
-                this.state.compareMode = mode;
-                this.updateActiveButtons('compare-mode-group', mode);
-                this.updateView();
-            },
-
+            setTargetType(type) { this.state.targetType = type; this.updateActiveButtons('target-type-group', type); this.updateView(); },
+            setCompareMode(mode) { this.state.compareMode = mode; this.updateActiveButtons('compare-mode-group', mode); this.updateView(); },
             updateActiveButtons(groupId, activeValue) {
-                const buttons = document.querySelectorAll(`#${groupId} .btn-toggle`);
-                buttons.forEach(btn => {
+                document.querySelectorAll(`#${groupId} .btn-toggle`).forEach(btn => {
                     btn.classList.remove('active');
                     if(btn.getAttribute('onclick').includes(activeValue)) btn.classList.add('active');
                 });
             },
 
-            // グラフの初期化
             initCharts() {
                 const ctxRadar = document.getElementById('radarChart').getContext('2d');
                 this.charts.radar = new Chart(ctxRadar, {
                     type: 'radar',
-                    data: { labels: ['1stサーブ成功率', '決定力(得点関与)', '守備力(非ミス)', 'レシーブ安定度', '展開力(ロブ等)'], datasets: [] },
-                    options: { 
-                        responsive: true, maintainAspectRatio: false,
-                        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } },
-                        plugins: { legend: { position: 'top' } }
-                    }
+                    data: { labels: ['1stサーブ安定', '攻撃力(ウィナー)', '守備力(非ミス)', 'レシーブ対応', '展開力(ロブ等)'], datasets: [] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } } }
                 });
 
                 const opts = { responsive: true, maintainAspectRatio: false };
@@ -234,66 +204,187 @@
                 });
             },
 
-            // データの集計と描画（頭脳部分）
+            // 🌟 アナリスト特製：真のダイナミック集計エンジン
             updateView() {
                 this.state.filterDate = document.getElementById('filter-date').value;
                 const filtered = this.data.filter(m => this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate);
                 
-                document.getElementById('dynamic-section-title').textContent = 
-                    `${this.state.targetType === 'pair' ? 'ペア' : (this.state.targetType === 'player' ? '個人' : 'チーム')} 分析結果`;
+                const titles = { 'pair': 'ペア', 'player': '個人', 'team': 'チーム' };
+                document.getElementById('dynamic-section-title').textContent = `${titles[this.state.targetType]} 分析結果`;
 
                 if(filtered.length === 0) return;
 
-                // 簡易集計ロジック（ペアごとにデータを束ねる）
-                let aggregates = {};
+                let entities = {}; // 計算箱
+
+                // 箱を作る関数
+                const getEntity = (name, side) => {
+                    if(!entities[name]) {
+                        entities[name] = { 
+                            name: name, side: side, 
+                            p: 0, m: 0, fi: 0, st: 0,
+                            err_net: 0, err_out: 0, err_df: 0, err_recv: 0, err_other: 0,
+                            pt_attack: 0, pt_lob: 0,
+                            s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0
+                        };
+                    }
+                    return entities[name];
+                };
+
+                // データの振り分け処理
                 filtered.forEach(m => {
-                    const pairName = `${m.names?.A || 'A'}・${m.names?.B || 'B'}`;
-                    if(!aggregates[pairName]) aggregates[pairName] = { pts: 0, errs: 0, net: 0, out: 0, recvM: 0 };
-                    
-                    // 仮の集計（本来は m.log や m.stats を深く解析します）
-                    const stA = m.stats?.A || {}; const stB = m.stats?.B || {};
-                    aggregates[pairName].pts += (stA.p || 0) + (stB.p || 0);
-                    aggregates[pairName].errs += (stA.m || 0) + (stB.m || 0);
-                    
-                    if(stA.mt) {
-                        for(let k in stA.mt) {
-                            if(k.includes('net')) aggregates[pairName].net += stA.mt[k];
-                            if(k.includes('out')) aggregates[pairName].out += stA.mt[k];
-                            if(k.includes('recv')) aggregates[pairName].recvM += stA.mt[k];
-                        }
+                    let keysL = [], keysR = [];
+
+                    // 【分岐1】 誰の箱に入れるか？
+                    if (this.state.targetType === 'pair') {
+                        const nameL = `${m.names?.A || 'A'}・${m.names?.B || 'B'}`;
+                        const nameR = `${m.names?.C || 'C'}・${m.names?.D || 'D'}`;
+                        keysL.push(nameL); keysR.push(nameR);
+                    } else if (this.state.targetType === 'player') {
+                        if(m.names?.A) keysL.push(m.names.A);
+                        if(m.names?.B && m.meta?.matchType !== 'シングルス') keysL.push(m.names.B);
+                        if(m.names?.C) keysR.push(m.names.C);
+                        if(m.names?.D && m.meta?.matchType !== 'シングルス') keysR.push(m.names.D);
+                    } else if (this.state.targetType === 'team') {
+                        keysL.push(m.teams?.L || '自チーム');
+                        keysR.push(m.teams?.R || '対戦相手');
+                    }
+
+                    // 【分岐2】 スタッツ（得点・ミス内容）の合算
+                    const addStats = (sideKeys, sidePlayers) => {
+                        sideKeys.forEach(k => {
+                            let e = getEntity(k, sidePlayers[0] === 'A' ? 'L' : 'R');
+                            sidePlayers.forEach(pKey => {
+                                const st = m.stats?.[pKey];
+                                if(!st) return;
+                                e.p += (st.p || 0); e.m += (st.m || 0);
+                                e.fi += (st.fi || 0); e.st += (st.st || 0);
+
+                                if(st.mt) {
+                                    for(let err in st.mt) {
+                                        let val = st.mt[err];
+                                        if(err === 'df') e.err_df += val;
+                                        else if(err.includes('net')) e.err_net += val;
+                                        else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
+                                        else if(err.startsWith('recv')) e.err_recv += val;
+                                        else e.err_other += val;
+                                    }
+                                }
+                                if(st.pt) {
+                                    for(let pt in st.pt) {
+                                        let val = st.pt[pt];
+                                        // 攻撃的ポイント（シュート、ボレー、スマッシュ、エース）
+                                        if(pt.includes('shoot') || pt.includes('volley') || pt.includes('smash') || pt.includes('ace')) e.pt_attack += val;
+                                        // 展開ポイント（ロブ、ツイスト、ドロップ）
+                                        if(pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_lob += val;
+                                    }
+                                }
+                            });
+                        });
+                    };
+                    addStats(keysL, ['A', 'B']);
+                    addStats(keysR, ['C', 'D']);
+
+                    // 【分岐3】 局面（1stサーブ/レシーブ）の合算
+                    // 個人であっても「その選手が出ている時のチーム局面勝率」として加算
+                    if (m.log) {
+                        m.log.forEach(g => {
+                            if(!g.flow) return;
+                            g.flow.forEach(pt => {
+                                const lServe = (pt.s === 0);
+                                const lWin = (pt.w === 'L');
+                                
+                                const updatePhase = (sideKeys, isServing, isWin) => {
+                                    sideKeys.forEach(k => {
+                                        let e = getEntity(k, '');
+                                        if(isServing) {
+                                            if(pt.f) { e.s1t++; if(isWin) e.s1w++; }
+                                            else { e.s2t++; if(isWin) e.s2w++; }
+                                        } else {
+                                            if(pt.f) { e.r1t++; if(isWin) e.r1w++; }
+                                            else { e.r2t++; if(isWin) e.r2w++; }
+                                        }
+                                    });
+                                };
+                                updatePhase(keysL, lServe, lWin);
+                                updatePhase(keysR, !lServe, !lWin);
+                            });
+                        });
                     }
                 });
 
-                const keys = Object.keys(aggregates).slice(0, 5); // 上位5つ
-                
-                // ② エラー内訳チャートの更新
-                this.charts.errorType.data.labels = keys;
+                // 【分岐4】 比較モードに基づく描画対象の抽出
+                let displayEntities = [];
+                const lSide = Object.values(entities).filter(e => e.side === 'L').sort((a,b) => (b.p+b.m) - (a.p+a.m));
+                const rSide = Object.values(entities).filter(e => e.side === 'R').sort((a,b) => (b.p+b.m) - (a.p+a.m));
+
+                if (this.state.compareMode === 'none') {
+                    displayEntities = lSide.slice(0, 1); // 自分の主力を1つ
+                } else if (this.state.compareMode === 'teammate') {
+                    displayEntities = lSide.slice(0, 3); // 味方トップ3まで
+                } else if (this.state.compareMode === 'opponent') {
+                    if(lSide.length > 0) displayEntities.push(lSide[0]);
+                    if(rSide.length > 0) displayEntities.push(rSide[0]); // 相手の主力
+                }
+
+                if(displayEntities.length === 0) return;
+
+                this.renderCharts(displayEntities);
+            },
+
+            // 計算ユーティリティ
+            calcRate(w, t) { return t > 0 ? Math.round((w/t)*100) : 0; },
+            
+            // グラフ描画実行
+            renderCharts(entities) {
+                const labels = entities.map(e => e.name);
+
+                // ① 局面別勝率
+                this.charts.winRate.data.datasets = entities.map((e, i) => ({
+                    label: e.name,
+                    backgroundColor: this.colors[i % this.colors.length].border,
+                    data: [this.calcRate(e.s1w, e.s1t), this.calcRate(e.s2w, e.s2t), this.calcRate(e.r1w, e.r1t)]
+                }));
+                this.charts.winRate.update();
+
+                document.querySelector('#winRateTable tbody').innerHTML = entities.map(e => {
+                    const f = (w,t) => t>0 ? `<span class="bold-val">${this.calcRate(w,t)}%</span> <span class="frac">${w}/${t}</span>` : '-';
+                    return `<tr><td>${e.name}</td><td>${f(e.s1w,e.s1t)}</td><td>${f(e.s2w,e.s2t)}</td><td>${f(e.r1w,e.r1t)}</td></tr>`;
+                }).join('');
+
+                // ② エラー内訳
+                this.charts.errorType.data.labels = labels;
                 this.charts.errorType.data.datasets = [
-                    { label: 'ネット', backgroundColor: this.colors.orange, data: keys.map(k => this.calc(aggregates[k].net, aggregates[k].errs)) },
-                    { label: 'アウト', backgroundColor: this.colors.purple, data: keys.map(k => this.calc(aggregates[k].out, aggregates[k].errs)) },
-                    { label: 'レシーブ', backgroundColor: this.colors.red, data: keys.map(k => this.calc(aggregates[k].recvM, aggregates[k].errs)) }
+                    { label: 'ネット', backgroundColor: '#ea580c', data: entities.map(e => this.calcRate(e.err_net, e.m)) },
+                    { label: 'アウト', backgroundColor: '#8b5cf6', data: entities.map(e => this.calcRate(e.err_out, e.m)) },
+                    { label: 'DF', backgroundColor: '#ef4444', data: entities.map(e => this.calcRate(e.err_df, e.m)) },
+                    { label: 'レシーブ', backgroundColor: '#3b82f6', data: entities.map(e => this.calcRate(e.err_recv, e.m)) }
                 ];
                 this.charts.errorType.update();
 
-                // 🌟 アナリスト特製：レーダーチャートの更新（比較モード連動）
-                // ※データはデモ用のダミー算出を含みます。実際はstatsから正確な割合を出します。
-                if (this.state.compareMode === 'teammate' && keys.length >= 2) {
-                    this.charts.radar.data.datasets = [
-                        { label: keys[0], data: [75, 60, 80, 55, 70], borderColor: this.colors.blue, backgroundColor: this.colors.blueLight, fill: true },
-                        { label: keys[1], data: [60, 80, 50, 75, 60], borderColor: this.colors.red, backgroundColor: this.colors.redLight, fill: true }
-                    ];
-                } else if (this.state.compareMode === 'none' && keys.length >= 1) {
-                    this.charts.radar.data.datasets = [
-                        { label: keys[0], data: [75, 60, 80, 55, 70], borderColor: this.colors.green, backgroundColor: 'rgba(22, 163, 74, 0.2)', fill: true }
-                    ];
-                } else {
-                    this.charts.radar.data.datasets = [];
-                }
+                document.querySelector('#errorTypeTable tbody').innerHTML = entities.map(e => {
+                    const f = v => e.m>0 ? `<span class="bold-val">${this.calcRate(v,e.m)}%</span> <span class="frac">${v}</span>` : '-';
+                    return `<tr><td>${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
+                }).join('');
+
+                // 🌟 ③ レーダーチャート（戦力偏差値化ロジック）
+                this.charts.radar.data.datasets = entities.map((e, i) => {
+                    // 数学パズル：生の数値を100点満点の評価軸に変換
+                    const serve = this.calcRate(e.fi, e.st); // 1st確率
+                    const attack = this.calcRate(e.pt_attack, e.p); // 全得点に対する攻撃的ショットの割合
+                    const defense = e.m > 0 ? Math.max(0, 100 - this.calcRate(e.m, e.p + e.m)) : 100; // ミス率の逆数
+                    const receive = 100 - this.calcRate(e.err_recv, e.r1t + e.r2t); // レシーブ失敗率の逆数
+                    const lob = this.calcRate(e.pt_lob, e.p); // 全得点に対する展開ショットの割合（ロブ多用なら高得点）
+
+                    return {
+                        label: e.name,
+                        data: [serve, attack, defense, receive || 50, lob],
+                        borderColor: this.colors[i % this.colors.length].border,
+                        backgroundColor: this.colors[i % this.colors.length].bg,
+                        fill: true
+                    };
+                });
                 this.charts.radar.update();
-
-            },
-
-            calc(val, total) { return total > 0 ? Math.round((val/total)*100) : 0; }
+            }
         };
 
         document.addEventListener('DOMContentLoaded', () => { app.init(); });
