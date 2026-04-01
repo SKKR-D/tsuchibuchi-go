@@ -57,23 +57,19 @@
         .card-title { font-size: 1.05rem; margin-bottom: 16px; font-weight: bold; color: var(--secondary-color); display: flex; align-items: center; justify-content: space-between;}
         .card-badge { font-size: 0.7rem; background: var(--bg-color); padding: 3px 8px; border-radius: 10px; color: var(--text-muted); white-space: nowrap; }
 
-        /* 🌟 修正：グラフコンテナの横幅固定を解除し、柔軟にリサイズさせる */
         .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; }
         .radar-container { position: relative; height: 350px; width: 100%; }
         
-        /* ヒートマップ用スタイル */
         .heatmap-container { display: flex; justify-content: center; align-items: center; background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; position: relative; overflow: hidden; }
         #heatmapCanvas { max-width: 100%; height: auto; background-color: #2a6f44; border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); }
         .heatmap-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: var(--text-muted); }
         .legend-group { display: flex; flex-wrap: wrap; gap: 12px; background: #fff; padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .legend-item { display: flex; align-items: center; gap: 4px; }
 
-        /* ドーナツグラフ用コンテナ */
         #recvPieContainer { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; height: auto; min-height: 200px; margin-bottom: 15px;}
         .pie-wrapper { width: 45%; min-width: 140px; display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; }
         .pie-title { font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; color: var(--text-main); text-align: center; }
 
-        /* 🌟 修正：テーブルの横幅固定を解除 */
         .table-wrapper { width: 100%; overflow-x: auto; margin-top: auto; }
         .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: max-content; }
         .data-table th, .data-table td { padding: 10px 6px; text-align: center; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
@@ -143,6 +139,15 @@
         </div>
         
         <div class="dashboard-grid">
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2 class="card-title">⑦ 試合の流れ <span class="card-badge">モメンタム推移</span></h2>
+                <div class="chart-container"><canvas id="timelineChart"></canvas></div>
+                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">
+                    ※横軸はポイントの経過、縦軸は「得失点差（＋/−）」です。グラフが右肩上がりなら主導権を握っています。<br>
+                    ※複数試合を選択した場合は、そのまま連続して勢いが描画されます（スタミナ切れや集中力の低下がわかります）。
+                </p>
+            </div>
             
             <div class="card" id="heatmap-card" style="grid-column: 1 / -1;">
                 <h2 class="card-title">🎾 コート・ヒートマップ <span class="card-badge">空間・球種データ分析</span></h2>
@@ -159,7 +164,7 @@
                         <div class="legend-item">▲ ロブ</div>
                         <div class="legend-item">■ ボレー</div>
                         <div class="legend-item">★ スマッシュ</div>
-                        <div class="legend-item">◆ その他</div>
+                        <div class="legend-item">◆ その他(落とす等)</div>
                     </div>
                 </div>
             </div>
@@ -344,6 +349,24 @@
             initCharts() {
                 const opts = { responsive: true, maintainAspectRatio: false };
                 
+                // 🌟 新設：タイムラインチャート（折れ線グラフ）
+                this.charts.timeline = new Chart(document.getElementById('timelineChart').getContext('2d'), {
+                    type: 'line',
+                    data: { labels: [], datasets: [] },
+                    options: { 
+                        ...opts, 
+                        elements: { point: { radius: 0, hitRadius: 10, hoverRadius: 5 }, line: { tension: 0.2, borderWidth: 3 } },
+                        scales: { 
+                            x: { display: false }, // 点の数が増えると邪魔なのでX軸ラベルは消す
+                            y: { 
+                                title: { display: true, text: '得失点差 (＋/−)' },
+                                grid: { color: (ctx) => ctx.tick.value === 0 ? '#1e293b' : '#e2e8f0', lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 1 }
+                            } 
+                        },
+                        plugins: { tooltip: { mode: 'index', intersect: false } }
+                    }
+                });
+
                 this.charts.radar = new Chart(document.getElementById('radarChart').getContext('2d'), {
                     type: 'radar',
                     data: { labels: ['1stサーブ安定', 'ストローク力(後衛)', '堅実性(ミス回避)', 'レシーブ対応', 'ネットプレー(前衛)'], datasets: [] },
@@ -393,7 +416,9 @@
                             pt_f_shoot: 0, pt_b_shoot: 0, pt_lob_drop: 0, pt_volley: 0, pt_smash: 0, pt_other: 0,
                             pt_stroke: 0, pt_net: 0, 
                             s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0,
-                            raw_pt: {}, raw_mt: {}
+                            raw_pt: {}, raw_mt: {},
+                            // 🌟 タイムライン用：現在の勢いと履歴の配列
+                            current_momentum: 0, momentum_history: [0]
                         };
                     }
                     return entityMap[name];
@@ -415,9 +440,39 @@
                         updates.push({ key: m.teams?.R || '対戦相手', side: 'R', players: ['C', 'D'] });
                     }
 
+                    // 1点ごとのログ解析（モメンタム計算もここで行う）
+                    if (m.log) {
+                        m.log.forEach(g => {
+                            if(!g.flow) return;
+                            g.flow.forEach(pt => {
+                                const lServe = (pt.s === 0);
+                                const lWin = (pt.w === 'L');
+                                
+                                updates.forEach(upd => {
+                                    let e = getEntity(upd.key, upd.side);
+                                    const isServing = (upd.side === 'L' ? lServe : !lServe);
+                                    const isWin = (upd.side === 'L' ? lWin : !lWin);
+                                    
+                                    // 🌟 モメンタム（勢い）の計算：勝てば＋1、負ければ－1
+                                    e.current_momentum += (isWin ? 1 : -1);
+                                    e.momentum_history.push(e.current_momentum);
+
+                                    // 局面別勝率の計算
+                                    if(isServing) {
+                                        if(pt.f) { e.s1t++; if(isWin) e.s1w++; }
+                                        else { e.s2t++; if(isWin) e.s2w++; }
+                                    } else {
+                                        if(pt.f) { e.r1t++; if(isWin) e.r1w++; }
+                                        else { e.r2t++; if(isWin) e.r2w++; }
+                                    }
+                                });
+                            });
+                        });
+                    }
+
+                    // 最終的なスタッツの合算
                     updates.forEach(upd => {
                         let e = getEntity(upd.key, upd.side);
-                        
                         upd.players.forEach(pKey => {
                             const st = m.stats?.[pKey];
                             if(!st) return;
@@ -427,7 +482,6 @@
                                 for(let err in st.mt) {
                                     let val = st.mt[err];
                                     e.raw_mt[err] = (e.raw_mt[err] || 0) + val; 
-                                    
                                     if(err === 'df') e.err_df += val;
                                     else if(err.includes('net')) e.err_net += val;
                                     else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
@@ -444,7 +498,6 @@
                                 for(let pt in st.pt) {
                                     let val = st.pt[pt];
                                     e.raw_pt[pt] = (e.raw_pt[pt] || 0) + val; 
-                                    
                                     if(pt.startsWith('f_shoot') || pt.startsWith('f_twist')) e.pt_f_shoot += val;
                                     else if(pt.startsWith('b_shoot') || pt.startsWith('b_twist')) e.pt_b_shoot += val;
                                     else if(pt.includes('lob') || pt.includes('drop')) e.pt_lob_drop += val;
@@ -457,26 +510,6 @@
                                 }
                             }
                         });
-
-                        if (m.log) {
-                            m.log.forEach(g => {
-                                if(!g.flow) return;
-                                g.flow.forEach(pt => {
-                                    const lServe = (pt.s === 0);
-                                    const lWin = (pt.w === 'L');
-                                    const isServing = (upd.side === 'L' ? lServe : !lServe);
-                                    const isWin = (upd.side === 'L' ? lWin : !lWin);
-                                    
-                                    if(isServing) {
-                                        if(pt.f) { e.s1t++; if(isWin) e.s1w++; }
-                                        else { e.s2t++; if(isWin) e.s2w++; }
-                                    } else {
-                                        if(pt.f) { e.r1t++; if(isWin) e.r1w++; }
-                                        else { e.r2t++; if(isWin) e.r2w++; }
-                                    }
-                                });
-                            });
-                        }
                     });
                 });
 
@@ -601,7 +634,7 @@
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
 
                 if(displayEntities.length === 0) {
-                    ['winRate', 'errorType', 'radar', 'volume', 'playStyle'].forEach(c => {
+                    ['winRate', 'errorType', 'radar', 'volume', 'playStyle', 'timeline'].forEach(c => {
                         this.charts[c].data.datasets = []; this.charts[c].update();
                     });
                     this.charts.recvPies.forEach(c => c.destroy()); this.charts.recvPies = [];
@@ -616,9 +649,23 @@
 
                 const labels = displayEntities.map(e => e.name);
 
+                // 🌟 新設：タイムライン（モメンタム）の描画
+                let maxLength = 0;
+                displayEntities.forEach(e => { if (e.momentum_history.length > maxLength) maxLength = e.momentum_history.length; });
+                
+                this.charts.timeline.data.labels = Array.from({length: maxLength}, (_, i) => i);
+                this.charts.timeline.data.datasets = displayEntities.map((e, i) => ({
+                    label: e.name,
+                    borderColor: this.colors[i % this.colors.length].border,
+                    backgroundColor: this.colors[i % this.colors.length].bg,
+                    data: e.momentum_history,
+                    fill: true
+                }));
+                this.charts.timeline.update();
+
+
                 this.drawHeatmap(displayEntities);
 
-                // ③ ボリューム分析
                 this.charts.volume.data.labels = labels;
                 this.charts.volume.data.datasets = [
                     { label: '得点', backgroundColor: '#10b981', data: displayEntities.map(e => e.p) },
@@ -633,7 +680,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val">${e.p}</span></td><td><span class="bold-val">${e.m}</span></td><td>${diffFmt}</td></tr>`;
                 }).join('');
 
-                // 🌟 修正：ドーナツグラフ無限増殖バグを封印したラッパー処理
                 const pieContainer = document.getElementById('recvPieContainer');
                 pieContainer.innerHTML = '';
                 this.charts.recvPies.forEach(c => c.destroy());
@@ -646,18 +692,12 @@
                     wrapper.className = 'pie-wrapper';
                     const title = document.createElement('div');
                     title.className = 'pie-title'; title.textContent = e.name;
-                    
-                    // 🚨 ここが重要！無限リサイズを防ぐ相対指定ラッパー
                     const canvasWrapper = document.createElement('div');
-                    canvasWrapper.style.position = 'relative';
-                    canvasWrapper.style.height = '180px';
-                    canvasWrapper.style.width = '100%';
-                    
+                    canvasWrapper.style.position = 'relative'; canvasWrapper.style.height = '180px'; canvasWrapper.style.width = '100%';
                     const canvas = document.createElement('canvas');
-                    canvasWrapper.appendChild(canvas);
                     
-                    wrapper.appendChild(title); 
-                    wrapper.appendChild(canvasWrapper);
+                    canvasWrapper.appendChild(canvas);
+                    wrapper.appendChild(title); wrapper.appendChild(canvasWrapper);
                     pieContainer.appendChild(wrapper);
 
                     const pie = new Chart(canvas, {
@@ -676,7 +716,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val" style="color:${this.shotColors.f_shoot}">${e.err_recv_f}</span>件</td><td><span class="bold-val" style="color:${this.shotColors.b_shoot}">${e.err_recv_b}</span>件</td><td>${e.err_recv_u}件</td></tr>`;
                 }).join('');
 
-                // ⑤⑥ プレースタイル内訳
                 this.charts.playStyle.data.labels = labels;
                 this.charts.playStyle.data.datasets = [
                     { label: 'Fシュート', backgroundColor: this.shotColors.f_shoot, data: displayEntities.map(e => this.calcRate(e.pt_f_shoot, e.p)) },
@@ -694,7 +733,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.pt_f_shoot)}</td><td>${f(e.pt_b_shoot)}</td><td>${f(e.pt_lob_drop)}</td><td>${f(e.pt_volley)}</td><td>${f(e.pt_smash)}</td><td>${f(e.pt_other)}</td></tr>`;
                 }).join('');
 
-                // ① 局面別勝率
                 this.charts.winRate.data.datasets = displayEntities.map((e, i) => ({
                     label: e.name, backgroundColor: this.colors[i % this.colors.length].border,
                     data: [ this.calcRate(e.s1w, e.s1t), this.calcRate(e.r2w, e.r2t), this.calcRate(e.r1w, e.r1t), this.calcRate(e.s2w, e.s2t) ]
@@ -707,7 +745,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td class="td-attack">${f(e.s1w,e.s1t)}</td><td class="td-attack">${f(e.r2w,e.r2t)}</td><td class="td-defense">${f(e.r1w,e.r1t)}</td><td class="td-defense">${f(e.s2w,e.s2t)}</td></tr>`;
                 }).join('');
 
-                // ② エラー内訳
                 this.charts.errorType.data.labels = labels;
                 this.charts.errorType.data.datasets = [
                     { label: 'ネット', backgroundColor: '#ea580c', data: displayEntities.map(e => e.err_net) },
@@ -723,7 +760,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
                 }).join('');
 
-                // レーダーチャート
                 this.charts.radar.data.datasets = displayEntities.map((e, i) => {
                     const serve = this.calcRate(e.fi, e.st); 
                     const stroke = this.calcRate(e.pt_stroke, e.p); 
