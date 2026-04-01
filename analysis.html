@@ -25,6 +25,7 @@
         .cp-header h1 { font-size: 1.5rem; color: var(--secondary-color); font-weight: 900; margin: 0; }
         .system-status { font-size: 0.85rem; color: #16a34a; font-weight: bold; background: #dcfce7; padding: 6px 12px; border-radius: 20px; }
 
+        /* フィルター部分を3カラムに変更 */
         .cp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
         .cp-group { display: flex; flex-direction: column; gap: 6px; }
         .cp-label { font-size: 0.8rem; font-weight: bold; color: var(--text-muted); text-transform: uppercase; }
@@ -32,11 +33,15 @@
         .cp-select { padding: 8px; font-size: 0.95rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: #f8fafc; cursor: pointer; color: var(--text-main); font-weight: bold; width: 100%; }
         .cp-select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2); }
 
+        /* 新設：試合選択チェックボックスエリア */
+        .match-filter-container { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; max-height: 110px; overflow-y: auto; font-size: 0.85rem; }
+        .match-filter-container label { display: block; margin-bottom: 4px; cursor: pointer; color: var(--text-main); }
+        .match-filter-container input[type="checkbox"] { margin-right: 6px; accent-color: var(--primary-color); }
+
         .btn-group { display: flex; gap: 5px; background: #e2e8f0; padding: 4px; border-radius: 8px; }
         .btn-toggle { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 6px; font-weight: bold; color: var(--text-muted); cursor: pointer; transition: 0.2s; font-size: 0.9rem;}
         .btn-toggle.active { background: var(--card-bg); color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* 新設：具体的なターゲットを選択するエリア */
         .target-selection-area { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed var(--border-color); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
         .vs-badge { background: var(--secondary-color); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
 
@@ -74,10 +79,16 @@
         
         <div class="cp-grid">
             <div class="cp-group">
-                <span class="cp-label">📅 フィルター (期間/大会)</span>
-                <select class="cp-select" id="filter-date" onchange="app.processData()">
+                <span class="cp-label">📅 期間 / 大会</span>
+                <select class="cp-select" id="filter-date" onchange="app.onDateFilterChange()">
                     <option value="all">すべてのデータ</option>
                 </select>
+            </div>
+
+            <div class="cp-group">
+                <span class="cp-label">🎾 試合選択 (複数可)</span>
+                <div class="match-filter-container" id="match-filter-container">
+                    </div>
             </div>
 
             <div class="cp-group">
@@ -101,7 +112,7 @@
 
         <div class="target-selection-area">
             <div style="flex: 1;">
-                <span class="cp-label">🔵 メイン対象 (自チーム)</span>
+                <span class="cp-label">🔵 メイン対象</span>
                 <select class="cp-select" id="main-target" onchange="app.renderCharts()"></select>
             </div>
             
@@ -113,7 +124,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <div id="dashboard-content">
@@ -149,12 +159,12 @@
     <script>
         const app = {
             rawData: [], 
-            entities: [], // 集計済みの箱リスト
-            state: { filterDate: 'all', targetType: 'pair', compareMode: 'none' },
+            entities: [], 
+            state: { filterDate: 'all', filterMatches: [], targetType: 'pair', compareMode: 'none' },
             charts: {},
             colors: [
-                { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   // メイン（青）
-                { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.2)' }    // 比較対象（オレンジ）
+                { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   
+                { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.2)' }    
             ],
             
             init() {
@@ -165,14 +175,18 @@
             },
 
             fetchData() {
-                // ※ご自身のGASのURL
+                // ※あなたのGASのURL
                 const url = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec?action=getMatchData";
                 fetch(url)
                     .then(res => res.json())
                     .then(response => {
                         this.rawData = response.data || response; 
+                        
+                        // 各試合にユニークなIDを付与（フィルター用）
+                        this.rawData.forEach((m, idx) => { m._uid = m.matchId || `match_${idx}`; });
+
                         this.setupDateFilter();
-                        this.processData(); // データ集計へ
+                        this.onDateFilterChange(); // 初期フィルター構築とデータ処理へ
                         const now = new Date();
                         document.getElementById('currentDateDisplay').textContent = `✓ ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 同期完了 (${this.rawData.length}試合)`;
                     })
@@ -182,6 +196,7 @@
                     });
             },
 
+            // 1. 日付フィルターのセットアップ
             setupDateFilter() {
                 const select = document.getElementById('filter-date');
                 const dates = [...new Set(this.rawData.map(m => m.matchDate || m.date).filter(Boolean))];
@@ -192,11 +207,61 @@
                 });
             },
 
+            // 2. 日付が変更されたら、試合チェックボックスを作り直す
+            onDateFilterChange() {
+                this.state.filterDate = document.getElementById('filter-date').value;
+                const container = document.getElementById('match-filter-container');
+                container.innerHTML = '';
+
+                // 日付で絞り込んだ試合一覧
+                const dateFiltered = this.rawData.filter(m => this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate);
+                
+                // 「すべて選択」チェックボックス
+                const allLabel = document.createElement('label');
+                allLabel.innerHTML = `<input type="checkbox" id="match-filter-all" checked onchange="app.toggleAllMatches(this)"> <b>すべての試合 (${dateFiltered.length}件)</b>`;
+                container.appendChild(allLabel);
+
+                // 個別の試合チェックボックス
+                dateFiltered.forEach((m, idx) => {
+                    const lbl = document.createElement('label');
+                    lbl.style.marginLeft = '10px';
+                    const title = `${idx + 1}試合目: vs ${m.teams?.R || '相手'} (${m.gL}-${m.gR})`;
+                    lbl.innerHTML = `<input type="checkbox" class="match-cb" value="${m._uid}" checked onchange="app.onMatchSelectionChange()"> ${title}`;
+                    container.appendChild(lbl);
+                });
+
+                this.onMatchSelectionChange(); // 状態を更新して集計へ
+            },
+
+            // すべて選択/解除のトグル
+            toggleAllMatches(checkbox) {
+                document.querySelectorAll('.match-cb').forEach(cb => cb.checked = checkbox.checked);
+                this.onMatchSelectionChange();
+            },
+
+            // 試合チェックボックスの状態が変わった時の処理
+            onMatchSelectionChange() {
+                const checkboxes = document.querySelectorAll('.match-cb');
+                const allCheckbox = document.getElementById('match-filter-all');
+                
+                let selected = [];
+                let allChecked = true;
+
+                checkboxes.forEach(cb => {
+                    if (cb.checked) selected.push(cb.value);
+                    else allChecked = false;
+                });
+
+                allCheckbox.checked = allChecked;
+                this.state.filterMatches = selected; // 選ばれた試合IDを保存
+
+                this.processData(); // 集計エンジン始動
+            },
+
             setTargetType(type) { this.state.targetType = type; this.updateUI(); this.processData(); },
             setCompareMode(mode) { this.state.compareMode = mode; this.updateUI(); this.updateSelectors(); },
             
             updateUI() {
-                // ボタンのアクティブ状態更新
                 ['target-type-group', 'compare-mode-group'].forEach(groupId => {
                     const activeVal = groupId.includes('target') ? this.state.targetType : this.state.compareMode;
                     document.querySelectorAll(`#${groupId} .btn-toggle`).forEach(btn => {
@@ -205,14 +270,12 @@
                     });
                 });
 
-                // 比較対象プルダウンの表示・非表示
                 const subContainer = document.getElementById('sub-target-container');
-                const subLabel = document.getElementById('sub-target-label');
                 if (this.state.compareMode === 'none') {
                     subContainer.style.display = 'none';
                 } else {
                     subContainer.style.display = 'flex';
-                    subLabel.textContent = this.state.compareMode === 'teammate' ? '🔵 比較(味方)' : '🔴 比較(相手)';
+                    document.getElementById('sub-target-label').textContent = this.state.compareMode === 'teammate' ? '🔵 比較(味方)' : '🔴 比較(相手)';
                 }
             },
 
@@ -226,7 +289,6 @@
 
                 const opts = { responsive: true, maintainAspectRatio: false };
                 this.charts.winRate = new Chart(document.getElementById('winRateChart'), {
-                    // 改善：4局面に修正
                     type: 'bar', data: { labels: ['1stサーブ時', '2ndサーブ時', '1stレシーブ時', '2ndレシーブ時'], datasets: [] },
                     options: { ...opts, scales: { y: { max: 100 } } }
                 });
@@ -237,21 +299,22 @@
                 });
             },
 
-            // データの集計（箱を作る作業）
+            // 🌟 バグ修正完了：真のダイナミック集計エンジン
             processData() {
-                this.state.filterDate = document.getElementById('filter-date').value;
-                const filtered = this.rawData.filter(m => this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate);
+                // 1. 日付と試合IDでデータを絞り込み
+                const filtered = this.rawData.filter(m => {
+                    const passDate = (this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate);
+                    const passMatch = this.state.filterMatches.includes(m._uid);
+                    return passDate && passMatch;
+                });
                 
-                const titles = { 'pair': 'ペア', 'player': '個人', 'team': 'チーム' };
-                document.getElementById('dynamic-section-title').textContent = `${titles[this.state.targetType]} 分析結果`;
+                document.getElementById('dynamic-section-title').textContent = `${{'pair':'ペア', 'player':'個人', 'team':'チーム'}[this.state.targetType]} 分析結果 (${filtered.length}試合)`;
 
                 let entityMap = {}; 
-
                 const getEntity = (name, side) => {
                     if(!entityMap[name]) {
                         entityMap[name] = { 
-                            name: name, side: side, 
-                            p: 0, m: 0, fi: 0, st: 0,
+                            name: name, side: side, p: 0, m: 0, fi: 0, st: 0,
                             err_net: 0, err_out: 0, err_df: 0, err_recv: 0, err_other: 0,
                             pt_attack: 0, pt_lob: 0,
                             s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0
@@ -261,83 +324,77 @@
                 };
 
                 filtered.forEach(m => {
-                    let keysL = [], keysR = [];
+                    let updates = []; // 箱と、合算するプレイヤー配列のペア
 
+                    // 【修正点】「個人」の時にA君の箱にB君のデータが混ざらないように分離
                     if (this.state.targetType === 'pair') {
-                        if(m.names?.A && m.names?.B) keysL.push(`${m.names.A}・${m.names.B}`);
-                        if(m.names?.C && m.names?.D) keysR.push(`${m.names.C}・${m.names.D}`);
+                        if(m.names?.A && m.names?.B) updates.push({ key: `${m.names.A}・${m.names.B}`, side: 'L', players: ['A', 'B'] });
+                        if(m.names?.C && m.names?.D) updates.push({ key: `${m.names.C}・${m.names.D}`, side: 'R', players: ['C', 'D'] });
                     } else if (this.state.targetType === 'player') {
-                        if(m.names?.A) keysL.push(m.names.A);
-                        if(m.names?.B && m.meta?.matchType !== 'シングルス') keysL.push(m.names.B);
-                        if(m.names?.C) keysR.push(m.names.C);
-                        if(m.names?.D && m.meta?.matchType !== 'シングルス') keysR.push(m.names.D);
+                        if(m.names?.A) updates.push({ key: m.names.A, side: 'L', players: ['A'] }); // A君にはA君だけ！
+                        if(m.names?.B && m.meta?.matchType !== 'シングルス') updates.push({ key: m.names.B, side: 'L', players: ['B'] });
+                        if(m.names?.C) updates.push({ key: m.names.C, side: 'R', players: ['C'] });
+                        if(m.names?.D && m.meta?.matchType !== 'シングルス') updates.push({ key: m.names.D, side: 'R', players: ['D'] });
                     } else if (this.state.targetType === 'team') {
-                        keysL.push(m.teams?.L || '土淵中');
-                        keysR.push(m.teams?.R || '対戦相手');
+                        updates.push({ key: m.teams?.L || '土淵中', side: 'L', players: ['A', 'B'] });
+                        updates.push({ key: m.teams?.R || '対戦相手', side: 'R', players: ['C', 'D'] });
                     }
 
-                    const addStats = (sideKeys, sidePlayers) => {
-                        sideKeys.forEach(k => {
-                            let e = getEntity(k, sidePlayers[0] === 'A' ? 'L' : 'R');
-                            sidePlayers.forEach(pKey => {
-                                const st = m.stats?.[pKey];
-                                if(!st) return;
-                                e.p += (st.p || 0); e.m += (st.m || 0); e.fi += (st.fi || 0); e.st += (st.st || 0);
+                    updates.forEach(upd => {
+                        let e = getEntity(upd.key, upd.side);
+                        
+                        // スタッツの合算
+                        upd.players.forEach(pKey => {
+                            const st = m.stats?.[pKey];
+                            if(!st) return;
+                            e.p += (st.p || 0); e.m += (st.m || 0); e.fi += (st.fi || 0); e.st += (st.st || 0);
 
-                                if(st.mt) {
-                                    for(let err in st.mt) {
-                                        let val = st.mt[err];
-                                        if(err === 'df') e.err_df += val;
-                                        else if(err.includes('net')) e.err_net += val;
-                                        else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
-                                        else if(err.startsWith('recv')) e.err_recv += val;
-                                        else e.err_other += val;
-                                    }
+                            if(st.mt) {
+                                for(let err in st.mt) {
+                                    let val = st.mt[err];
+                                    if(err === 'df') e.err_df += val;
+                                    else if(err.includes('net')) e.err_net += val;
+                                    else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
+                                    else if(err.startsWith('recv')) e.err_recv += val;
+                                    else e.err_other += val;
                                 }
-                                if(st.pt) {
-                                    for(let pt in st.pt) {
-                                        let val = st.pt[pt];
-                                        if(pt.includes('shoot') || pt.includes('volley') || pt.includes('smash') || pt.includes('ace')) e.pt_attack += val;
-                                        if(pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_lob += val;
-                                    }
+                            }
+                            if(st.pt) {
+                                for(let pt in st.pt) {
+                                    let val = st.pt[pt];
+                                    if(pt.includes('shoot') || pt.includes('volley') || pt.includes('smash') || pt.includes('ace')) e.pt_attack += val;
+                                    if(pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_lob += val;
                                 }
-                            });
+                            }
                         });
-                    };
-                    addStats(keysL, ['A', 'B']);
-                    addStats(keysR, ['C', 'D']);
 
-                    if (m.log) {
-                        m.log.forEach(g => {
-                            if(!g.flow) return;
-                            g.flow.forEach(pt => {
-                                const lServe = (pt.s === 0);
-                                const lWin = (pt.w === 'L');
-                                
-                                const updatePhase = (sideKeys, isServing, isWin) => {
-                                    sideKeys.forEach(k => {
-                                        let e = getEntity(k, '');
-                                        if(isServing) {
-                                            if(pt.f) { e.s1t++; if(isWin) e.s1w++; }
-                                            else { e.s2t++; if(isWin) e.s2w++; }
-                                        } else {
-                                            if(pt.f) { e.r1t++; if(isWin) e.r1w++; }
-                                            else { e.r2t++; if(isWin) e.r2w++; }
-                                        }
-                                    });
-                                };
-                                updatePhase(keysL, lServe, lWin);
-                                updatePhase(keysR, !lServe, !lWin);
+                        // 局面（ゲームフロー）の合算
+                        if (m.log) {
+                            m.log.forEach(g => {
+                                if(!g.flow) return;
+                                g.flow.forEach(pt => {
+                                    const lServe = (pt.s === 0);
+                                    const lWin = (pt.w === 'L');
+                                    const isServing = (upd.side === 'L' ? lServe : !lServe);
+                                    const isWin = (upd.side === 'L' ? lWin : !lWin);
+                                    
+                                    if(isServing) {
+                                        if(pt.f) { e.s1t++; if(isWin) e.s1w++; }
+                                        else { e.s2t++; if(isWin) e.s2w++; }
+                                    } else {
+                                        if(pt.f) { e.r1t++; if(isWin) e.r1w++; }
+                                        else { e.r2t++; if(isWin) e.r2w++; }
+                                    }
+                                });
                             });
-                        });
-                    }
+                        }
+                    });
                 });
 
                 this.entities = Object.values(entityMap);
                 this.updateSelectors();
             },
 
-            // 新設：プルダウン（セレクトボックス）の中身を作る処理
             updateSelectors() {
                 const mainSelect = document.getElementById('main-target');
                 const subSelect = document.getElementById('sub-target');
@@ -345,7 +402,6 @@
                 mainSelect.innerHTML = '';
                 subSelect.innerHTML = '';
 
-                // L側（自分たち）をメインプルダウンに
                 const lSide = this.entities.filter(e => e.side === 'L').sort((a,b) => (b.p+b.m) - (a.p+a.m));
                 const rSide = this.entities.filter(e => e.side === 'R').sort((a,b) => (b.p+b.m) - (a.p+a.m));
 
@@ -355,13 +411,9 @@
                     mainSelect.appendChild(opt);
                 });
 
-                // 比較対象のプルダウン生成
                 let subList = [];
-                if (this.state.compareMode === 'teammate') {
-                    subList = lSide; // 味方と比較
-                } else if (this.state.compareMode === 'opponent') {
-                    subList = rSide; // 相手と比較
-                }
+                if (this.state.compareMode === 'teammate') subList = lSide;
+                else if (this.state.compareMode === 'opponent') subList = rSide;
 
                 subList.forEach(e => {
                     const opt = document.createElement('option');
@@ -369,7 +421,6 @@
                     subSelect.appendChild(opt);
                 });
 
-                // デフォルトで2番目の人/ペアを選択しておく（同じ人同士の比較を避ける）
                 if (this.state.compareMode === 'teammate' && subSelect.options.length > 1) {
                     subSelect.selectedIndex = 1;
                 }
@@ -379,7 +430,6 @@
 
             calcRate(w, t) { return t > 0 ? Math.round((w/t)*100) : 0; },
             
-            // 選択されたプルダウンの値に基づいてグラフを描画
             renderCharts() {
                 const mainName = document.getElementById('main-target').value;
                 const subName = document.getElementById('sub-target').value;
@@ -393,11 +443,17 @@
                     if (subEnt) displayEntities.push(subEnt);
                 }
 
-                if(displayEntities.length === 0) return;
+                if(displayEntities.length === 0) {
+                    // 描画データがない場合はグラフをクリア
+                    this.charts.winRate.data.datasets = []; this.charts.winRate.update();
+                    this.charts.errorType.data.datasets = []; this.charts.errorType.update();
+                    this.charts.radar.data.datasets = []; this.charts.radar.update();
+                    return;
+                }
 
                 const labels = displayEntities.map(e => e.name);
 
-                // ① 局面別勝率（4局面に完全対応）
+                // ① 局面別勝率
                 this.charts.winRate.data.datasets = displayEntities.map((e, i) => ({
                     label: e.name,
                     backgroundColor: this.colors[i % this.colors.length].border,
