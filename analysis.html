@@ -60,13 +60,12 @@
         .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; min-width: 350px; }
         .radar-container { height: 350px; display: flex; justify-content: center; }
         
-        /* 🌟 ヒートマップ用コンテナスタイル */
+        /* ヒートマップ用スタイル（凡例を拡張） */
         .heatmap-container { display: flex; justify-content: center; align-items: center; background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; position: relative; overflow: hidden; }
         #heatmapCanvas { max-width: 100%; height: auto; background-color: #2a6f44; border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); }
-        .heatmap-legend { display: flex; justify-content: center; gap: 15px; margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: var(--text-muted); }
+        .heatmap-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: var(--text-muted); }
+        .legend-group { display: flex; flex-wrap: wrap; gap: 12px; background: #fff; padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .legend-item { display: flex; align-items: center; gap: 4px; }
-        .dot-blue { width: 12px; height: 12px; background-color: rgba(59, 130, 246, 0.8); border-radius: 50%; border: 1px solid white; }
-        .dot-red { width: 12px; height: 12px; background-color: rgba(239, 68, 68, 0.8); border-radius: 50%; border: 1px solid white; }
 
         .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: auto; min-width: 350px;}
         .data-table th, .data-table td { padding: 10px 4px; text-align: center; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
@@ -137,13 +136,22 @@
         <div class="dashboard-grid">
             
             <div class="card" id="heatmap-card" style="grid-column: 1 / -1;">
-                <h2 class="card-title">🎾 コート・ヒートマップ <span class="card-badge">空間データ分析</span></h2>
+                <h2 class="card-title">🎾 コート・ヒートマップ <span class="card-badge">空間・球種データ分析</span></h2>
                 <div class="heatmap-container">
                     <canvas id="heatmapCanvas" width="300" height="400"></canvas>
                 </div>
                 <div class="heatmap-legend">
-                    <div class="legend-item"><div class="dot-blue"></div> 得点（ウィナー等）</div>
-                    <div class="legend-item"><div class="dot-red"></div> 失点（ネット・アウト等）</div>
+                    <div class="legend-group">
+                        <div class="legend-item"><span style="color:#3b82f6; font-size:1.2rem;">●</span> 得点 (青)</div>
+                        <div class="legend-item"><span style="color:#ef4444; font-size:1.2rem;">●</span> 失点 (赤)</div>
+                    </div>
+                    <div class="legend-group">
+                        <div class="legend-item">● シュート</div>
+                        <div class="legend-item">▲ ロブ</div>
+                        <div class="legend-item">■ ボレー</div>
+                        <div class="legend-item">★ スマッシュ</div>
+                        <div class="legend-item">◆ その他(落とす等)</div>
+                    </div>
                 </div>
                 <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">※入力されたコースデータに基づく推測マッピングです（上側が相手コート、中央がネット）</p>
             </div>
@@ -208,7 +216,7 @@
             },
 
             fetchData() {
-                // ※あなたのGASのURLに書き換えてください
+                // ※ご自身のGASのURLに設定してください
                 const url = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec?action=getMatchData";
                 fetch(url)
                     .then(res => res.json())
@@ -322,7 +330,6 @@
                             err_net: 0, err_out: 0, err_df: 0, err_recv: 0, err_other: 0,
                             pt_stroke: 0, pt_net: 0,
                             s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0,
-                            // 🌟 ヒートマップ用：生のコース記録を格納する箱を追加
                             raw_pt: {}, raw_mt: {}
                         };
                     }
@@ -356,7 +363,7 @@
                             if(st.mt) {
                                 for(let err in st.mt) {
                                     let val = st.mt[err];
-                                    e.raw_mt[err] = (e.raw_mt[err] || 0) + val; // 🌟 生データを保存
+                                    e.raw_mt[err] = (e.raw_mt[err] || 0) + val; 
                                     
                                     if(err === 'df') e.err_df += val;
                                     else if(err.includes('net')) e.err_net += val;
@@ -368,7 +375,7 @@
                             if(st.pt) {
                                 for(let pt in st.pt) {
                                     let val = st.pt[pt];
-                                    e.raw_pt[pt] = (e.raw_pt[pt] || 0) + val; // 🌟 生データを保存
+                                    e.raw_pt[pt] = (e.raw_pt[pt] || 0) + val; 
                                     
                                     if(pt.includes('shoot') || pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_stroke += val;
                                     if(pt.includes('volley') || pt.includes('smash') || pt.includes('overhead')) e.pt_net += val;
@@ -435,85 +442,133 @@
 
             calcRate(w, t) { return t > 0 ? Math.round((w/t)*100) : 0; },
             
-            // 🌟 ヒートマップ描画関数（アナリストの空間分析）
+            // 🌟 球種の文字列からカテゴリを判定する関数
+            getShotType(key) {
+                if (key.includes('shoot')) return 'shoot';
+                if (key.includes('lob')) return 'lob';
+                if (key.includes('volley')) return 'volley';
+                if (key.includes('smash') || key.includes('overhead')) return 'smash';
+                return 'other'; // drop, twist など
+            },
+
+            // 🌟 形（シェイプ）を描画する関数
+            drawShape(ctx, x, y, isPoint, shotType) {
+                ctx.fillStyle = isPoint ? "rgba(59, 130, 246, 0.85)" : "rgba(239, 68, 68, 0.85)"; // 青 or 赤
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                
+                const size = 7; // 図形の大きさ
+
+                if (shotType === 'shoot') {
+                    // ● 円（シュート）
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                } 
+                else if (shotType === 'lob') {
+                    // ▲ 上向き三角（ロブ）
+                    ctx.moveTo(x, y - size - 2);
+                    ctx.lineTo(x + size + 1, y + size - 1);
+                    ctx.lineTo(x - size - 1, y + size - 1);
+                    ctx.closePath();
+                } 
+                else if (shotType === 'volley') {
+                    // ■ 四角（ボレー）
+                    ctx.rect(x - size, y - size, size * 2, size * 2);
+                } 
+                else if (shotType === 'smash') {
+                    // ★ 星型（スマッシュ）
+                    const spikes = 5;
+                    const outerRadius = size + 2;
+                    const innerRadius = size / 2;
+                    let rot = Math.PI / 2 * 3;
+                    let step = Math.PI / spikes;
+                    ctx.moveTo(x, y - outerRadius);
+                    for (let i = 0; i < spikes; i++) {
+                        let px = x + Math.cos(rot) * outerRadius;
+                        let py = y + Math.sin(rot) * outerRadius;
+                        ctx.lineTo(px, py);
+                        rot += step;
+                        px = x + Math.cos(rot) * innerRadius;
+                        py = y + Math.sin(rot) * innerRadius;
+                        ctx.lineTo(px, py);
+                        rot += step;
+                    }
+                    ctx.lineTo(x, y - outerRadius);
+                    ctx.closePath();
+                } 
+                else {
+                    // ◆ ひし形（その他：ドロップ・ツイスト等）
+                    ctx.moveTo(x, y - size - 2);
+                    ctx.lineTo(x + size + 2, y);
+                    ctx.lineTo(x, y + size + 2);
+                    ctx.lineTo(x - size - 2, y);
+                    ctx.closePath();
+                }
+                
+                ctx.fill();
+                ctx.stroke();
+            },
+
+            // 🌟 ヒートマップ描画本体
             drawHeatmap(displayEntities) {
                 const canvas = document.getElementById('heatmapCanvas');
                 const ctx = canvas.getContext('2d');
                 const w = canvas.width;
                 const h = canvas.height;
 
-                // コートのクリアと白線描画
                 ctx.clearRect(0, 0, w, h);
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
                 ctx.lineWidth = 2;
 
-                // 外枠
+                // コート枠とライン
                 ctx.strokeRect(w*0.1, h*0.1, w*0.8, h*0.8);
-                // ネット (中央横線)
                 ctx.beginPath(); ctx.moveTo(w*0.05, h*0.5); ctx.lineTo(w*0.95, h*0.5); ctx.lineWidth = 3; ctx.stroke(); ctx.lineWidth = 2;
-                // シングルスライン
                 ctx.beginPath(); ctx.moveTo(w*0.2, h*0.1); ctx.lineTo(w*0.2, h*0.9); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(w*0.8, h*0.1); ctx.lineTo(w*0.8, h*0.9); ctx.stroke();
-                // サービスライン
                 ctx.beginPath(); ctx.moveTo(w*0.2, h*0.25); ctx.lineTo(w*0.8, h*0.25); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(w*0.2, h*0.75); ctx.lineTo(w*0.8, h*0.75); ctx.stroke();
-                // センターライン
                 ctx.beginPath(); ctx.moveTo(w*0.5, h*0.25); ctx.lineTo(w*0.5, h*0.75); ctx.stroke();
 
-                // 座標変換関数（キーの文字列から位置を推測）
                 const getCoords = (key, isPoint) => {
-                    let y = 0.25; // デフォルト：相手コート中段
-                    let x = 0.5;  // デフォルト：センター
+                    let y = 0.25; 
+                    let x = 0.5;  
 
-                    // 深さ (Y軸)
-                    if(key.includes('lob') || key.includes('bout') || key.includes('out')) y = 0.08; // コート奥深く
-                    if(key.includes('drop') || key.includes('twist') || key.includes('sout')) y = 0.4; // ネット際
-                    if(key.includes('net')) y = 0.5; // ネット
+                    if(key.includes('lob') || key.includes('bout') || key.includes('out')) y = 0.08; 
+                    if(key.includes('drop') || key.includes('twist') || key.includes('sout')) y = 0.4; 
+                    if(key.includes('net')) y = 0.5; 
 
-                    // 幅 (X軸)
-                    if(key.includes('cross') || key.includes('rev')) x = (Math.random() > 0.5) ? 0.3 : 0.7; // 左右どちらか
-                    if(key.includes('str')) x = (Math.random() > 0.5) ? 0.15 : 0.85; // サイドライン際
+                    if(key.includes('cross') || key.includes('rev')) x = (Math.random() > 0.5) ? 0.3 : 0.7; 
+                    if(key.includes('str')) x = (Math.random() > 0.5) ? 0.15 : 0.85; 
                     if(key.includes('ctr')) x = 0.5;
                     
-                    // 完全なアウト調整
-                    if(!isPoint && (key.includes('out') || key.includes('bout'))) y = -0.05; // 相手ベースライン外
+                    if(!isPoint && (key.includes('out') || key.includes('bout'))) y = -0.05; 
                     if(!isPoint && key.includes('sout')) { x = (Math.random() > 0.5) ? 0.05 : 0.95; y = 0.25; }
 
-                    // 点が重ならないようにランダムな散らばり（ジッター）を加える
-                    x += (Math.random() - 0.5) * 0.15;
-                    y += (Math.random() - 0.5) * 0.1;
+                    // 点が完全に重ならないよう、少しだけ散らす（ジッター）
+                    x += (Math.random() - 0.5) * 0.12;
+                    y += (Math.random() - 0.5) * 0.08;
 
-                    // キャンバスのピクセルに変換
                     return { cx: x * w, cy: (y + 0.1) * (h * 0.8) }; 
                 };
 
-                const drawDot = (cx, cy, isPoint) => {
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-                    ctx.fillStyle = isPoint ? "rgba(59, 130, 246, 0.75)" : "rgba(239, 68, 68, 0.75)"; // 青 or 赤
-                    ctx.fill();
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = "white";
-                    ctx.stroke();
-                };
-
-                // 選択された全ての選手のドットを描画
                 displayEntities.forEach(e => {
-                    // 得点（青）
+                    // 得点描画
                     for(let key in e.raw_pt) {
                         let count = e.raw_pt[key];
+                        let shotType = this.getShotType(key);
                         for(let i=0; i<count; i++) {
                             let pos = getCoords(key, true);
-                            drawDot(pos.cx, pos.cy, true);
+                            this.drawShape(ctx, pos.cx, pos.cy, true, shotType);
                         }
                     }
-                    // 失点（赤）
+                    // 失点描画
                     for(let key in e.raw_mt) {
-                        if(key === 'df') continue; // DFはコートに描画しない
+                        if(key === 'df') continue; 
                         let count = e.raw_mt[key];
+                        let shotType = this.getShotType(key);
                         for(let i=0; i<count; i++) {
                             let pos = getCoords(key, false);
-                            drawDot(pos.cx, pos.cy, false);
+                            this.drawShape(ctx, pos.cx, pos.cy, false, shotType);
                         }
                     }
                 });
@@ -529,14 +584,13 @@
                     document.querySelector('#winRateTable tbody').innerHTML = '';
                     document.querySelector('#errorTypeTable tbody').innerHTML = '';
                     
-                    // ヒートマップもクリア
                     const canvas = document.getElementById('heatmapCanvas');
                     const ctx = canvas.getContext('2d');
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     return;
                 }
 
-                // 🌟 新設：ヒートマップの描画処理を呼び出し
+                // ヒートマップ描画呼び出し
                 this.drawHeatmap(displayEntities);
 
                 const labels = displayEntities.map(e => e.name);
