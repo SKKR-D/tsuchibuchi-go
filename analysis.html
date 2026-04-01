@@ -60,11 +60,17 @@
         .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; min-width: 350px; }
         .radar-container { height: 350px; display: flex; justify-content: center; }
         
+        /* ヒートマップ用スタイル */
         .heatmap-container { display: flex; justify-content: center; align-items: center; background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; position: relative; overflow: hidden; }
         #heatmapCanvas { max-width: 100%; height: auto; background-color: #2a6f44; border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); }
         .heatmap-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: var(--text-muted); }
         .legend-group { display: flex; flex-wrap: wrap; gap: 12px; background: #fff; padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .legend-item { display: flex; align-items: center; gap: 4px; }
+
+        /* ドーナツグラフ（レシーブミス）用コンテナ */
+        #recvPieContainer { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; height: auto; min-height: 250px; }
+        .pie-wrapper { width: 45%; min-width: 160px; display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; }
+        .pie-title { font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; color: var(--text-main); text-align: center; }
 
         .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: auto; min-width: 350px;}
         .data-table th, .data-table td { padding: 10px 4px; text-align: center; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
@@ -80,6 +86,7 @@
 
         @media screen and (max-width: 600px) {
             .dashboard-grid { grid-template-columns: 1fr; }
+            .pie-wrapper { width: 100%; }
         }
     </style>
 </head>
@@ -152,12 +159,40 @@
                         <div class="legend-item">◆ その他(落とす等)</div>
                     </div>
                 </div>
-                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">※上側が相手コートです。クロス/逆クロスのサイドアウトも正確にプロットされます。</p>
             </div>
 
             <div class="card" id="radar-card" style="grid-column: 1 / -1;">
                 <h2 class="card-title">🌟 プレースタイル・戦力比較 <span class="card-badge">レーダー分析</span></h2>
                 <div class="chart-container radar-container"><canvas id="radarChart"></canvas></div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">③ ボリューム分析 <span class="card-badge">得失点関与数</span></h2>
+                <div class="chart-container"><canvas id="volumeChart"></canvas></div>
+                <table class="data-table" id="volumeTable">
+                    <thead><tr><th>対象</th><th>得点獲得数</th><th>失点記録数</th><th>差引(＋/−)</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">※試合中、どれだけボールに触って結果を出したか（仕事量）を表します。</p>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">④ レシーブミスの内訳 <span class="card-badge">コース分析</span></h2>
+                <div id="recvPieContainer"></div>
+                <table class="data-table" id="recvPieTable">
+                    <thead><tr><th>対象</th><th>フォア側ミス</th><th>バック側ミス</th><th>不明/その他</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2 class="card-title">⑤ プレースタイル内訳 <span class="card-badge">得点ショット比率</span></h2>
+                <div class="chart-container"><canvas id="playStyleChart"></canvas></div>
+                <table class="data-table" id="playStyleTable">
+                    <thead><tr><th>対象</th><th>Fシュート</th><th>Bシュート</th><th>ロブ等</th><th>ボレー</th><th>スマッシュ</th><th>その他</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">※得点全体を100%とした時の、ショットの構成比です（前衛・後衛のスタイルが一目でわかります）</p>
             </div>
 
             <div class="card">
@@ -198,6 +233,7 @@
             entities: [], 
             state: { filterDate: 'all', filterMatches: [], targetType: 'pair', selectedTargets: [] },
             charts: {},
+            // テーマカラー設定（プレースタイル内訳などに使用）
             colors: [
                 { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   
                 { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.2)' },   
@@ -206,6 +242,15 @@
                 { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)' },   
                 { border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.2)' }   
             ],
+            // ショット別の専用カラー
+            shotColors: {
+                f_shoot: '#ef4444', // 赤
+                b_shoot: '#3b82f6', // 青
+                lob_drop: '#eab308',// 黄
+                volley: '#10b981',  // 緑
+                smash: '#8b5cf6',   // 紫
+                other: '#94a3b8'    // 灰
+            },
             
             init() {
                 Chart.defaults.font.family = "'Noto Sans JP', sans-serif";
@@ -272,7 +317,6 @@
             onMatchSelectionChange() {
                 const checkboxes = document.querySelectorAll('.match-cb');
                 const allCheckbox = document.getElementById('match-filter-all');
-                
                 let selected = [];
                 let allChecked = true;
                 checkboxes.forEach(cb => { if(cb.checked) selected.push(cb.value); else allChecked = false; });
@@ -292,14 +336,26 @@
             },
 
             initCharts() {
-                const ctxRadar = document.getElementById('radarChart').getContext('2d');
-                this.charts.radar = new Chart(ctxRadar, {
+                const opts = { responsive: true, maintainAspectRatio: false };
+                
+                this.charts.radar = new Chart(document.getElementById('radarChart').getContext('2d'), {
                     type: 'radar',
                     data: { labels: ['1stサーブ安定', 'ストローク力(後衛)', '堅実性(ミス回避)', 'レシーブ対応', 'ネットプレー(前衛)'], datasets: [] },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } } }
+                    options: { ...opts, scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } } }
                 });
 
-                const opts = { responsive: true, maintainAspectRatio: false };
+                // 🌟 追加：③ ボリュームグラフ（Bar）
+                this.charts.volume = new Chart(document.getElementById('volumeChart'), {
+                    type: 'bar', data: { labels: [], datasets: [] },
+                    options: { ...opts, scales: { y: { beginAtZero: true } } }
+                });
+
+                // 🌟 追加：⑤⑥ プレースタイルグラフ（100% Stacked Bar）
+                this.charts.playStyle = new Chart(document.getElementById('playStyleChart'), {
+                    type: 'bar', data: { labels: [], datasets: [] },
+                    options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } }
+                });
+
                 this.charts.winRate = new Chart(document.getElementById('winRateChart'), {
                     type: 'bar', 
                     data: { labels: [['⚔️ 攻め', '1stサーブ'], ['⚔️ 攻め', '2ndレシーブ'], ['🛡️ 守り', '1stレシーブ'], ['🛡️ 守り', '2ndサーブ']], datasets: [] },
@@ -310,6 +366,8 @@
                     type: 'bar', data: { labels: [], datasets: [] },
                     options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true } } }
                 });
+
+                this.charts.recvPies = []; // ドーナツグラフ保管用
             },
 
             processData() {
@@ -327,7 +385,10 @@
                         entityMap[name] = { 
                             name: name, side: side, p: 0, m: 0, fi: 0, st: 0,
                             err_net: 0, err_out: 0, err_df: 0, err_recv: 0, err_other: 0,
-                            pt_stroke: 0, pt_net: 0,
+                            // 🌟 拡張：レシーブミスの詳細とショットの詳細
+                            err_recv_f: 0, err_recv_b: 0, err_recv_u: 0,
+                            pt_f_shoot: 0, pt_b_shoot: 0, pt_lob_drop: 0, pt_volley: 0, pt_smash: 0, pt_other: 0,
+                            pt_stroke: 0, pt_net: 0, // レーダー用合算
                             s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0,
                             raw_pt: {}, raw_mt: {}
                         };
@@ -367,7 +428,13 @@
                                     if(err === 'df') e.err_df += val;
                                     else if(err.includes('net')) e.err_net += val;
                                     else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
-                                    else if(err.startsWith('recv')) e.err_recv += val;
+                                    else if(err.startsWith('recv')) {
+                                        e.err_recv += val;
+                                        // 🌟 拡張：レシーブの左右判定
+                                        if(err.includes('_f_')) e.err_recv_f += val;
+                                        else if(err.includes('_b_')) e.err_recv_b += val;
+                                        else e.err_recv_u += val;
+                                    }
                                     else e.err_other += val;
                                 }
                             }
@@ -376,6 +443,15 @@
                                     let val = st.pt[pt];
                                     e.raw_pt[pt] = (e.raw_pt[pt] || 0) + val; 
                                     
+                                    // 🌟 拡張：プレースタイル内訳の判定
+                                    if(pt.startsWith('f_shoot') || pt.startsWith('f_twist')) e.pt_f_shoot += val;
+                                    else if(pt.startsWith('b_shoot') || pt.startsWith('b_twist')) e.pt_b_shoot += val;
+                                    else if(pt.includes('lob') || pt.includes('drop')) e.pt_lob_drop += val;
+                                    else if(pt.includes('volley')) e.pt_volley += val;
+                                    else if(pt.includes('smash') || pt.includes('overhead')) e.pt_smash += val;
+                                    else e.pt_other += val;
+
+                                    // レーダー用
                                     if(pt.includes('shoot') || pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_stroke += val;
                                     if(pt.includes('volley') || pt.includes('smash') || pt.includes('overhead')) e.pt_net += val;
                                 }
@@ -452,63 +528,31 @@
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                
                 const size = 7; 
-
-                if (shotType === 'shoot') {
-                    ctx.arc(x, y, size, 0, Math.PI * 2);
-                } 
-                else if (shotType === 'lob') {
-                    ctx.moveTo(x, y - size - 2);
-                    ctx.lineTo(x + size + 1, y + size - 1);
-                    ctx.lineTo(x - size - 1, y + size - 1);
-                    ctx.closePath();
-                } 
-                else if (shotType === 'volley') {
-                    ctx.rect(x - size, y - size, size * 2, size * 2);
-                } 
+                if (shotType === 'shoot') { ctx.arc(x, y, size, 0, Math.PI * 2); } 
+                else if (shotType === 'lob') { ctx.moveTo(x, y - size - 2); ctx.lineTo(x + size + 1, y + size - 1); ctx.lineTo(x - size - 1, y + size - 1); ctx.closePath(); } 
+                else if (shotType === 'volley') { ctx.rect(x - size, y - size, size * 2, size * 2); } 
                 else if (shotType === 'smash') {
-                    const spikes = 5;
-                    const outerRadius = size + 2;
-                    const innerRadius = size / 2;
-                    let rot = Math.PI / 2 * 3;
-                    let step = Math.PI / spikes;
+                    const spikes = 5; const outerRadius = size + 2; const innerRadius = size / 2;
+                    let rot = Math.PI / 2 * 3; let step = Math.PI / spikes;
                     ctx.moveTo(x, y - outerRadius);
                     for (let i = 0; i < spikes; i++) {
-                        let px = x + Math.cos(rot) * outerRadius;
-                        let py = y + Math.sin(rot) * outerRadius;
-                        ctx.lineTo(px, py);
-                        rot += step;
-                        px = x + Math.cos(rot) * innerRadius;
-                        py = y + Math.sin(rot) * innerRadius;
-                        ctx.lineTo(px, py);
-                        rot += step;
+                        ctx.lineTo(x + Math.cos(rot) * outerRadius, y + Math.sin(rot) * outerRadius); rot += step;
+                        ctx.lineTo(x + Math.cos(rot) * innerRadius, y + Math.sin(rot) * innerRadius); rot += step;
                     }
-                    ctx.lineTo(x, y - outerRadius);
-                    ctx.closePath();
-                } 
-                else {
-                    ctx.moveTo(x, y - size - 2);
-                    ctx.lineTo(x + size + 2, y);
-                    ctx.lineTo(x, y + size + 2);
-                    ctx.lineTo(x - size - 2, y);
-                    ctx.closePath();
+                    ctx.lineTo(x, y - outerRadius); ctx.closePath();
+                } else {
+                    ctx.moveTo(x, y - size - 2); ctx.lineTo(x + size + 2, y); ctx.lineTo(x, y + size + 2); ctx.lineTo(x - size - 2, y); ctx.closePath();
                 }
-                
-                ctx.fill();
-                ctx.stroke();
+                ctx.fill(); ctx.stroke();
             },
 
             drawHeatmap(displayEntities) {
                 const canvas = document.getElementById('heatmapCanvas');
                 const ctx = canvas.getContext('2d');
-                const w = canvas.width;
-                const h = canvas.height;
+                const w = canvas.width; const h = canvas.height;
 
-                ctx.clearRect(0, 0, w, h);
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
-                ctx.lineWidth = 2;
-
+                ctx.clearRect(0, 0, w, h); ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"; ctx.lineWidth = 2;
                 ctx.strokeRect(w*0.1, h*0.1, w*0.8, h*0.8);
                 ctx.beginPath(); ctx.moveTo(w*0.05, h*0.5); ctx.lineTo(w*0.95, h*0.5); ctx.lineWidth = 3; ctx.stroke(); ctx.lineWidth = 2;
                 ctx.beginPath(); ctx.moveTo(w*0.2, h*0.1); ctx.lineTo(w*0.2, h*0.9); ctx.stroke();
@@ -517,60 +561,36 @@
                 ctx.beginPath(); ctx.moveTo(w*0.2, h*0.75); ctx.lineTo(w*0.8, h*0.75); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(w*0.5, h*0.25); ctx.lineTo(w*0.5, h*0.75); ctx.stroke();
 
-                // 🌟 修正：打点・アウトの座標計算ロジック
                 const getCoords = (key, isPoint) => {
-                    let y = 0.18; 
-                    let x = 0.5;  
-
+                    let y = 0.18; let x = 0.5;  
                     if(key.includes('lob')) y = 0.12; 
                     if(key.includes('drop') || key.includes('twist')) y = 0.35; 
                     if(key.includes('net')) y = 0.5; 
-
                     if(key.includes('cross')) x = 0.35; 
                     if(key.includes('rev')) x = 0.65; 
                     if(key.includes('str')) x = (Math.random() > 0.5) ? 0.25 : 0.75; 
                     if(key.includes('ctr')) x = 0.5;
                     
-                    // 完全なアウト（ベースライン外）
-                    if(!isPoint && (key.includes('out') || key.includes('bout'))) {
-                        y = 0.05; 
-                    }
-                    
-                    // サイドアウトの左右振り分け
+                    if(!isPoint && (key.includes('out') || key.includes('bout'))) { y = 0.05; }
                     if(!isPoint && key.includes('sout')) {
-                        if (key.includes('cross')) {
-                            x = 0.04; // 左のサイドライン(0.1)より外
-                        } else if (key.includes('rev')) {
-                            x = 0.96; // 右のサイドライン(0.9)より外
-                        } else {
-                            x = (Math.random() > 0.5) ? 0.04 : 0.96; 
-                        }
+                        if (key.includes('cross')) x = 0.04; 
+                        else if (key.includes('rev')) x = 0.96; 
+                        else x = (Math.random() > 0.5) ? 0.04 : 0.96; 
                         y = 0.25; 
                     }
-
-                    x += (Math.random() - 0.5) * 0.06;
-                    y += (Math.random() - 0.5) * 0.04;
-
+                    x += (Math.random() - 0.5) * 0.06; y += (Math.random() - 0.5) * 0.04;
                     return { cx: x * w, cy: y * h }; 
                 };
 
                 displayEntities.forEach(e => {
                     for(let key in e.raw_pt) {
-                        let count = e.raw_pt[key];
-                        let shotType = this.getShotType(key);
-                        for(let i=0; i<count; i++) {
-                            let pos = getCoords(key, true);
-                            this.drawShape(ctx, pos.cx, pos.cy, true, shotType);
-                        }
+                        let count = e.raw_pt[key]; let shotType = this.getShotType(key);
+                        for(let i=0; i<count; i++) { let pos = getCoords(key, true); this.drawShape(ctx, pos.cx, pos.cy, true, shotType); }
                     }
                     for(let key in e.raw_mt) {
                         if(key === 'df') continue; 
-                        let count = e.raw_mt[key];
-                        let shotType = this.getShotType(key);
-                        for(let i=0; i<count; i++) {
-                            let pos = getCoords(key, false);
-                            this.drawShape(ctx, pos.cx, pos.cy, false, shotType);
-                        }
+                        let count = e.raw_mt[key]; let shotType = this.getShotType(key);
+                        for(let i=0; i<count; i++) { let pos = getCoords(key, false); this.drawShape(ctx, pos.cx, pos.cy, false, shotType); }
                     }
                 });
             },
@@ -581,46 +601,104 @@
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
 
                 if(displayEntities.length === 0) {
-                    this.charts.winRate.data.datasets = []; this.charts.winRate.update();
-                    this.charts.errorType.data.datasets = []; this.charts.errorType.update();
-                    this.charts.radar.data.datasets = []; this.charts.radar.update();
-                    document.querySelector('#winRateTable tbody').innerHTML = '';
-                    document.querySelector('#errorTypeTable tbody').innerHTML = '';
-                    
-                    const canvas = document.getElementById('heatmapCanvas');
-                    const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ['winRate', 'errorType', 'radar', 'volume', 'playStyle'].forEach(c => {
+                        this.charts[c].data.datasets = []; this.charts[c].update();
+                    });
+                    this.charts.recvPies.forEach(c => c.destroy()); this.charts.recvPies = [];
+                    document.getElementById('recvPieContainer').innerHTML = '';
+                    ['winRateTable', 'errorTypeTable', 'volumeTable', 'recvPieTable', 'playStyleTable'].forEach(t => {
+                        document.querySelector(`#${t} tbody`).innerHTML = '';
+                    });
+                    const ctx = document.getElementById('heatmapCanvas').getContext('2d');
+                    ctx.clearRect(0, 0, 300, 400);
                     return;
                 }
 
-                this.drawHeatmap(displayEntities);
-
                 const labels = displayEntities.map(e => e.name);
 
+                this.drawHeatmap(displayEntities);
+
+                // 🌟 追加：③ ボリューム分析（得失点）
+                this.charts.volume.data.labels = labels;
+                this.charts.volume.data.datasets = [
+                    { label: '得点', backgroundColor: '#10b981', data: displayEntities.map(e => e.p) },
+                    { label: '失点', backgroundColor: '#ef4444', data: displayEntities.map(e => e.m) }
+                ];
+                this.charts.volume.update();
+
+                document.querySelector('#volumeTable tbody').innerHTML = displayEntities.map((e, i) => {
+                    const color = this.colors[i % this.colors.length].border;
+                    const diff = e.p - e.m;
+                    const diffFmt = diff > 0 ? `<span style="color:#10b981; font-weight:bold;">+${diff}</span>` : (diff < 0 ? `<span style="color:#ef4444; font-weight:bold;">${diff}</span>` : '0');
+                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val">${e.p}</span></td><td><span class="bold-val">${e.m}</span></td><td>${diffFmt}</td></tr>`;
+                }).join('');
+
+                // 🌟 追加：④ レシーブミスの打球コース内訳（ドーナツ）
+                const pieContainer = document.getElementById('recvPieContainer');
+                pieContainer.innerHTML = '';
+                this.charts.recvPies.forEach(c => c.destroy());
+                this.charts.recvPies = [];
+
+                displayEntities.forEach(e => {
+                    if (e.err_recv === 0) return; // レシーブミスが無い場合はスキップ
+                    
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'pie-wrapper';
+                    const title = document.createElement('div');
+                    title.className = 'pie-title'; title.textContent = e.name;
+                    const canvas = document.createElement('canvas');
+                    
+                    wrapper.appendChild(title); wrapper.appendChild(canvas);
+                    pieContainer.appendChild(wrapper);
+
+                    const pie = new Chart(canvas, {
+                        type: 'doughnut',
+                        data: { 
+                            labels: ['フォア側', 'バック側', '不明/その他'], 
+                            datasets: [{ backgroundColor: [this.shotColors.f_shoot, this.shotColors.b_shoot, this.shotColors.other], data: [e.err_recv_f, e.err_recv_b, e.err_recv_u] }] 
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    });
+                    this.charts.recvPies.push(pie);
+                });
+
+                document.querySelector('#recvPieTable tbody').innerHTML = displayEntities.map((e, i) => {
+                    const color = this.colors[i % this.colors.length].border;
+                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val" style="color:${this.shotColors.f_shoot}">${e.err_recv_f}</span>件</td><td><span class="bold-val" style="color:${this.shotColors.b_shoot}">${e.err_recv_b}</span>件</td><td>${e.err_recv_u}件</td></tr>`;
+                }).join('');
+
+                // 🌟 追加：⑤⑥ プレースタイル内訳（100% Stacked）
+                this.charts.playStyle.data.labels = labels;
+                this.charts.playStyle.data.datasets = [
+                    { label: 'Fシュート', backgroundColor: this.shotColors.f_shoot, data: displayEntities.map(e => this.calcRate(e.pt_f_shoot, e.p)) },
+                    { label: 'Bシュート', backgroundColor: this.shotColors.b_shoot, data: displayEntities.map(e => this.calcRate(e.pt_b_shoot, e.p)) },
+                    { label: 'ロブ/ドロップ', backgroundColor: this.shotColors.lob_drop, data: displayEntities.map(e => this.calcRate(e.pt_lob_drop, e.p)) },
+                    { label: 'ボレー', backgroundColor: this.shotColors.volley, data: displayEntities.map(e => this.calcRate(e.pt_volley, e.p)) },
+                    { label: 'スマッシュ', backgroundColor: this.shotColors.smash, data: displayEntities.map(e => this.calcRate(e.pt_smash, e.p)) },
+                    { label: 'その他(SA等)', backgroundColor: this.shotColors.other, data: displayEntities.map(e => this.calcRate(e.pt_other, e.p)) }
+                ];
+                this.charts.playStyle.update();
+
+                document.querySelector('#playStyleTable tbody').innerHTML = displayEntities.map((e, i) => {
+                    const color = this.colors[i % this.colors.length].border;
+                    const f = v => e.p>0 ? `<span class="bold-val">${this.calcRate(v,e.p)}%</span>` : '-';
+                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.pt_f_shoot)}</td><td>${f(e.pt_b_shoot)}</td><td>${f(e.pt_lob_drop)}</td><td>${f(e.pt_volley)}</td><td>${f(e.pt_smash)}</td><td>${f(e.pt_other)}</td></tr>`;
+                }).join('');
+
+                // ① 局面別勝率
                 this.charts.winRate.data.datasets = displayEntities.map((e, i) => ({
-                    label: e.name,
-                    backgroundColor: this.colors[i % this.colors.length].border,
-                    data: [
-                        this.calcRate(e.s1w, e.s1t), 
-                        this.calcRate(e.r2w, e.r2t), 
-                        this.calcRate(e.r1w, e.r1t), 
-                        this.calcRate(e.s2w, e.s2t)
-                    ]
+                    label: e.name, backgroundColor: this.colors[i % this.colors.length].border,
+                    data: [ this.calcRate(e.s1w, e.s1t), this.calcRate(e.r2w, e.r2t), this.calcRate(e.r1w, e.r1t), this.calcRate(e.s2w, e.s2t) ]
                 }));
                 this.charts.winRate.update();
 
                 document.querySelector('#winRateTable tbody').innerHTML = displayEntities.map((e, i) => {
                     const color = this.colors[i % this.colors.length].border;
                     const f = (w,t) => t>0 ? `<span class="bold-val">${this.calcRate(w,t)}%</span><br><span class="frac">${w}/${t}</span>` : '-';
-                    return `<tr>
-                        <td style="color:${color}; font-weight:bold;">${e.name}</td>
-                        <td class="td-attack">${f(e.s1w,e.s1t)}</td>
-                        <td class="td-attack">${f(e.r2w,e.r2t)}</td>
-                        <td class="td-defense">${f(e.r1w,e.r1t)}</td>
-                        <td class="td-defense">${f(e.s2w,e.s2t)}</td>
-                    </tr>`;
+                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td class="td-attack">${f(e.s1w,e.s1t)}</td><td class="td-attack">${f(e.r2w,e.r2t)}</td><td class="td-defense">${f(e.r1w,e.r1t)}</td><td class="td-defense">${f(e.s2w,e.s2t)}</td></tr>`;
                 }).join('');
 
+                // ② エラー内訳
                 this.charts.errorType.data.labels = labels;
                 this.charts.errorType.data.datasets = [
                     { label: 'ネット', backgroundColor: '#ea580c', data: displayEntities.map(e => e.err_net) },
@@ -636,6 +714,7 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
                 }).join('');
 
+                // 🌟 レーダーチャート
                 this.charts.radar.data.datasets = displayEntities.map((e, i) => {
                     const serve = this.calcRate(e.fi, e.st); 
                     const stroke = this.calcRate(e.pt_stroke, e.p); 
