@@ -60,7 +60,6 @@
         .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; min-width: 350px; }
         .radar-container { height: 350px; display: flex; justify-content: center; }
         
-        /* ヒートマップ用スタイル（凡例を拡張） */
         .heatmap-container { display: flex; justify-content: center; align-items: center; background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; position: relative; overflow: hidden; }
         #heatmapCanvas { max-width: 100%; height: auto; background-color: #2a6f44; border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); }
         .heatmap-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: var(--text-muted); }
@@ -153,7 +152,7 @@
                         <div class="legend-item">◆ その他(落とす等)</div>
                     </div>
                 </div>
-                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">※入力されたコースデータに基づく推測マッピングです（上側が相手コート、中央がネット）</p>
+                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">※上側が相手コートです。クロス/逆クロスのサイドアウトも正確にプロットされます。</p>
             </div>
 
             <div class="card" id="radar-card" style="grid-column: 1 / -1;">
@@ -440,43 +439,35 @@
                 this.renderCharts();
             },
 
-            calcRate(w, t) { return t > 0 ? Math.round((w/t)*100) : 0; },
-            
-            // 🌟 球種の文字列からカテゴリを判定する関数
             getShotType(key) {
                 if (key.includes('shoot')) return 'shoot';
                 if (key.includes('lob')) return 'lob';
                 if (key.includes('volley')) return 'volley';
                 if (key.includes('smash') || key.includes('overhead')) return 'smash';
-                return 'other'; // drop, twist など
+                return 'other'; 
             },
 
-            // 🌟 形（シェイプ）を描画する関数
             drawShape(ctx, x, y, isPoint, shotType) {
-                ctx.fillStyle = isPoint ? "rgba(59, 130, 246, 0.85)" : "rgba(239, 68, 68, 0.85)"; // 青 or 赤
+                ctx.fillStyle = isPoint ? "rgba(59, 130, 246, 0.85)" : "rgba(239, 68, 68, 0.85)"; 
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 
-                const size = 7; // 図形の大きさ
+                const size = 7; 
 
                 if (shotType === 'shoot') {
-                    // ● 円（シュート）
                     ctx.arc(x, y, size, 0, Math.PI * 2);
                 } 
                 else if (shotType === 'lob') {
-                    // ▲ 上向き三角（ロブ）
                     ctx.moveTo(x, y - size - 2);
                     ctx.lineTo(x + size + 1, y + size - 1);
                     ctx.lineTo(x - size - 1, y + size - 1);
                     ctx.closePath();
                 } 
                 else if (shotType === 'volley') {
-                    // ■ 四角（ボレー）
                     ctx.rect(x - size, y - size, size * 2, size * 2);
                 } 
                 else if (shotType === 'smash') {
-                    // ★ 星型（スマッシュ）
                     const spikes = 5;
                     const outerRadius = size + 2;
                     const innerRadius = size / 2;
@@ -497,7 +488,6 @@
                     ctx.closePath();
                 } 
                 else {
-                    // ◆ ひし形（その他：ドロップ・ツイスト等）
                     ctx.moveTo(x, y - size - 2);
                     ctx.lineTo(x + size + 2, y);
                     ctx.lineTo(x, y + size + 2);
@@ -509,7 +499,6 @@
                 ctx.stroke();
             },
 
-            // 🌟 ヒートマップ描画本体
             drawHeatmap(displayEntities) {
                 const canvas = document.getElementById('heatmapCanvas');
                 const ctx = canvas.getContext('2d');
@@ -520,7 +509,6 @@
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
                 ctx.lineWidth = 2;
 
-                // コート枠とライン
                 ctx.strokeRect(w*0.1, h*0.1, w*0.8, h*0.8);
                 ctx.beginPath(); ctx.moveTo(w*0.05, h*0.5); ctx.lineTo(w*0.95, h*0.5); ctx.lineWidth = 3; ctx.stroke(); ctx.lineWidth = 2;
                 ctx.beginPath(); ctx.moveTo(w*0.2, h*0.1); ctx.lineTo(w*0.2, h*0.9); ctx.stroke();
@@ -529,30 +517,44 @@
                 ctx.beginPath(); ctx.moveTo(w*0.2, h*0.75); ctx.lineTo(w*0.8, h*0.75); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(w*0.5, h*0.25); ctx.lineTo(w*0.5, h*0.75); ctx.stroke();
 
+                // 🌟 修正：打点・アウトの座標計算ロジック
                 const getCoords = (key, isPoint) => {
-                    let y = 0.25; 
+                    let y = 0.18; 
                     let x = 0.5;  
 
-                    if(key.includes('lob') || key.includes('bout') || key.includes('out')) y = 0.08; 
-                    if(key.includes('drop') || key.includes('twist') || key.includes('sout')) y = 0.4; 
+                    if(key.includes('lob')) y = 0.12; 
+                    if(key.includes('drop') || key.includes('twist')) y = 0.35; 
                     if(key.includes('net')) y = 0.5; 
 
-                    if(key.includes('cross') || key.includes('rev')) x = (Math.random() > 0.5) ? 0.3 : 0.7; 
-                    if(key.includes('str')) x = (Math.random() > 0.5) ? 0.15 : 0.85; 
+                    if(key.includes('cross')) x = 0.35; 
+                    if(key.includes('rev')) x = 0.65; 
+                    if(key.includes('str')) x = (Math.random() > 0.5) ? 0.25 : 0.75; 
                     if(key.includes('ctr')) x = 0.5;
                     
-                    if(!isPoint && (key.includes('out') || key.includes('bout'))) y = -0.05; 
-                    if(!isPoint && key.includes('sout')) { x = (Math.random() > 0.5) ? 0.05 : 0.95; y = 0.25; }
+                    // 完全なアウト（ベースライン外）
+                    if(!isPoint && (key.includes('out') || key.includes('bout'))) {
+                        y = 0.05; 
+                    }
+                    
+                    // サイドアウトの左右振り分け
+                    if(!isPoint && key.includes('sout')) {
+                        if (key.includes('cross')) {
+                            x = 0.04; // 左のサイドライン(0.1)より外
+                        } else if (key.includes('rev')) {
+                            x = 0.96; // 右のサイドライン(0.9)より外
+                        } else {
+                            x = (Math.random() > 0.5) ? 0.04 : 0.96; 
+                        }
+                        y = 0.25; 
+                    }
 
-                    // 点が完全に重ならないよう、少しだけ散らす（ジッター）
-                    x += (Math.random() - 0.5) * 0.12;
-                    y += (Math.random() - 0.5) * 0.08;
+                    x += (Math.random() - 0.5) * 0.06;
+                    y += (Math.random() - 0.5) * 0.04;
 
-                    return { cx: x * w, cy: (y + 0.1) * (h * 0.8) }; 
+                    return { cx: x * w, cy: y * h }; 
                 };
 
                 displayEntities.forEach(e => {
-                    // 得点描画
                     for(let key in e.raw_pt) {
                         let count = e.raw_pt[key];
                         let shotType = this.getShotType(key);
@@ -561,7 +563,6 @@
                             this.drawShape(ctx, pos.cx, pos.cy, true, shotType);
                         }
                     }
-                    // 失点描画
                     for(let key in e.raw_mt) {
                         if(key === 'df') continue; 
                         let count = e.raw_mt[key];
@@ -574,6 +575,8 @@
                 });
             },
 
+            calcRate(w, t) { return t > 0 ? Math.round((w/t)*100) : 0; },
+            
             renderCharts() {
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
 
@@ -590,7 +593,6 @@
                     return;
                 }
 
-                // ヒートマップ描画呼び出し
                 this.drawHeatmap(displayEntities);
 
                 const labels = displayEntities.map(e => e.name);
