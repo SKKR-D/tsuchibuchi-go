@@ -15,6 +15,12 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border-color: #cbd5e1;
+            
+            /* 新設：攻めと守りのテーマカラー */
+            --attack-bg: #fff1f2;
+            --attack-text: #e11d48;
+            --defense-bg: #f0fdf4;
+            --defense-text: #16a34a;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, sans-serif; }
@@ -41,7 +47,6 @@
         .btn-toggle { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 6px; font-weight: bold; color: var(--text-muted); cursor: pointer; transition: 0.2s; font-size: 0.9rem;}
         .btn-toggle.active { background: var(--card-bg); color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* マルチセレクト用に再設計されたエリア */
         .target-selection-area { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed var(--border-color); display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
         .target-col { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
         .target-col .match-filter-container { max-height: 150px; background: var(--card-bg); border-color: #e2e8f0;}
@@ -62,6 +67,12 @@
         
         .frac { font-size: 0.75rem; color: var(--text-muted); margin-left: 2px; }
         .bold-val { font-weight: 900; font-size: 1rem; color: var(--primary-color); }
+
+        /* 新設：攻め・守りヘッダー用スタイル */
+        .th-attack { background-color: var(--attack-bg) !important; color: var(--attack-text) !important; border-bottom: 2px solid var(--attack-text) !important; }
+        .th-defense { background-color: var(--defense-bg) !important; color: var(--defense-text) !important; border-bottom: 2px solid var(--defense-text) !important; }
+        .td-attack { background-color: #fffbfb; }
+        .td-defense { background-color: #fcfdfc; }
 
         @media screen and (max-width: 600px) {
             .dashboard-grid { grid-template-columns: 1fr; }
@@ -98,8 +109,7 @@
                     <button class="btn-toggle" onclick="app.setTargetType('team')">チーム</button>
                 </div>
             </div>
-            
-            </div>
+        </div>
 
         <div class="target-selection-area">
             <div class="target-col">
@@ -130,7 +140,19 @@
                 <h2 class="card-title">① 局面別の主導権 <span class="card-badge">得点率</span></h2>
                 <div class="chart-container"><canvas id="winRateChart"></canvas></div>
                 <table class="data-table" id="winRateTable">
-                    <thead><tr><th>対象</th><th>1stサーブ</th><th>2ndサーブ</th><th>1stレシーブ</th><th>2ndレシーブ</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="vertical-align: middle;">対象</th>
+                            <th colspan="2" class="th-attack">⚔️ 攻めスタート (優位局面)</th>
+                            <th colspan="2" class="th-defense">🛡️ 守りスタート (劣位局面)</th>
+                        </tr>
+                        <tr>
+                            <th style="background-color: var(--attack-bg);">1stサーブ</th>
+                            <th style="background-color: var(--attack-bg);">2ndレシーブ</th>
+                            <th style="background-color: var(--defense-bg);">1stレシーブ</th>
+                            <th style="background-color: var(--defense-bg);">2ndサーブ</th>
+                        </tr>
+                    </thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -150,17 +172,15 @@
         const app = {
             rawData: [], 
             entities: [], 
-            // selectedTargets配列で、「現在チェックがついている対象」を管理します
             state: { filterDate: 'all', filterMatches: [], targetType: 'pair', selectedTargets: [] },
             charts: {},
-            // 複数選択に対応できるよう、カラーパレットを6色に拡張
             colors: [
-                { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   // ブルー
-                { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.2)' },   // オレンジ
-                { border: '#16a34a', bg: 'rgba(22, 163, 74, 0.2)' },   // グリーン
-                { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.2)' },  // パープル
-                { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)' },   // レッド
-                { border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.2)' }   // シアン
+                { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   
+                { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.2)' },   
+                { border: '#16a34a', bg: 'rgba(22, 163, 74, 0.2)' },   
+                { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.2)' },  
+                { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)' },   
+                { border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.2)' }   
             ],
             
             init() {
@@ -243,7 +263,7 @@
 
             setTargetType(type) { 
                 this.state.targetType = type; 
-                this.state.selectedTargets = []; // 単位が変わったら選択状態をリセット
+                this.state.selectedTargets = []; 
                 
                 document.querySelectorAll(`#target-type-group .btn-toggle`).forEach(btn => {
                     btn.classList.remove('active');
@@ -262,7 +282,17 @@
 
                 const opts = { responsive: true, maintainAspectRatio: false };
                 this.charts.winRate = new Chart(document.getElementById('winRateChart'), {
-                    type: 'bar', data: { labels: ['1stサーブ時', '2ndサーブ時', '1stレシーブ時', '2ndレシーブ時'], datasets: [] },
+                    // 🌟 改善：グラフのラベルも2行にして攻守を分かりやすく
+                    type: 'bar', 
+                    data: { 
+                        labels: [
+                            ['⚔️ 攻め', '1stサーブ'], 
+                            ['⚔️ 攻め', '2ndレシーブ'], 
+                            ['🛡️ 守り', '1stレシーブ'], 
+                            ['🛡️ 守り', '2ndサーブ']
+                        ], 
+                        datasets: [] 
+                    },
                     options: { ...opts, scales: { y: { max: 100 } } }
                 });
 
@@ -363,7 +393,6 @@
                 this.updateTargetCheckboxes();
             },
 
-            // 🌟 新設：マルチセレクト用チェックボックスの生成
             updateTargetCheckboxes() {
                 const containerL = document.getElementById('target-list-L');
                 const containerR = document.getElementById('target-list-R');
@@ -372,7 +401,6 @@
                 const lSide = this.entities.filter(e => e.side === 'L').sort((a,b) => (b.p+b.m) - (a.p+a.m));
                 const rSide = this.entities.filter(e => e.side === 'R').sort((a,b) => (b.p+b.m) - (a.p+a.m));
 
-                // 初回読み込み時や単位切り替え時、誰も選ばれていなければ自チームの一番上の人を自動選択
                 if (this.state.selectedTargets.length === 0 && lSide.length > 0) {
                     this.state.selectedTargets.push(lSide[0].name);
                 }
@@ -390,7 +418,6 @@
                 this.renderCharts();
             },
 
-            // ターゲット（分析対象）のチェックボックスが押された時の処理
             onTargetChange() {
                 const cbs = document.querySelectorAll('.target-cb:checked');
                 this.state.selectedTargets = Array.from(cbs).map(cb => cb.value);
@@ -400,7 +427,6 @@
             calcRate(w, t) { return t > 0 ? Math.round((w/t)*100) : 0; },
             
             renderCharts() {
-                // チェックされている対象だけを抽出
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
 
                 if(displayEntities.length === 0) {
@@ -414,26 +440,32 @@
 
                 const labels = displayEntities.map(e => e.name);
 
-                // ① 局面別勝率
+                // 🌟 改善：データ配列を新ロジック（攻め → 守りの順）にマッピング
                 this.charts.winRate.data.datasets = displayEntities.map((e, i) => ({
                     label: e.name,
                     backgroundColor: this.colors[i % this.colors.length].border,
                     data: [
-                        this.calcRate(e.s1w, e.s1t), 
-                        this.calcRate(e.s2w, e.s2t), 
-                        this.calcRate(e.r1w, e.r1t), 
-                        this.calcRate(e.r2w, e.r2t)
+                        this.calcRate(e.s1w, e.s1t), // 攻め1：1stサーブ
+                        this.calcRate(e.r2w, e.r2t), // 攻め2：2ndレシーブ
+                        this.calcRate(e.r1w, e.r1t), // 守り1：1stレシーブ
+                        this.calcRate(e.s2w, e.s2t)  // 守り2：2ndサーブ
                     ]
                 }));
                 this.charts.winRate.update();
 
+                // 🌟 改善：表の描画も新しい順序と背景色に合わせて更新
                 document.querySelector('#winRateTable tbody').innerHTML = displayEntities.map((e, i) => {
                     const color = this.colors[i % this.colors.length].border;
                     const f = (w,t) => t>0 ? `<span class="bold-val">${this.calcRate(w,t)}%</span><br><span class="frac">${w}/${t}</span>` : '-';
-                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.s1w,e.s1t)}</td><td>${f(e.s2w,e.s2t)}</td><td>${f(e.r1w,e.r1t)}</td><td>${f(e.r2w,e.r2t)}</td></tr>`;
+                    return `<tr>
+                        <td style="color:${color}; font-weight:bold;">${e.name}</td>
+                        <td class="td-attack">${f(e.s1w,e.s1t)}</td>
+                        <td class="td-attack">${f(e.r2w,e.r2t)}</td>
+                        <td class="td-defense">${f(e.r1w,e.r1t)}</td>
+                        <td class="td-defense">${f(e.s2w,e.s2t)}</td>
+                    </tr>`;
                 }).join('');
 
-                // ② エラー内訳（回数ベース）
                 this.charts.errorType.data.labels = labels;
                 this.charts.errorType.data.datasets = [
                     { label: 'ネット', backgroundColor: '#ea580c', data: displayEntities.map(e => e.err_net) },
@@ -449,7 +481,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
                 }).join('');
 
-                // ③ レーダーチャート
                 this.charts.radar.data.datasets = displayEntities.map((e, i) => {
                     const serve = this.calcRate(e.fi, e.st); 
                     const attack = this.calcRate(e.pt_attack, e.p); 
