@@ -16,7 +16,6 @@
             --text-muted: #64748b;
             --border-color: #cbd5e1;
             
-            /* 新設：攻めと守りのテーマカラー */
             --attack-bg: #fff1f2;
             --attack-text: #e11d48;
             --defense-bg: #f0fdf4;
@@ -68,7 +67,6 @@
         .frac { font-size: 0.75rem; color: var(--text-muted); margin-left: 2px; }
         .bold-val { font-weight: 900; font-size: 1rem; color: var(--primary-color); }
 
-        /* 新設：攻め・守りヘッダー用スタイル */
         .th-attack { background-color: var(--attack-bg) !important; color: var(--attack-text) !important; border-bottom: 2px solid var(--attack-text) !important; }
         .th-defense { background-color: var(--defense-bg) !important; color: var(--defense-text) !important; border-bottom: 2px solid var(--defense-text) !important; }
         .td-attack { background-color: #fffbfb; }
@@ -126,14 +124,14 @@
     <div id="dashboard-content">
         <div class="section-title">
             <span id="dynamic-section-title">分析結果</span>
-            <span style="font-size: 0.8rem; font-weight: normal; color: gray;">※グラフが重なりすぎる場合は選択数を3〜4つに絞ってください</span>
+            <span style="font-size: 0.8rem; font-weight: normal; color: gray;">※グラフが重なりすぎる場合は選択数を絞ってください</span>
         </div>
         
         <div class="dashboard-grid">
             <div class="card" id="radar-card" style="grid-column: 1 / -1;">
                 <h2 class="card-title">🌟 プレースタイル・戦力比較 <span class="card-badge">レーダー分析</span></h2>
                 <div class="chart-container radar-container"><canvas id="radarChart"></canvas></div>
-                <p style="text-align:center; font-size:0.8rem; color:gray;">※集計データに基づく偏差値（1stサーブ、攻撃力、守備力、レシーブ、展開力）</p>
+                <p style="text-align:center; font-size:0.8rem; color:gray;">※集計データに基づく偏差値（1stサーブ、ストローク力、堅実性、レシーブ、ネットプレー）</p>
             </div>
 
             <div class="card">
@@ -143,8 +141,8 @@
                     <thead>
                         <tr>
                             <th rowspan="2" style="vertical-align: middle;">対象</th>
-                            <th colspan="2" class="th-attack">⚔️ 攻めスタート (優位局面)</th>
-                            <th colspan="2" class="th-defense">🛡️ 守りスタート (劣位局面)</th>
+                            <th colspan="2" class="th-attack">⚔️ 攻めスタート (優位)</th>
+                            <th colspan="2" class="th-defense">🛡️ 守りスタート (劣位)</th>
                         </tr>
                         <tr>
                             <th style="background-color: var(--attack-bg);">1stサーブ</th>
@@ -276,13 +274,13 @@
                 const ctxRadar = document.getElementById('radarChart').getContext('2d');
                 this.charts.radar = new Chart(ctxRadar, {
                     type: 'radar',
-                    data: { labels: ['1stサーブ安定', '攻撃力(ウィナー)', '守備力(非ミス)', 'レシーブ対応', '展開力(ロブ等)'], datasets: [] },
+                    // 🌟 改善：指標の名前を「ストローク攻撃力」「ネットプレー力」に完全分離
+                    data: { labels: ['1stサーブ安定', 'ストローク力(後衛)', '堅実性(ミス回避)', 'レシーブ対応', 'ネットプレー(前衛)'], datasets: [] },
                     options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } } }
                 });
 
                 const opts = { responsive: true, maintainAspectRatio: false };
                 this.charts.winRate = new Chart(document.getElementById('winRateChart'), {
-                    // 🌟 改善：グラフのラベルも2行にして攻守を分かりやすく
                     type: 'bar', 
                     data: { 
                         labels: [
@@ -317,7 +315,8 @@
                         entityMap[name] = { 
                             name: name, side: side, p: 0, m: 0, fi: 0, st: 0,
                             err_net: 0, err_out: 0, err_df: 0, err_recv: 0, err_other: 0,
-                            pt_attack: 0, pt_lob: 0,
+                            // 🌟 改善：ストロークとネットプレーの得点を分ける箱を用意
+                            pt_stroke: 0, pt_net: 0,
                             s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0
                         };
                     }
@@ -361,8 +360,10 @@
                             if(st.pt) {
                                 for(let pt in st.pt) {
                                     let val = st.pt[pt];
-                                    if(pt.includes('shoot') || pt.includes('volley') || pt.includes('smash') || pt.includes('ace')) e.pt_attack += val;
-                                    if(pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_lob += val;
+                                    // 🌟 改善：ストローク系（シュート、ロブ、ツイスト、ドロップ）
+                                    if(pt.includes('shoot') || pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_stroke += val;
+                                    // 🌟 改善：ネットプレー系（ボレー、スマッシュ、オーバーヘッド）
+                                    if(pt.includes('volley') || pt.includes('smash') || pt.includes('overhead')) e.pt_net += val;
                                 }
                             }
                         });
@@ -440,20 +441,18 @@
 
                 const labels = displayEntities.map(e => e.name);
 
-                // 🌟 改善：データ配列を新ロジック（攻め → 守りの順）にマッピング
                 this.charts.winRate.data.datasets = displayEntities.map((e, i) => ({
                     label: e.name,
                     backgroundColor: this.colors[i % this.colors.length].border,
                     data: [
-                        this.calcRate(e.s1w, e.s1t), // 攻め1：1stサーブ
-                        this.calcRate(e.r2w, e.r2t), // 攻め2：2ndレシーブ
-                        this.calcRate(e.r1w, e.r1t), // 守り1：1stレシーブ
-                        this.calcRate(e.s2w, e.s2t)  // 守り2：2ndサーブ
+                        this.calcRate(e.s1w, e.s1t), 
+                        this.calcRate(e.r2w, e.r2t), 
+                        this.calcRate(e.r1w, e.r1t), 
+                        this.calcRate(e.s2w, e.s2t)
                     ]
                 }));
                 this.charts.winRate.update();
 
-                // 🌟 改善：表の描画も新しい順序と背景色に合わせて更新
                 document.querySelector('#winRateTable tbody').innerHTML = displayEntities.map((e, i) => {
                     const color = this.colors[i % this.colors.length].border;
                     const f = (w,t) => t>0 ? `<span class="bold-val">${this.calcRate(w,t)}%</span><br><span class="frac">${w}/${t}</span>` : '-';
@@ -481,16 +480,17 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
                 }).join('');
 
+                // 🌟 改善：レーダーチャートの算出ロジックをストローク・ネットプレーに分離
                 this.charts.radar.data.datasets = displayEntities.map((e, i) => {
                     const serve = this.calcRate(e.fi, e.st); 
-                    const attack = this.calcRate(e.pt_attack, e.p); 
-                    const defense = e.m > 0 ? Math.max(0, 100 - this.calcRate(e.m, e.p + e.m)) : 100; 
+                    const stroke = this.calcRate(e.pt_stroke, e.p); // 全得点に対するストローク得点の割合
+                    const defense = e.m > 0 ? Math.max(0, 100 - this.calcRate(e.m, e.p + e.m)) : 100; // 堅実性(非ミス)
                     const receive = e.r1t+e.r2t > 0 ? 100 - this.calcRate(e.err_recv, e.r1t + e.r2t) : 50; 
-                    const lob = this.calcRate(e.pt_lob, e.p); 
+                    const netPlay = this.calcRate(e.pt_net, e.p); // 全得点に対するネットプレー得点の割合
 
                     return {
                         label: e.name,
-                        data: [serve, attack, defense, receive, lob],
+                        data: [serve, stroke, defense, receive, netPlay],
                         borderColor: this.colors[i % this.colors.length].border,
                         backgroundColor: this.colors[i % this.colors.length].bg,
                         fill: true
