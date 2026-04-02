@@ -30,7 +30,8 @@
         .cp-header h1 { font-size: 1.5rem; color: var(--secondary-color); font-weight: 900; margin: 0; }
         .system-status { font-size: 0.85rem; color: #16a34a; font-weight: bold; background: #dcfce7; padding: 6px 12px; border-radius: 20px; }
 
-        .cp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        /* 🌟 フィルター領域を4カラムに拡張 */
+        .cp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
         .cp-group { display: flex; flex-direction: column; gap: 6px; }
         .cp-label { font-size: 0.8rem; font-weight: bold; color: var(--text-muted); text-transform: uppercase; }
         
@@ -57,6 +58,12 @@
         .card-title { font-size: 1.1rem; margin-bottom: 16px; font-weight: 900; color: var(--secondary-color); display: flex; align-items: center; justify-content: space-between;}
         .card-badge { font-size: 0.7rem; background: var(--bg-color); padding: 3px 8px; border-radius: 10px; color: var(--text-muted); white-space: nowrap; font-weight: normal; }
 
+        /* 🌟 デジタルコーチ用スタイル */
+        .coach-card { border-top: 5px solid #fbbf24 !important; background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%) !important; }
+        .coach-list { list-style: none; padding: 0; margin: 0; }
+        .coach-list li { background: var(--surface); border-left: 4px solid #f59e0b; padding: 12px 16px; margin-bottom: 10px; border-radius: 0 8px 8px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.03); font-size: 0.95rem; line-height: 1.5; color: var(--text-main); }
+        .coach-list li:last-child { margin-bottom: 0; }
+
         .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; }
         .radar-container { position: relative; height: 350px; width: 100%; }
         
@@ -82,8 +89,6 @@
         .th-defense { background-color: var(--defense-bg) !important; color: var(--defense-text) !important; border-bottom: 2px solid var(--defense-text) !important; }
         .td-attack { background-color: #fffbfb; }
         .td-defense { background-color: #fcfdfc; }
-        
-        /* フォアバック詳細表のヘッダー色 */
         .th-fb-pt { background-color: #dcfce7 !important; color: #16a34a !important; border-bottom: 2px solid #16a34a !important;}
         .th-fb-mt { background-color: #fee2e2 !important; color: #dc2626 !important; border-bottom: 2px solid #dc2626 !important;}
 
@@ -103,24 +108,32 @@
         
         <div class="cp-grid">
             <div class="cp-group">
-                <span class="cp-label">📅 期間 / 大会</span>
-                <select class="cp-select" id="filter-date" onchange="app.onDateFilterChange()">
-                    <option value="all">すべてのデータ</option>
-                </select>
+                <span class="cp-label">📅 期間</span>
+                <select class="cp-select" id="filter-date" onchange="app.onFilterChange()"><option value="all">すべて</option></select>
             </div>
 
             <div class="cp-group">
-                <span class="cp-label">🎾 試合選択 (複数可)</span>
+                <span class="cp-label">🏆 大会名</span>
+                <select class="cp-select" id="filter-tourney" onchange="app.onFilterChange()"><option value="all">すべて</option></select>
+            </div>
+
+            <div class="cp-group">
+                <span class="cp-label">🆚 相手チーム (DB)</span>
+                <select class="cp-select" id="filter-opponent" onchange="app.onFilterChange()"><option value="all">すべて</option></select>
+            </div>
+
+            <div class="cp-group">
+                <span class="cp-label">🎾 試合絞り込み</span>
                 <div class="match-filter-container" id="match-filter-container"></div>
             </div>
-
-            <div class="cp-group">
-                <span class="cp-label">🎯 分析単位 (Who)</span>
-                <div class="btn-group" id="target-type-group">
-                    <button class="btn-toggle active" onclick="app.setTargetType('pair')">ペア</button>
-                    <button class="btn-toggle" onclick="app.setTargetType('player')">個人</button>
-                    <button class="btn-toggle" onclick="app.setTargetType('team')">チーム</button>
-                </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <span class="cp-label">🎯 分析単位 (Who)</span>
+            <div class="btn-group" id="target-type-group" style="max-width: 400px;">
+                <button class="btn-toggle active" onclick="app.setTargetType('pair')">ペア</button>
+                <button class="btn-toggle" onclick="app.setTargetType('player')">個人</button>
+                <button class="btn-toggle" onclick="app.setTargetType('team')">チーム</button>
             </div>
         </div>
 
@@ -143,6 +156,13 @@
         </div>
         
         <div class="dashboard-grid">
+
+            <div class="card coach-card" style="grid-column: 1 / -1;">
+                <h2 class="card-title" style="color: #d97706;">💡 デジタル・コーチ <span class="card-badge" style="background:#fef3c7; color:#d97706; border:1px solid #fde68a;">AI戦術アシスト</span></h2>
+                <ul class="coach-list" id="coach-advice-list">
+                    <li style="color:gray;">データが集計されていません。分析対象を選択してください。</li>
+                </ul>
+            </div>
 
             <div class="card" style="grid-column: 1 / -1; border-top-color: #0ea5e9;">
                 <h2 class="card-title">▶ 試合の流れ <span class="card-badge">モメンタム推移</span></h2>
@@ -230,7 +250,6 @@
                         <tbody></tbody>
                     </table>
                 </div>
-                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">※入力アプリに左右の項目が無い場合、「不明/他」に分類されます。</p>
             </div>
 
             <div class="card" style="grid-column: 1 / -1; border-top-color: #06b6d4;">
@@ -289,7 +308,8 @@
         const app = {
             rawData: [], 
             entities: [], 
-            state: { filterDate: 'all', filterMatches: [], targetType: 'pair', selectedTargets: [] },
+            // 🌟 フィルター状態の拡張
+            state: { filterDate: 'all', filterTourney: 'all', filterOpponent: 'all', filterMatches: [], targetType: 'pair', selectedTargets: [] },
             charts: {},
             colors: [
                 { border: '#0284c7', bg: 'rgba(2, 132, 199, 0.2)' },   
@@ -302,7 +322,6 @@
             shotColors: {
                 f_shoot: '#ef4444', b_shoot: '#3b82f6', lob_drop: '#eab308',
                 volley: '#10b981', smash: '#8b5cf6', other: '#94a3b8',
-                // フォアバック分析用の専用カラー
                 f_stroke: '#ef4444', b_stroke: '#3b82f6',
                 f_volley: '#f97316', b_volley: '#0ea5e9',
                 smash_all: '#8b5cf6'
@@ -322,8 +341,8 @@
                     .then(response => {
                         this.rawData = response.data || response; 
                         this.rawData.forEach((m, idx) => { m._uid = m.matchId || `match_${idx}`; });
-                        this.setupDateFilter();
-                        this.onDateFilterChange(); 
+                        this.setupFilters(); // 🌟 フィルター一括セットアップ
+                        this.onFilterChange(); 
                         const now = new Date();
                         document.getElementById('currentDateDisplay').textContent = `✓ ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 同期完了`;
                     })
@@ -333,30 +352,48 @@
                     });
             },
 
-            setupDateFilter() {
-                const select = document.getElementById('filter-date');
+            // 🌟 フィルター設定（大会名と相手チームを追加）
+            setupFilters() {
+                // 日付
+                const dateSelect = document.getElementById('filter-date');
                 const dates = [...new Set(this.rawData.map(m => m.matchDate || m.date).filter(Boolean))];
-                dates.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d; opt.textContent = `${d} の試合`;
-                    select.appendChild(opt);
-                });
+                dates.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; dateSelect.appendChild(opt); });
+                
+                // 大会名
+                const tourneySelect = document.getElementById('filter-tourney');
+                const tourneys = [...new Set(this.rawData.map(m => m.meta?.tourney).filter(Boolean))];
+                tourneys.forEach(t => { const opt = document.createElement('option'); opt.value = t; opt.textContent = t; tourneySelect.appendChild(opt); });
+
+                // 相手チーム (DB)
+                const oppSelect = document.getElementById('filter-opponent');
+                const opponents = [...new Set(this.rawData.map(m => m.teams?.R).filter(Boolean))];
+                opponents.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; oppSelect.appendChild(opt); });
             },
 
-            onDateFilterChange() {
+            // 🌟 フィルター変更時の処理（3つの条件のAND検索）
+            onFilterChange() {
                 this.state.filterDate = document.getElementById('filter-date').value;
+                this.state.filterTourney = document.getElementById('filter-tourney').value;
+                this.state.filterOpponent = document.getElementById('filter-opponent').value;
+
                 const container = document.getElementById('match-filter-container');
                 container.innerHTML = '';
 
-                const dateFiltered = this.rawData.filter(m => this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate);
+                // 絞り込みロジック
+                const dateFiltered = this.rawData.filter(m => {
+                    const passDate = this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate;
+                    const passTourney = this.state.filterTourney === 'all' || m.meta?.tourney === this.state.filterTourney;
+                    const passOpp = this.state.filterOpponent === 'all' || m.teams?.R === this.state.filterOpponent;
+                    return passDate && passTourney && passOpp;
+                });
                 
                 const allLabel = document.createElement('label');
-                allLabel.innerHTML = `<input type="checkbox" id="match-filter-all" checked onchange="app.toggleAllMatches(this)"> <b>すべての試合 (${dateFiltered.length}件)</b>`;
+                allLabel.innerHTML = `<input type="checkbox" id="match-filter-all" checked onchange="app.onMatchSelectionChange(this)"> <b>該当する全試合 (${dateFiltered.length}件)</b>`;
                 container.appendChild(allLabel);
 
                 dateFiltered.forEach((m, idx) => {
                     const lbl = document.createElement('label');
-                    const title = `${idx + 1}試合目: vs ${m.teams?.R || '相手'} (${m.gL}-${m.gR})`;
+                    const title = `${m.matchDate} ${m.meta?.tourney||''} vs ${m.teams?.R} (${m.gL}-${m.gR})`;
                     lbl.innerHTML = `<input type="checkbox" class="match-cb" value="${m._uid}" checked onchange="app.onMatchSelectionChange()"> ${title}`;
                     container.appendChild(lbl);
                 });
@@ -364,18 +401,19 @@
                 this.onMatchSelectionChange(); 
             },
 
-            toggleAllMatches(checkbox) {
-                document.querySelectorAll('.match-cb').forEach(cb => cb.checked = checkbox.checked);
-                this.onMatchSelectionChange();
-            },
-
-            onMatchSelectionChange() {
+            onMatchSelectionChange(allCheckboxElement = null) {
                 const checkboxes = document.querySelectorAll('.match-cb');
                 const allCheckbox = document.getElementById('match-filter-all');
+                
+                if(allCheckboxElement && allCheckboxElement.id === 'match-filter-all') {
+                    checkboxes.forEach(cb => cb.checked = allCheckbox.checked);
+                }
+
                 let selected = [];
                 let allChecked = true;
                 checkboxes.forEach(cb => { if(cb.checked) selected.push(cb.value); else allChecked = false; });
-                allCheckbox.checked = allChecked;
+                if(checkboxes.length > 0) allCheckbox.checked = allChecked;
+                
                 this.state.filterMatches = selected; 
                 this.processData(); 
             },
@@ -408,14 +446,9 @@
                     options: { ...opts, scales: { y: { max: 100 } } }
                 });
 
-                // 🌟 刷新：③ フォアバック得失点チャート（積み上げ棒グラフ）
                 this.charts.fbRatio = new Chart(document.getElementById('fbRatioChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
-                    options: { 
-                        ...opts, 
-                        scales: { x: { stacked: true }, y: { stacked: true } },
-                        plugins: { tooltip: { mode: 'index', intersect: false } }
-                    }
+                    options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { tooltip: { mode: 'index', intersect: false } } }
                 });
 
                 this.charts.errorType = new Chart(document.getElementById('errorTypeChart'), {
@@ -442,11 +475,7 @@
             },
 
             processData() {
-                const filtered = this.rawData.filter(m => {
-                    const passDate = (this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate);
-                    const passMatch = this.state.filterMatches.includes(m._uid);
-                    return passDate && passMatch;
-                });
+                const filtered = this.rawData.filter(m => this.state.filterMatches.includes(m._uid));
                 
                 document.getElementById('dynamic-section-title').textContent = `${{'pair':'ペア', 'player':'個人', 'team':'チーム'}[this.state.targetType]} 分析結果 (${filtered.length}試合)`;
 
@@ -459,10 +488,8 @@
                             err_recv_f: 0, err_recv_b: 0, err_recv_u: 0,
                             pt_f_shoot: 0, pt_b_shoot: 0, pt_lob_drop: 0, pt_volley: 0, pt_smash: 0, pt_other: 0,
                             pt_stroke: 0, pt_net: 0, 
-                            // 🌟 新設：③ フォアバック分析用の詳細な箱
                             pt_f_str: 0, pt_b_str: 0, pt_f_vol: 0, pt_b_vol: 0, pt_sma: 0,
                             mt_f_str: 0, mt_b_str: 0, mt_f_vol: 0, mt_b_vol: 0, mt_sma: 0,
-                            
                             s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0,
                             raw_pt: {}, raw_mt: {},
                             current_momentum: 0, momentum_history: [0],
@@ -528,13 +555,11 @@
                             if(!st) return;
                             e.p += (st.p || 0); e.m += (st.m || 0); e.fi += (st.fi || 0); e.st += (st.st || 0);
 
-                            // 🔴 失点の解析
                             if(st.mt) {
                                 for(let err in st.mt) {
                                     let val = st.mt[err];
                                     e.raw_mt[err] = (e.raw_mt[err] || 0) + val; 
                                     
-                                    // 既存のエラー解析
                                     if(err === 'df') e.err_df += val;
                                     else if(err.includes('net')) e.err_net += val;
                                     else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
@@ -546,27 +571,24 @@
                                     }
                                     else e.err_other += val;
 
-                                    // 🌟 新設：失点のF/B詳細解析
                                     let isFm = err.startsWith('f_') || err.includes('_f_') || err.startsWith('recv_f');
                                     let isBm = err.startsWith('b_') || err.includes('_b_') || err.startsWith('recv_b');
                                     
                                     if(err.includes('volley')) {
                                         if(isFm) e.mt_f_vol += val; else if(isBm) e.mt_b_vol += val;
                                     } else if(err.includes('smash') || err.includes('overhead')) {
-                                        e.mt_sma += val; // スマッシュは一括
+                                        e.mt_sma += val; 
                                     } else if(err.includes('shoot') || err.includes('lob') || err.includes('drop') || err.includes('twist') || err.startsWith('recv_')) {
                                         if(isFm) e.mt_f_str += val; else if(isBm) e.mt_b_str += val;
                                     }
                                 }
                             }
                             
-                            // 🔵 得点の解析
                             if(st.pt) {
                                 for(let pt in st.pt) {
                                     let val = st.pt[pt];
                                     e.raw_pt[pt] = (e.raw_pt[pt] || 0) + val; 
                                     
-                                    // 既存のプレースタイル解析
                                     if(pt.startsWith('f_shoot') || pt.startsWith('f_twist')) e.pt_f_shoot += val;
                                     else if(pt.startsWith('b_shoot') || pt.startsWith('b_twist')) e.pt_b_shoot += val;
                                     else if(pt.includes('lob') || pt.includes('drop')) e.pt_lob_drop += val;
@@ -577,7 +599,6 @@
                                     if(pt.includes('shoot') || pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_stroke += val;
                                     if(pt.includes('volley') || pt.includes('smash') || pt.includes('overhead')) e.pt_net += val;
 
-                                    // 🌟 新設：得点のF/B詳細解析
                                     let isFp = pt.startsWith('f_');
                                     let isBp = pt.startsWith('b_');
                                     
@@ -627,6 +648,61 @@
                 const cbs = document.querySelectorAll('.target-cb:checked');
                 this.state.selectedTargets = Array.from(cbs).map(cb => cb.value);
                 this.renderCharts();
+            },
+
+            // 🌟 新設：AIデジタルコーチによるアドバイス自動生成
+            generateAdvice(displayEntities) {
+                const list = document.getElementById('coach-advice-list');
+                list.innerHTML = '';
+                if(displayEntities.length === 0) {
+                    list.innerHTML = '<li style="color:gray;">データが集計されていません。分析対象を選択してください。</li>';
+                    return;
+                }
+
+                let advices = [];
+                displayEntities.forEach(e => {
+                    // データが少なすぎる場合はスキップ（ノイズ排除）
+                    if ((e.p + e.m) < 5) return;
+
+                    const isOpponent = e.side === 'R';
+                    const nameTag = `<span style="font-weight:bold; color:${isOpponent ? '#ea580c' : '#0284c7'}">${e.name}</span>`;
+                    const prefix = isOpponent ? `🎯 【攻略法: ${nameTag}】 ` : `💪 【特訓メモ: ${nameTag}】 `;
+
+                    // 1. 1st Serve
+                    if (e.s1t >= 5 && (e.s1w / e.s1t) < 0.4) {
+                        advices.push(`<li>${prefix}1stサーブを入れた時の得点率が低迷（${Math.round(e.s1w/e.s1t*100)}%）しています。${isOpponent ? '相手の1stサーブは恐れず、強気にリターンから攻めましょう。' : 'サーブのコースを散らすか、打った後の3球目の準備を早くしましょう。'}</li>`);
+                    }
+
+                    // 2. Backhand weakness
+                    if (e.mt_b_str > (e.pt_b_str * 1.5) && e.mt_b_str >= 3) {
+                        advices.push(`<li>${prefix}バックハンドでのストロークミス（${e.mt_b_str}本）が、得点を上回ってしまっています。${isOpponent ? '徹底的にバック側を狙い、ミスを誘いましょう。' : 'バック側を狙われています。回り込んでフォアで打つか、まずは深く繋ぐ意識を持ちましょう。'}</li>`);
+                    } else if (e.pt_f_str > (e.mt_f_str * 2) && e.pt_f_str >= 4) {
+                        // Forehand strength
+                        advices.push(`<li>${prefix}フォアのストロークが強烈な武器になっています。${isOpponent ? '絶対にフォアで打たせないよう、コースを厳しく突きましょう。' : '調子が良いです！どんどんフォアで回り込んで攻撃の起点を作りましょう。'}</li>`);
+                    }
+
+                    // 3. Volley strength
+                    if ((e.pt_f_vol + e.pt_b_vol) >= 4 && (e.pt_f_vol + e.pt_b_vol) > (e.mt_f_vol + e.mt_b_vol) * 2) {
+                        advices.push(`<li>${prefix}ボレーによる得点力が非常に高いです。${isOpponent ? '前衛に捕まらないよう、ロブやストレートへのパッシングを有効に使いましょう。' : '前衛がしっかり機能しています。後衛は強気でシュートを打ち、前衛に勝負させましょう。'}</li>`);
+                    }
+
+                    // 4. Rally Length
+                    let longRate = e.rl_long_t > 0 ? (e.rl_long_w / e.rl_long_t) : 0;
+                    if (e.rl_long_t >= 4 && longRate <= 0.3) {
+                        advices.push(`<li>${prefix}長期戦（9球以上のラリー）になると勝率がガクッと落ちます。${isOpponent ? '粘り強くラリーを続ければ、相手が焦って自滅する確率が高いです。' : 'ラリーが長引くと焦ってミスをする傾向があります。相手のミスを待つ我慢強さを持ちましょう。'}</li>`);
+                    }
+
+                    // 5. Receive Misses
+                    if (e.err_recv >= 4) {
+                        advices.push(`<li>${prefix}レシーブミスが${e.err_recv}回発生し、流れを失っています。${isOpponent ? 'サーブで崩す戦術が非常に効果的です。' : 'まずはサービスボックスの奥を狙って、確実に相手コートへ返すことを最優先しましょう。'}</li>`);
+                    }
+                });
+
+                if (advices.length === 0) {
+                    list.innerHTML = '<li>現在選択されているデータからは、極端な偏り（明確な弱点や特長）は検出されませんでした。バランスの良い状態です。</li>';
+                } else {
+                    advices.forEach(txt => { list.innerHTML += txt; });
+                }
             },
 
             getShotType(key) {
@@ -725,10 +801,16 @@
                     });
                     const ctx = document.getElementById('heatmapCanvas').getContext('2d');
                     ctx.clearRect(0, 0, 300, 400);
+                    
+                    // アドバイスもクリア
+                    this.generateAdvice([]);
                     return;
                 }
 
                 const labels = displayEntities.map(e => e.name);
+
+                // 🌟 デジタルコーチ実行
+                this.generateAdvice(displayEntities);
 
                 let maxLength = 0;
                 displayEntities.forEach(e => { if (e.momentum_history.length > maxLength) maxLength = e.momentum_history.length; });
@@ -760,40 +842,19 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td class="td-attack">${f(e.s1w,e.s1t)}</td><td class="td-attack">${f(e.r2w,e.r2t)}</td><td class="td-defense">${f(e.r1w,e.r1t)}</td><td class="td-defense">${f(e.s2w,e.s2t)}</td></tr>`;
                 }).join('');
 
-                // 🌟 刷新：③ フォアバック得失点チャート
-                // X軸のラベルを「名前(得点)」「名前(失点)」と2本並べる
                 let fbLabels = [];
-                displayEntities.forEach(e => {
-                    fbLabels.push(e.name + ' (得点🔵)');
-                    fbLabels.push(e.name + ' (失点🔴)');
-                });
+                displayEntities.forEach(e => { fbLabels.push(e.name + ' (得🔵)'); fbLabels.push(e.name + ' (失🔴)'); });
                 this.charts.fbRatio.data.labels = fbLabels;
 
                 this.charts.fbRatio.data.datasets = [
-                    { 
-                        label: 'Fストローク', backgroundColor: this.shotColors.f_stroke, 
-                        data: displayEntities.flatMap(e => [e.pt_f_str, e.mt_f_str]) 
-                    },
-                    { 
-                        label: 'Bストローク', backgroundColor: this.shotColors.b_stroke, 
-                        data: displayEntities.flatMap(e => [e.pt_b_str, e.mt_b_str]) 
-                    },
-                    { 
-                        label: 'Fボレー', backgroundColor: this.shotColors.f_volley, 
-                        data: displayEntities.flatMap(e => [e.pt_f_vol, e.mt_f_vol]) 
-                    },
-                    { 
-                        label: 'Bボレー', backgroundColor: this.shotColors.b_volley, 
-                        data: displayEntities.flatMap(e => [e.pt_b_vol, e.mt_b_vol]) 
-                    },
-                    { 
-                        label: 'スマッシュ', backgroundColor: this.shotColors.smash_all, 
-                        data: displayEntities.flatMap(e => [e.pt_sma, e.mt_sma]) 
-                    }
+                    { label: 'Fストローク', backgroundColor: this.shotColors.f_stroke, data: displayEntities.flatMap(e => [e.pt_f_str, e.mt_f_str]) },
+                    { label: 'Bストローク', backgroundColor: this.shotColors.b_stroke, data: displayEntities.flatMap(e => [e.pt_b_str, e.mt_b_str]) },
+                    { label: 'Fボレー', backgroundColor: this.shotColors.f_volley, data: displayEntities.flatMap(e => [e.pt_f_vol, e.mt_f_vol]) },
+                    { label: 'Bボレー', backgroundColor: this.shotColors.b_volley, data: displayEntities.flatMap(e => [e.pt_b_vol, e.mt_b_vol]) },
+                    { label: 'スマッシュ', backgroundColor: this.shotColors.smash_all, data: displayEntities.flatMap(e => [e.pt_sma, e.mt_sma]) }
                 ];
                 this.charts.fbRatio.update();
 
-                // 🌟 刷新：③ フォアバック詳細テーブル
                 document.querySelector('#fbRatioTable tbody').innerHTML = displayEntities.map((e, i) => {
                     const color = this.colors[i % this.colors.length].border;
                     return `<tr>
@@ -884,25 +945,15 @@
                 }).join('');
 
                 this.charts.rally.data.datasets = displayEntities.map((e, i) => ({
-                    label: e.name,
-                    backgroundColor: this.colors[i % this.colors.length].border,
-                    data: [
-                        this.calcRate(e.rl_short_w, e.rl_short_t),
-                        this.calcRate(e.rl_mid_w, e.rl_mid_t),
-                        this.calcRate(e.rl_long_w, e.rl_long_t)
-                    ]
+                    label: e.name, backgroundColor: this.colors[i % this.colors.length].border,
+                    data: [ this.calcRate(e.rl_short_w, e.rl_short_t), this.calcRate(e.rl_mid_w, e.rl_mid_t), this.calcRate(e.rl_long_w, e.rl_long_t) ]
                 }));
                 this.charts.rally.update();
 
                 document.querySelector('#rallyTable tbody').innerHTML = displayEntities.map((e, i) => {
                     const color = this.colors[i % this.colors.length].border;
                     const f = (w,t) => t>0 ? `<span class="bold-val">${this.calcRate(w,t)}%</span><br><span class="frac">${w}/${t}</span>` : '-';
-                    return `<tr>
-                        <td style="color:${color}; font-weight:bold;">${e.name}</td>
-                        <td>${f(e.rl_short_w, e.rl_short_t)}</td>
-                        <td>${f(e.rl_mid_w, e.rl_mid_t)}</td>
-                        <td>${f(e.rl_long_w, e.rl_long_t)}</td>
-                    </tr>`;
+                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.rl_short_w, e.rl_short_t)}</td><td>${f(e.rl_mid_w, e.rl_mid_t)}</td><td>${f(e.rl_long_w, e.rl_long_t)}</td></tr>`;
                 }).join('');
 
                 this.drawHeatmap(displayEntities);
