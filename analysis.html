@@ -82,6 +82,10 @@
         .th-defense { background-color: var(--defense-bg) !important; color: var(--defense-text) !important; border-bottom: 2px solid var(--defense-text) !important; }
         .td-attack { background-color: #fffbfb; }
         .td-defense { background-color: #fcfdfc; }
+        
+        /* フォアバック詳細表のヘッダー色 */
+        .th-fb-pt { background-color: #dcfce7 !important; color: #16a34a !important; border-bottom: 2px solid #16a34a !important;}
+        .th-fb-mt { background-color: #fee2e2 !important; color: #dc2626 !important; border-bottom: 2px solid #dc2626 !important;}
 
         @media screen and (max-width: 600px) {
             .dashboard-grid { grid-template-columns: 1fr; }
@@ -174,11 +178,22 @@
             </div>
 
             <div class="card" style="grid-column: 1 / -1; border-top-color: #f59e0b;">
-                <h2 class="card-title">③ フォア・バック得点割合 <span class="card-badge">左右使用率</span></h2>
+                <h2 class="card-title">③ フォア・バック詳細分析 <span class="card-badge">左右×球種 得失点バランス</span></h2>
                 <div class="chart-container"><canvas id="fbRatioChart"></canvas></div>
+                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:0px; margin-bottom:8px;">※左の棒が得点（本数）、右の棒が失点（本数）です。</p>
                 <div class="table-wrapper">
                     <table class="data-table" id="fbRatioTable">
-                        <thead><tr><th>対象</th><th>フォアハンド</th><th>バックハンド</th><th>その他(ボレー等)</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align: middle;">対象</th>
+                                <th colspan="5" class="th-fb-pt">🔵 得点 (獲得した本数)</th>
+                                <th colspan="5" class="th-fb-mt">🔴 失点 (ミスした本数)</th>
+                            </tr>
+                            <tr>
+                                <th style="background:#f0fdf4;">Fストローク</th><th style="background:#f0fdf4;">Bストローク</th><th style="background:#f0fdf4;">Fボレー</th><th style="background:#f0fdf4;">Bボレー</th><th style="background:#f0fdf4;">スマッシュ</th>
+                                <th style="background:#fef2f2;">Fストローク</th><th style="background:#fef2f2;">Bストローク</th><th style="background:#fef2f2;">Fボレー</th><th style="background:#fef2f2;">Bボレー</th><th style="background:#fef2f2;">スマッシュ</th>
+                            </tr>
+                        </thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -245,9 +260,6 @@
                         <tbody></tbody>
                     </table>
                 </div>
-                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">
-                    ※どの長さのラリーでポイントを稼いでいるか（プレースタイルの特性やスタミナ）を表します。
-                </p>
             </div>
 
             <div class="card" id="heatmap-card" style="grid-column: 1 / -1; border-top-color: #22c55e;">
@@ -289,7 +301,11 @@
             ],
             shotColors: {
                 f_shoot: '#ef4444', b_shoot: '#3b82f6', lob_drop: '#eab308',
-                volley: '#10b981', smash: '#8b5cf6', other: '#94a3b8'
+                volley: '#10b981', smash: '#8b5cf6', other: '#94a3b8',
+                // フォアバック分析用の専用カラー
+                f_stroke: '#ef4444', b_stroke: '#3b82f6',
+                f_volley: '#f97316', b_volley: '#0ea5e9',
+                smash_all: '#8b5cf6'
             },
             
             init() {
@@ -378,31 +394,28 @@
                 const opts = { responsive: true, maintainAspectRatio: false };
                 
                 this.charts.timeline = new Chart(document.getElementById('timelineChart').getContext('2d'), {
-                    type: 'line',
-                    data: { labels: [], datasets: [] },
-                    options: { 
-                        ...opts, 
-                        elements: { point: { radius: 0, hitRadius: 10, hoverRadius: 5 }, line: { tension: 0.2, borderWidth: 3 } },
-                        scales: { x: { display: false }, y: { title: { display: true, text: '得失点差 (＋/−)' }, grid: { color: (ctx) => ctx.tick.value === 0 ? '#1e293b' : '#e2e8f0', lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 1 } } },
-                        plugins: { tooltip: { mode: 'index', intersect: false } }
-                    }
+                    type: 'line', data: { labels: [], datasets: [] },
+                    options: { ...opts, elements: { point: { radius: 0, hitRadius: 10, hoverRadius: 5 }, line: { tension: 0.2, borderWidth: 3 } }, scales: { x: { display: false }, y: { title: { display: true, text: '得失点差 (＋/−)' }, grid: { color: (ctx) => ctx.tick.value === 0 ? '#1e293b' : '#e2e8f0', lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 1 } } }, plugins: { tooltip: { mode: 'index', intersect: false } } }
                 });
 
                 this.charts.radar = new Chart(document.getElementById('radarChart').getContext('2d'), {
-                    type: 'radar',
-                    data: { labels: ['1stサーブ安定', 'ストローク力(後衛)', '堅実性(ミス回避)', 'レシーブ対応', 'ネットプレー(前衛)'], datasets: [] },
+                    type: 'radar', data: { labels: ['1stサーブ安定', 'ストローク力(後衛)', '堅実性(ミス回避)', 'レシーブ対応', 'ネットプレー(前衛)'], datasets: [] },
                     options: { ...opts, scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } } }
                 });
 
                 this.charts.winRate = new Chart(document.getElementById('winRateChart'), {
-                    type: 'bar', 
-                    data: { labels: [['攻め', '1stサーブ'], ['攻め', '2ndレシーブ'], ['守り', '1stレシーブ'], ['守り', '2ndサーブ']], datasets: [] },
+                    type: 'bar', data: { labels: [['攻め', '1stサーブ'], ['攻め', '2ndレシーブ'], ['守り', '1stレシーブ'], ['守り', '2ndサーブ']], datasets: [] },
                     options: { ...opts, scales: { y: { max: 100 } } }
                 });
 
+                // 🌟 刷新：③ フォアバック得失点チャート（積み上げ棒グラフ）
                 this.charts.fbRatio = new Chart(document.getElementById('fbRatioChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
-                    options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } }
+                    options: { 
+                        ...opts, 
+                        scales: { x: { stacked: true }, y: { stacked: true } },
+                        plugins: { tooltip: { mode: 'index', intersect: false } }
+                    }
                 });
 
                 this.charts.errorType = new Chart(document.getElementById('errorTypeChart'), {
@@ -422,10 +435,8 @@
                     options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } }
                 });
 
-                // 🌟 新設：ラリーテンポ分析用のグラフ
                 this.charts.rally = new Chart(document.getElementById('rallyChart'), {
-                    type: 'bar',
-                    data: { labels: ['短期 (1-4球)', '中期 (5-8球)', '長期 (9球〜)'], datasets: [] },
+                    type: 'bar', data: { labels: ['短期 (1-4球)', '中期 (5-8球)', '長期 (9球〜)'], datasets: [] },
                     options: { ...opts, scales: { y: { max: 100, title: { display: true, text: '得点率 (%)' } } } }
                 });
             },
@@ -448,14 +459,14 @@
                             err_recv_f: 0, err_recv_b: 0, err_recv_u: 0,
                             pt_f_shoot: 0, pt_b_shoot: 0, pt_lob_drop: 0, pt_volley: 0, pt_smash: 0, pt_other: 0,
                             pt_stroke: 0, pt_net: 0, 
-                            pt_fore: 0, pt_back: 0, pt_other_fb: 0, 
+                            // 🌟 新設：③ フォアバック分析用の詳細な箱
+                            pt_f_str: 0, pt_b_str: 0, pt_f_vol: 0, pt_b_vol: 0, pt_sma: 0,
+                            mt_f_str: 0, mt_b_str: 0, mt_f_vol: 0, mt_b_vol: 0, mt_sma: 0,
+                            
                             s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0,
                             raw_pt: {}, raw_mt: {},
                             current_momentum: 0, momentum_history: [0],
-                            // 🌟 ラリー長別の集計用変数
-                            rl_short_w: 0, rl_short_t: 0,
-                            rl_mid_w: 0, rl_mid_t: 0,
-                            rl_long_w: 0, rl_long_t: 0
+                            rl_short_w: 0, rl_short_t: 0, rl_mid_w: 0, rl_mid_t: 0, rl_long_w: 0, rl_long_t: 0
                         };
                     }
                     return entityMap[name];
@@ -483,7 +494,6 @@
                             g.flow.forEach(pt => {
                                 const lServe = (pt.s === 0);
                                 const lWin = (pt.w === 'L');
-                                // 古いデータのためにデフォルトを 'short' に設定
                                 const rl = pt.rl || 'short';
                                 
                                 updates.forEach(upd => {
@@ -494,7 +504,6 @@
                                     e.current_momentum += (isWin ? 1 : -1);
                                     e.momentum_history.push(e.current_momentum);
 
-                                    // 🌟 ラリー長別の勝率計算
                                     if (rl === 'short') { e.rl_short_t++; if(isWin) e.rl_short_w++; }
                                     else if (rl === 'mid') { e.rl_mid_t++; if(isWin) e.rl_mid_w++; }
                                     else if (rl === 'long') { e.rl_long_t++; if(isWin) e.rl_long_w++; }
@@ -519,11 +528,13 @@
                             if(!st) return;
                             e.p += (st.p || 0); e.m += (st.m || 0); e.fi += (st.fi || 0); e.st += (st.st || 0);
 
+                            // 🔴 失点の解析
                             if(st.mt) {
                                 for(let err in st.mt) {
                                     let val = st.mt[err];
                                     e.raw_mt[err] = (e.raw_mt[err] || 0) + val; 
                                     
+                                    // 既存のエラー解析
                                     if(err === 'df') e.err_df += val;
                                     else if(err.includes('net')) e.err_net += val;
                                     else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
@@ -534,13 +545,28 @@
                                         else e.err_recv_u += val;
                                     }
                                     else e.err_other += val;
+
+                                    // 🌟 新設：失点のF/B詳細解析
+                                    let isFm = err.startsWith('f_') || err.includes('_f_') || err.startsWith('recv_f');
+                                    let isBm = err.startsWith('b_') || err.includes('_b_') || err.startsWith('recv_b');
+                                    
+                                    if(err.includes('volley')) {
+                                        if(isFm) e.mt_f_vol += val; else if(isBm) e.mt_b_vol += val;
+                                    } else if(err.includes('smash') || err.includes('overhead')) {
+                                        e.mt_sma += val; // スマッシュは一括
+                                    } else if(err.includes('shoot') || err.includes('lob') || err.includes('drop') || err.includes('twist') || err.startsWith('recv_')) {
+                                        if(isFm) e.mt_f_str += val; else if(isBm) e.mt_b_str += val;
+                                    }
                                 }
                             }
+                            
+                            // 🔵 得点の解析
                             if(st.pt) {
                                 for(let pt in st.pt) {
                                     let val = st.pt[pt];
                                     e.raw_pt[pt] = (e.raw_pt[pt] || 0) + val; 
                                     
+                                    // 既存のプレースタイル解析
                                     if(pt.startsWith('f_shoot') || pt.startsWith('f_twist')) e.pt_f_shoot += val;
                                     else if(pt.startsWith('b_shoot') || pt.startsWith('b_twist')) e.pt_b_shoot += val;
                                     else if(pt.includes('lob') || pt.includes('drop')) e.pt_lob_drop += val;
@@ -551,9 +577,17 @@
                                     if(pt.includes('shoot') || pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_stroke += val;
                                     if(pt.includes('volley') || pt.includes('smash') || pt.includes('overhead')) e.pt_net += val;
 
-                                    if(pt.startsWith('f_')) e.pt_fore += val;
-                                    else if(pt.startsWith('b_')) e.pt_back += val;
-                                    else e.pt_other_fb += val;
+                                    // 🌟 新設：得点のF/B詳細解析
+                                    let isFp = pt.startsWith('f_');
+                                    let isBp = pt.startsWith('b_');
+                                    
+                                    if(pt.includes('volley')) {
+                                        if(isFp) e.pt_f_vol += val; else if(isBp) e.pt_b_vol += val;
+                                    } else if(pt.includes('smash') || pt.includes('overhead')) {
+                                        e.pt_sma += val;
+                                    } else if(pt.includes('shoot') || pt.includes('lob') || pt.includes('drop') || pt.includes('twist')) {
+                                        if(isFp) e.pt_f_str += val; else if(isBp) e.pt_b_str += val;
+                                    }
                                 }
                             }
                         });
@@ -726,18 +760,55 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td class="td-attack">${f(e.s1w,e.s1t)}</td><td class="td-attack">${f(e.r2w,e.r2t)}</td><td class="td-defense">${f(e.r1w,e.r1t)}</td><td class="td-defense">${f(e.s2w,e.s2t)}</td></tr>`;
                 }).join('');
 
-                this.charts.fbRatio.data.labels = labels;
+                // 🌟 刷新：③ フォアバック得失点チャート
+                // X軸のラベルを「名前(得点)」「名前(失点)」と2本並べる
+                let fbLabels = [];
+                displayEntities.forEach(e => {
+                    fbLabels.push(e.name + ' (得点🔵)');
+                    fbLabels.push(e.name + ' (失点🔴)');
+                });
+                this.charts.fbRatio.data.labels = fbLabels;
+
                 this.charts.fbRatio.data.datasets = [
-                    { label: 'フォアハンド', backgroundColor: this.shotColors.f_shoot, data: displayEntities.map(e => this.calcRate(e.pt_fore, e.p)) },
-                    { label: 'バックハンド', backgroundColor: this.shotColors.b_shoot, data: displayEntities.map(e => this.calcRate(e.pt_back, e.p)) },
-                    { label: 'その他(ボレー等)', backgroundColor: this.shotColors.other, data: displayEntities.map(e => this.calcRate(e.pt_other_fb, e.p)) }
+                    { 
+                        label: 'Fストローク', backgroundColor: this.shotColors.f_stroke, 
+                        data: displayEntities.flatMap(e => [e.pt_f_str, e.mt_f_str]) 
+                    },
+                    { 
+                        label: 'Bストローク', backgroundColor: this.shotColors.b_stroke, 
+                        data: displayEntities.flatMap(e => [e.pt_b_str, e.mt_b_str]) 
+                    },
+                    { 
+                        label: 'Fボレー', backgroundColor: this.shotColors.f_volley, 
+                        data: displayEntities.flatMap(e => [e.pt_f_vol, e.mt_f_vol]) 
+                    },
+                    { 
+                        label: 'Bボレー', backgroundColor: this.shotColors.b_volley, 
+                        data: displayEntities.flatMap(e => [e.pt_b_vol, e.mt_b_vol]) 
+                    },
+                    { 
+                        label: 'スマッシュ', backgroundColor: this.shotColors.smash_all, 
+                        data: displayEntities.flatMap(e => [e.pt_sma, e.mt_sma]) 
+                    }
                 ];
                 this.charts.fbRatio.update();
 
+                // 🌟 刷新：③ フォアバック詳細テーブル
                 document.querySelector('#fbRatioTable tbody').innerHTML = displayEntities.map((e, i) => {
                     const color = this.colors[i % this.colors.length].border;
-                    const f = v => e.p>0 ? `<span class="bold-val">${v}</span>本 <span class="frac">(${this.calcRate(v,e.p)}%)</span>` : '0本 (0%)';
-                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.pt_fore)}</td><td>${f(e.pt_back)}</td><td>${f(e.pt_other_fb)}</td></tr>`;
+                    return `<tr>
+                        <td style="color:${color}; font-weight:bold;">${e.name}</td>
+                        <td style="background:#f0fdf4;"><span class="bold-val">${e.pt_f_str}</span></td>
+                        <td style="background:#f0fdf4;"><span class="bold-val">${e.pt_b_str}</span></td>
+                        <td style="background:#f0fdf4;"><span class="bold-val">${e.pt_f_vol}</span></td>
+                        <td style="background:#f0fdf4;"><span class="bold-val">${e.pt_b_vol}</span></td>
+                        <td style="background:#f0fdf4;"><span class="bold-val">${e.pt_sma}</span></td>
+                        <td style="background:#fef2f2; color:#dc2626;"><span class="bold-val" style="color:#dc2626;">${e.mt_f_str}</span></td>
+                        <td style="background:#fef2f2; color:#dc2626;"><span class="bold-val" style="color:#dc2626;">${e.mt_b_str}</span></td>
+                        <td style="background:#fef2f2; color:#dc2626;"><span class="bold-val" style="color:#dc2626;">${e.mt_f_vol}</span></td>
+                        <td style="background:#fef2f2; color:#dc2626;"><span class="bold-val" style="color:#dc2626;">${e.mt_b_vol}</span></td>
+                        <td style="background:#fef2f2; color:#dc2626;"><span class="bold-val" style="color:#dc2626;">${e.mt_sma}</span></td>
+                    </tr>`;
                 }).join('');
 
                 this.charts.errorType.data.labels = labels;
@@ -784,7 +855,7 @@
 
                     const pie = new Chart(canvas, {
                         type: 'doughnut',
-                        data: { labels: ['フォア側', 'バック側', '不明/その他'], datasets: [{ backgroundColor: [this.shotColors.f_shoot, this.shotColors.b_shoot, this.shotColors.other], data: [e.err_recv_f, e.err_recv_b, e.err_recv_u] }] },
+                        data: { labels: ['フォア側', 'バック側', '不明/その他'], datasets: [{ backgroundColor: [this.shotColors.f_stroke, this.shotColors.b_stroke, this.shotColors.other], data: [e.err_recv_f, e.err_recv_b, e.err_recv_u] }] },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                     });
                     this.charts.recvPies.push(pie);
@@ -792,7 +863,7 @@
 
                 document.querySelector('#recvPieTable tbody').innerHTML = displayEntities.map((e, i) => {
                     const color = this.colors[i % this.colors.length].border;
-                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val" style="color:${this.shotColors.f_shoot}">${e.err_recv_f}</span>件</td><td><span class="bold-val" style="color:${this.shotColors.b_shoot}">${e.err_recv_b}</span>件</td><td>${e.err_recv_u}件</td></tr>`;
+                    return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val" style="color:${this.shotColors.f_stroke}">${e.err_recv_f}</span>件</td><td><span class="bold-val" style="color:${this.shotColors.b_stroke}">${e.err_recv_b}</span>件</td><td>${e.err_recv_u}件</td></tr>`;
                 }).join('');
 
                 this.charts.playStyle.data.labels = labels;
@@ -812,7 +883,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.pt_f_shoot)}</td><td>${f(e.pt_b_shoot)}</td><td>${f(e.pt_lob_drop)}</td><td>${f(e.pt_volley)}</td><td>${f(e.pt_smash)}</td><td>${f(e.pt_other)}</td></tr>`;
                 }).join('');
 
-                // 🌟 新設：⑧ ラリーテンポ分析の描画
                 this.charts.rally.data.datasets = displayEntities.map((e, i) => ({
                     label: e.name,
                     backgroundColor: this.colors[i % this.colors.length].border,
