@@ -642,7 +642,7 @@
                 this.renderCharts();
             },
 
-            // 🌟 究極系・改：OpenRouter経由で無料AIを呼び出す関数
+            // 🌟 究極系・最終版：安全なGASを経由してAIを呼び出す
             async requestAIAdvice() {
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
                 const list = document.getElementById('coach-advice-list');
@@ -667,40 +667,25 @@
                     receive_miss: e.err_recv
                 }));
 
-                list.innerHTML = '<li style="color:#d97706; font-weight:bold; text-align:center;">🤖 AIデジタルコーチが最新のデータを分析中...<br><span style="font-size:0.8rem; color:gray;">(OpenRouter経由で通信しています。数秒お待ちください)</span></li>';
+                list.innerHTML = '<li style="color:#d97706; font-weight:bold; text-align:center;">🤖 AIデジタルコーチが最新のデータを分析中...<br><span style="font-size:0.8rem; color:gray;">(セキュア回線で通信しています。数秒お待ちください)</span></li>';
 
                 try {
-                    // ▼▼▼ 取得したOpenRouterのAPIキーを貼り付けてください ▼▼▼
-                    const apiKey = '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';
-                    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+                    // ※ご自身のGASのURLに設定済みです
+                    const GAS_URL = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec";
                     
-                    const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
-
-                    const prompt = `あなたはプロのソフトテニス指導者であり、超一流のデータアナリストです。指導カテゴリは初心者の小学生～プロ選手まで多岐にわたります。以下の選手のスタッツを分析し、明日からの具体的な練習課題と試合での戦術的アドバイスを150文字〜200文字程度の日本語で出力してください。専門用語を交えつつ、中学生にもわかる熱い言葉でお願いします。
-【対象選手のデータ】
-${JSON.stringify(aiData)}`;
-
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch(GAS_URL, {
                         method: 'POST',
-                        headers: { 
-                            'Authorization': `Bearer ${apiKey}`,
-                            'Content-Type': 'application/json' 
-                        },
-                        body: JSON.stringify({
-                            model: 'google/gemini-2.0-flash:free', 
-                            messages: [{ role: 'user', content: prompt }]
-                        })
+                        headers: { 'Content-Type': 'text/plain' }, 
+                        body: JSON.stringify({ action: 'getAdvice', data: aiData })
                     });
-
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        throw new Error(errData.error?.message || `API通信エラー: ${response.status}`);
-                    }
                     
                     const result = await response.json();
-                    const adviceText = result.choices[0].message.content;
                     
-                    list.innerHTML = `<li>${adviceText.replace(/\n/g, '<br>')}</li>`;
+                    if (result.advice && result.advice.includes("エラー")) {
+                        throw new Error(result.advice);
+                    }
+                    
+                    list.innerHTML = `<li>${result.advice.replace(/\n/g, '<br>')}</li>`;
                 } catch (error) {
                     console.error("AI Advice Error:", error);
                     list.innerHTML = `<li style="color:red;">⚠️ AIコーチへの通信に失敗しました。<br><span style="font-size:0.8rem;">詳細: ${error.message}</span></li>`;
