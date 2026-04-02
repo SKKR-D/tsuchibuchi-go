@@ -30,7 +30,6 @@
         .cp-header h1 { font-size: 1.5rem; color: var(--secondary-color); font-weight: 900; margin: 0; }
         .system-status { font-size: 0.85rem; color: #16a34a; font-weight: bold; background: #dcfce7; padding: 6px 12px; border-radius: 20px; }
 
-        /* 🌟 フィルター領域を4カラムに拡張 */
         .cp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
         .cp-group { display: flex; flex-direction: column; gap: 6px; }
         .cp-label { font-size: 0.8rem; font-weight: bold; color: var(--text-muted); text-transform: uppercase; }
@@ -58,10 +57,10 @@
         .card-title { font-size: 1.1rem; margin-bottom: 16px; font-weight: 900; color: var(--secondary-color); display: flex; align-items: center; justify-content: space-between;}
         .card-badge { font-size: 0.7rem; background: var(--bg-color); padding: 3px 8px; border-radius: 10px; color: var(--text-muted); white-space: nowrap; font-weight: normal; }
 
-        /* 🌟 デジタルコーチ用スタイル */
+        /* デジタルコーチ用スタイル */
         .coach-card { border-top: 5px solid #fbbf24 !important; background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%) !important; }
         .coach-list { list-style: none; padding: 0; margin: 0; }
-        .coach-list li { background: var(--surface); border-left: 4px solid #f59e0b; padding: 12px 16px; margin-bottom: 10px; border-radius: 0 8px 8px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.03); font-size: 0.95rem; line-height: 1.5; color: var(--text-main); }
+        .coach-list li { background: var(--surface); border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 10px; border-radius: 0 8px 8px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.03); font-size: 0.95rem; line-height: 1.6; color: var(--text-main); font-weight: bold;}
         .coach-list li:last-child { margin-bottom: 0; }
 
         .chart-container { position: relative; height: 280px; width: 100%; margin-bottom: 15px; }
@@ -111,17 +110,14 @@
                 <span class="cp-label">📅 期間</span>
                 <select class="cp-select" id="filter-date" onchange="app.onFilterChange()"><option value="all">すべて</option></select>
             </div>
-
             <div class="cp-group">
                 <span class="cp-label">🏆 大会名</span>
                 <select class="cp-select" id="filter-tourney" onchange="app.onFilterChange()"><option value="all">すべて</option></select>
             </div>
-
             <div class="cp-group">
                 <span class="cp-label">🆚 相手チーム (DB)</span>
                 <select class="cp-select" id="filter-opponent" onchange="app.onFilterChange()"><option value="all">すべて</option></select>
             </div>
-
             <div class="cp-group">
                 <span class="cp-label">🎾 試合絞り込み</span>
                 <div class="match-filter-container" id="match-filter-container"></div>
@@ -158,9 +154,13 @@
         <div class="dashboard-grid">
 
             <div class="card coach-card" style="grid-column: 1 / -1;">
-                <h2 class="card-title" style="color: #d97706;">💡 デジタル・コーチ <span class="card-badge" style="background:#fef3c7; color:#d97706; border:1px solid #fde68a;">AI戦術アシスト</span></h2>
+                <div class="card-title" style="color: #d97706; margin-bottom: 0;">
+                    <div>💡 AIデジタル・コーチ <span class="card-badge" style="background:#fef3c7; color:#d97706; border:1px solid #fde68a;">Gemini生成AI 分析</span></div>
+                    <button onclick="app.requestAIAdvice()" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem;">✨ AIにアドバイスを求める</button>
+                </div>
+                <p style="font-size: 0.75rem; color: gray; margin-top: 8px; margin-bottom: 12px;">※通信量を節約するため、自動生成はしません。知りたい時だけボタンを押してください。</p>
                 <ul class="coach-list" id="coach-advice-list">
-                    <li style="color:gray;">データが集計されていません。分析対象を選択してください。</li>
+                    <li style="color:gray;">分析したい選手を選んで、上の「AIにアドバイスを求める」ボタンを押してください。</li>
                 </ul>
             </div>
 
@@ -308,7 +308,6 @@
         const app = {
             rawData: [], 
             entities: [], 
-            // 🌟 フィルター状態の拡張
             state: { filterDate: 'all', filterTourney: 'all', filterOpponent: 'all', filterMatches: [], targetType: 'pair', selectedTargets: [] },
             charts: {},
             colors: [
@@ -341,7 +340,7 @@
                     .then(response => {
                         this.rawData = response.data || response; 
                         this.rawData.forEach((m, idx) => { m._uid = m.matchId || `match_${idx}`; });
-                        this.setupFilters(); // 🌟 フィルター一括セットアップ
+                        this.setupFilters(); 
                         this.onFilterChange(); 
                         const now = new Date();
                         document.getElementById('currentDateDisplay').textContent = `✓ ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 同期完了`;
@@ -352,25 +351,20 @@
                     });
             },
 
-            // 🌟 フィルター設定（大会名と相手チームを追加）
             setupFilters() {
-                // 日付
                 const dateSelect = document.getElementById('filter-date');
                 const dates = [...new Set(this.rawData.map(m => m.matchDate || m.date).filter(Boolean))];
                 dates.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; dateSelect.appendChild(opt); });
                 
-                // 大会名
                 const tourneySelect = document.getElementById('filter-tourney');
                 const tourneys = [...new Set(this.rawData.map(m => m.meta?.tourney).filter(Boolean))];
                 tourneys.forEach(t => { const opt = document.createElement('option'); opt.value = t; opt.textContent = t; tourneySelect.appendChild(opt); });
 
-                // 相手チーム (DB)
                 const oppSelect = document.getElementById('filter-opponent');
                 const opponents = [...new Set(this.rawData.map(m => m.teams?.R).filter(Boolean))];
                 opponents.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; oppSelect.appendChild(opt); });
             },
 
-            // 🌟 フィルター変更時の処理（3つの条件のAND検索）
             onFilterChange() {
                 this.state.filterDate = document.getElementById('filter-date').value;
                 this.state.filterTourney = document.getElementById('filter-tourney').value;
@@ -379,7 +373,6 @@
                 const container = document.getElementById('match-filter-container');
                 container.innerHTML = '';
 
-                // 絞り込みロジック
                 const dateFiltered = this.rawData.filter(m => {
                     const passDate = this.state.filterDate === 'all' || (m.matchDate || m.date) === this.state.filterDate;
                     const passTourney = this.state.filterTourney === 'all' || m.meta?.tourney === this.state.filterTourney;
@@ -650,58 +643,52 @@
                 this.renderCharts();
             },
 
-            // 🌟 新設：AIデジタルコーチによるアドバイス自動生成
-            generateAdvice(displayEntities) {
+            // 🌟 究極系：GAS経由でGemini(生成AI)にアドバイスをリクエストする関数
+            async requestAIAdvice() {
+                const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
                 const list = document.getElementById('coach-advice-list');
-                list.innerHTML = '';
+                
                 if(displayEntities.length === 0) {
-                    list.innerHTML = '<li style="color:gray;">データが集計されていません。分析対象を選択してください。</li>';
+                    list.innerHTML = '<li style="color:gray;">データがありません。分析対象の選手を選択してください。</li>';
                     return;
                 }
 
-                let advices = [];
-                displayEntities.forEach(e => {
-                    // データが少なすぎる場合はスキップ（ノイズ排除）
-                    if ((e.p + e.m) < 5) return;
+                // AIに送信するために、通信量を節約して必要なデータだけを抽出
+                const aiData = displayEntities.map(e => ({
+                    name: e.name,
+                    side: e.side === 'L' ? '自チーム' : '相手チーム',
+                    total_points: e.p,
+                    total_misses: e.m,
+                    serve_1st_win_rate: this.calcRate(e.s1w, e.s1t) + '%',
+                    rally_short_win_rate: this.calcRate(e.rl_short_w, e.rl_short_t) + '%',
+                    rally_long_win_rate: this.calcRate(e.rl_long_w, e.rl_long_t) + '%',
+                    forehand_stroke_miss: e.mt_f_str,
+                    backhand_stroke_miss: e.mt_b_str,
+                    forehand_volley_miss: e.mt_f_vol,
+                    backhand_volley_miss: e.mt_b_vol,
+                    receive_miss: e.err_recv
+                }));
 
-                    const isOpponent = e.side === 'R';
-                    const nameTag = `<span style="font-weight:bold; color:${isOpponent ? '#ea580c' : '#0284c7'}">${e.name}</span>`;
-                    const prefix = isOpponent ? `🎯 【攻略法: ${nameTag}】 ` : `💪 【特訓メモ: ${nameTag}】 `;
+                // ローディング表示（AIが考えている感を演出）
+                list.innerHTML = '<li style="color:#d97706; font-weight:bold; text-align:center;">🤖 AIデジタルコーチが最新のデータを分析中...<br><span style="font-size:0.8rem; color:gray;">(Gemini APIと通信しています。数秒お待ちください)</span></li>';
 
-                    // 1. 1st Serve
-                    if (e.s1t >= 5 && (e.s1w / e.s1t) < 0.4) {
-                        advices.push(`<li>${prefix}1stサーブを入れた時の得点率が低迷（${Math.round(e.s1w/e.s1t*100)}%）しています。${isOpponent ? '相手の1stサーブは恐れず、強気にリターンから攻めましょう。' : 'サーブのコースを散らすか、打った後の3球目の準備を早くしましょう。'}</li>`);
-                    }
-
-                    // 2. Backhand weakness
-                    if (e.mt_b_str > (e.pt_b_str * 1.5) && e.mt_b_str >= 3) {
-                        advices.push(`<li>${prefix}バックハンドでのストロークミス（${e.mt_b_str}本）が、得点を上回ってしまっています。${isOpponent ? '徹底的にバック側を狙い、ミスを誘いましょう。' : 'バック側を狙われています。回り込んでフォアで打つか、まずは深く繋ぐ意識を持ちましょう。'}</li>`);
-                    } else if (e.pt_f_str > (e.mt_f_str * 2) && e.pt_f_str >= 4) {
-                        // Forehand strength
-                        advices.push(`<li>${prefix}フォアのストロークが強烈な武器になっています。${isOpponent ? '絶対にフォアで打たせないよう、コースを厳しく突きましょう。' : '調子が良いです！どんどんフォアで回り込んで攻撃の起点を作りましょう。'}</li>`);
-                    }
-
-                    // 3. Volley strength
-                    if ((e.pt_f_vol + e.pt_b_vol) >= 4 && (e.pt_f_vol + e.pt_b_vol) > (e.mt_f_vol + e.mt_b_vol) * 2) {
-                        advices.push(`<li>${prefix}ボレーによる得点力が非常に高いです。${isOpponent ? '前衛に捕まらないよう、ロブやストレートへのパッシングを有効に使いましょう。' : '前衛がしっかり機能しています。後衛は強気でシュートを打ち、前衛に勝負させましょう。'}</li>`);
-                    }
-
-                    // 4. Rally Length
-                    let longRate = e.rl_long_t > 0 ? (e.rl_long_w / e.rl_long_t) : 0;
-                    if (e.rl_long_t >= 4 && longRate <= 0.3) {
-                        advices.push(`<li>${prefix}長期戦（9球以上のラリー）になると勝率がガクッと落ちます。${isOpponent ? '粘り強くラリーを続ければ、相手が焦って自滅する確率が高いです。' : 'ラリーが長引くと焦ってミスをする傾向があります。相手のミスを待つ我慢強さを持ちましょう。'}</li>`);
-                    }
-
-                    // 5. Receive Misses
-                    if (e.err_recv >= 4) {
-                        advices.push(`<li>${prefix}レシーブミスが${e.err_recv}回発生し、流れを失っています。${isOpponent ? 'サーブで崩す戦術が非常に効果的です。' : 'まずはサービスボックスの奥を狙って、確実に相手コートへ返すことを最優先しましょう。'}</li>`);
-                    }
-                });
-
-                if (advices.length === 0) {
-                    list.innerHTML = '<li>現在選択されているデータからは、極端な偏り（明確な弱点や特長）は検出されませんでした。バランスの良い状態です。</li>';
-                } else {
-                    advices.forEach(txt => { list.innerHTML += txt; });
+                try {
+                    // ※ご自身のGASのURLに設定してください
+                    const GAS_URL = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec";
+                    
+                    const response = await fetch(GAS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' }, 
+                        body: JSON.stringify({ action: 'getAdvice', data: aiData })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // 結果の表示（Markdownのような改行をHTMLタグに変換）
+                    list.innerHTML = `<li>${result.advice.replace(/\n/g, '<br>')}</li>`;
+                } catch (error) {
+                    console.error("AI Advice Error:", error);
+                    list.innerHTML = '<li style="color:red;">⚠️ AIコーチへの通信に失敗しました。電波状況かAPIキーの設定を確認してください。</li>';
                 }
             },
 
@@ -790,6 +777,9 @@
             renderCharts() {
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
 
+                // 🌟 分析対象が変わったら、アドバイス欄をリセットする
+                document.getElementById('coach-advice-list').innerHTML = '<li style="color:gray;">分析したい選手を選んで、上の「✨ AIにアドバイスを求める」ボタンを押してください。</li>';
+
                 if(displayEntities.length === 0) {
                     ['winRate', 'errorType', 'radar', 'volume', 'playStyle', 'fbRatio', 'timeline', 'rally'].forEach(c => {
                         this.charts[c].data.datasets = []; this.charts[c].update();
@@ -801,16 +791,10 @@
                     });
                     const ctx = document.getElementById('heatmapCanvas').getContext('2d');
                     ctx.clearRect(0, 0, 300, 400);
-                    
-                    // アドバイスもクリア
-                    this.generateAdvice([]);
                     return;
                 }
 
                 const labels = displayEntities.map(e => e.name);
-
-                // 🌟 デジタルコーチ実行
-                this.generateAdvice(displayEntities);
 
                 let maxLength = 0;
                 displayEntities.forEach(e => { if (e.momentum_history.length > maxLength) maxLength = e.momentum_history.length; });
