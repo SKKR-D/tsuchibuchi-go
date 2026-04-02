@@ -50,7 +50,7 @@
         .target-col { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
         .target-col .match-filter-container { max-height: 150px; background: var(--card-bg); border-color: #e2e8f0;}
 
-        .section-title { font-size: 1.2rem; color: var(--secondary-color); margin: 30px 0 15px 0; padding-left: 12px; border-left: 6px solid var(--primary-color); font-weight: 900; display: flex; align-items: center; justify-content: space-between;}
+        .section-title { font-size: 1.2rem; color: var(--secondary-color); margin: 30px 0 15px 0; padding-left: 12px; border-left: 6px solid var(--accent-color); font-weight: 900; display: flex; align-items: center; justify-content: space-between;}
         
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
         .card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; overflow-x: auto; border-top: 4px solid var(--border-color); }
@@ -140,6 +140,11 @@
         
         <div class="dashboard-grid">
 
+            <div class="card" style="grid-column: 1 / -1; border-top-color: #0ea5e9;">
+                <h2 class="card-title">▶ 試合の流れ <span class="card-badge">モメンタム推移</span></h2>
+                <div class="chart-container"><canvas id="timelineChart"></canvas></div>
+            </div>
+
             <div class="card" id="radar-card" style="grid-column: 1 / -1; border-top-color: #3b82f6;">
                 <h2 class="card-title">① プレースタイル・戦力比較 <span class="card-badge">レーダー分析</span></h2>
                 <div class="chart-container radar-container"><canvas id="radarChart"></canvas></div>
@@ -224,8 +229,29 @@
                 </div>
             </div>
 
+            <div class="card" style="grid-column: 1 / -1; border-top-color: #6366f1;">
+                <h2 class="card-title">⑧ ラリーテンポ分析 <span class="card-badge">ラリー長別の勝率</span></h2>
+                <div class="chart-container"><canvas id="rallyChart"></canvas></div>
+                <div class="table-wrapper">
+                    <table class="data-table" id="rallyTable">
+                        <thead>
+                            <tr>
+                                <th>対象</th>
+                                <th>短期決戦 (1〜4球)</th>
+                                <th>中盤戦 (5〜8球)</th>
+                                <th>長期戦 (9球〜)</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p style="text-align:center; font-size:0.75rem; color:gray; margin-top:8px;">
+                    ※どの長さのラリーでポイントを稼いでいるか（プレースタイルの特性やスタミナ）を表します。
+                </p>
+            </div>
+
             <div class="card" id="heatmap-card" style="grid-column: 1 / -1; border-top-color: #22c55e;">
-                <h2 class="card-title">⑧ コート・ヒートマップ <span class="card-badge">空間データ分析</span></h2>
+                <h2 class="card-title">⑨ コート・ヒートマップ <span class="card-badge">空間データ分析</span></h2>
                 <div class="heatmap-container">
                     <canvas id="heatmapCanvas" width="300" height="400"></canvas>
                 </div>
@@ -239,7 +265,7 @@
                         <div class="legend-item">▲ ロブ</div>
                         <div class="legend-item">■ ボレー</div>
                         <div class="legend-item">★ スマッシュ</div>
-                        <div class="legend-item">◆ その他(落とす等)</div>
+                        <div class="legend-item">◆ その他</div>
                     </div>
                 </div>
             </div>
@@ -351,45 +377,56 @@
             initCharts() {
                 const opts = { responsive: true, maintainAspectRatio: false };
                 
-                // ① プレースタイル・戦力比較
+                this.charts.timeline = new Chart(document.getElementById('timelineChart').getContext('2d'), {
+                    type: 'line',
+                    data: { labels: [], datasets: [] },
+                    options: { 
+                        ...opts, 
+                        elements: { point: { radius: 0, hitRadius: 10, hoverRadius: 5 }, line: { tension: 0.2, borderWidth: 3 } },
+                        scales: { x: { display: false }, y: { title: { display: true, text: '得失点差 (＋/−)' }, grid: { color: (ctx) => ctx.tick.value === 0 ? '#1e293b' : '#e2e8f0', lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 1 } } },
+                        plugins: { tooltip: { mode: 'index', intersect: false } }
+                    }
+                });
+
                 this.charts.radar = new Chart(document.getElementById('radarChart').getContext('2d'), {
                     type: 'radar',
                     data: { labels: ['1stサーブ安定', 'ストローク力(後衛)', '堅実性(ミス回避)', 'レシーブ対応', 'ネットプレー(前衛)'], datasets: [] },
                     options: { ...opts, scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } } }
                 });
 
-                // ② 局面別の主導権
                 this.charts.winRate = new Chart(document.getElementById('winRateChart'), {
                     type: 'bar', 
                     data: { labels: [['攻め', '1stサーブ'], ['攻め', '2ndレシーブ'], ['守り', '1stレシーブ'], ['守り', '2ndサーブ']], datasets: [] },
                     options: { ...opts, scales: { y: { max: 100 } } }
                 });
 
-                // ③ 新設：フォア・バック割合
                 this.charts.fbRatio = new Chart(document.getElementById('fbRatioChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
                     options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } }
                 });
 
-                // ④ エラーの質
                 this.charts.errorType = new Chart(document.getElementById('errorTypeChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
                     options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true } } }
                 });
 
-                // ⑤ ボリューム分析
                 this.charts.volume = new Chart(document.getElementById('volumeChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
                     options: { ...opts, scales: { y: { beginAtZero: true } } }
                 });
 
-                // ⑥ レシーブパイ用の配列
                 this.charts.recvPies = []; 
 
-                // ⑦ プレースタイル内訳
                 this.charts.playStyle = new Chart(document.getElementById('playStyleChart'), {
                     type: 'bar', data: { labels: [], datasets: [] },
                     options: { ...opts, scales: { x: { stacked: true }, y: { stacked: true, max: 100 } } }
+                });
+
+                // 🌟 新設：ラリーテンポ分析用のグラフ
+                this.charts.rally = new Chart(document.getElementById('rallyChart'), {
+                    type: 'bar',
+                    data: { labels: ['短期 (1-4球)', '中期 (5-8球)', '長期 (9球〜)'], datasets: [] },
+                    options: { ...opts, scales: { y: { max: 100, title: { display: true, text: '得点率 (%)' } } } }
                 });
             },
 
@@ -411,9 +448,14 @@
                             err_recv_f: 0, err_recv_b: 0, err_recv_u: 0,
                             pt_f_shoot: 0, pt_b_shoot: 0, pt_lob_drop: 0, pt_volley: 0, pt_smash: 0, pt_other: 0,
                             pt_stroke: 0, pt_net: 0, 
-                            pt_fore: 0, pt_back: 0, pt_other_fb: 0, // ③用の追加集計
+                            pt_fore: 0, pt_back: 0, pt_other_fb: 0, 
                             s1w:0, s1t:0, s2w:0, s2t:0, r1w:0, r1t:0, r2w:0, r2t:0,
-                            raw_pt: {}, raw_mt: {}
+                            raw_pt: {}, raw_mt: {},
+                            current_momentum: 0, momentum_history: [0],
+                            // 🌟 ラリー長別の集計用変数
+                            rl_short_w: 0, rl_short_t: 0,
+                            rl_mid_w: 0, rl_mid_t: 0,
+                            rl_long_w: 0, rl_long_t: 0
                         };
                     }
                     return entityMap[name];
@@ -433,6 +475,40 @@
                     } else if (this.state.targetType === 'team') {
                         updates.push({ key: m.teams?.L || '土淵中', side: 'L', players: ['A', 'B'] });
                         updates.push({ key: m.teams?.R || '対戦相手', side: 'R', players: ['C', 'D'] });
+                    }
+
+                    if (m.log) {
+                        m.log.forEach(g => {
+                            if(!g.flow) return;
+                            g.flow.forEach(pt => {
+                                const lServe = (pt.s === 0);
+                                const lWin = (pt.w === 'L');
+                                // 古いデータのためにデフォルトを 'short' に設定
+                                const rl = pt.rl || 'short';
+                                
+                                updates.forEach(upd => {
+                                    let e = getEntity(upd.key, upd.side);
+                                    const isServing = (upd.side === 'L' ? lServe : !lServe);
+                                    const isWin = (upd.side === 'L' ? lWin : !lWin);
+                                    
+                                    e.current_momentum += (isWin ? 1 : -1);
+                                    e.momentum_history.push(e.current_momentum);
+
+                                    // 🌟 ラリー長別の勝率計算
+                                    if (rl === 'short') { e.rl_short_t++; if(isWin) e.rl_short_w++; }
+                                    else if (rl === 'mid') { e.rl_mid_t++; if(isWin) e.rl_mid_w++; }
+                                    else if (rl === 'long') { e.rl_long_t++; if(isWin) e.rl_long_w++; }
+
+                                    if(isServing) {
+                                        if(pt.f) { e.s1t++; if(isWin) e.s1w++; }
+                                        else { e.s2t++; if(isWin) e.s2w++; }
+                                    } else {
+                                        if(pt.f) { e.r1t++; if(isWin) e.r1w++; }
+                                        else { e.r2t++; if(isWin) e.r2w++; }
+                                    }
+                                });
+                            });
+                        });
                     }
 
                     updates.forEach(upd => {
@@ -465,7 +541,6 @@
                                     let val = st.pt[pt];
                                     e.raw_pt[pt] = (e.raw_pt[pt] || 0) + val; 
                                     
-                                    // プレースタイル用
                                     if(pt.startsWith('f_shoot') || pt.startsWith('f_twist')) e.pt_f_shoot += val;
                                     else if(pt.startsWith('b_shoot') || pt.startsWith('b_twist')) e.pt_b_shoot += val;
                                     else if(pt.includes('lob') || pt.includes('drop')) e.pt_lob_drop += val;
@@ -473,37 +548,15 @@
                                     else if(pt.includes('smash') || pt.includes('overhead')) e.pt_smash += val;
                                     else e.pt_other += val;
 
-                                    // レーダー用
                                     if(pt.includes('shoot') || pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) e.pt_stroke += val;
                                     if(pt.includes('volley') || pt.includes('smash') || pt.includes('overhead')) e.pt_net += val;
 
-                                    // ③ フォア・バック用
                                     if(pt.startsWith('f_')) e.pt_fore += val;
                                     else if(pt.startsWith('b_')) e.pt_back += val;
                                     else e.pt_other_fb += val;
                                 }
                             }
                         });
-
-                        if (m.log) {
-                            m.log.forEach(g => {
-                                if(!g.flow) return;
-                                g.flow.forEach(pt => {
-                                    const lServe = (pt.s === 0);
-                                    const lWin = (pt.w === 'L');
-                                    const isServing = (upd.side === 'L' ? lServe : !lServe);
-                                    const isWin = (upd.side === 'L' ? lWin : !lWin);
-                                    
-                                    if(isServing) {
-                                        if(pt.f) { e.s1t++; if(isWin) e.s1w++; }
-                                        else { e.s2t++; if(isWin) e.s2w++; }
-                                    } else {
-                                        if(pt.f) { e.r1t++; if(isWin) e.r1w++; }
-                                        else { e.r2t++; if(isWin) e.r2w++; }
-                                    }
-                                });
-                            });
-                        }
                     });
                 });
 
@@ -628,12 +681,12 @@
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
 
                 if(displayEntities.length === 0) {
-                    ['winRate', 'errorType', 'radar', 'volume', 'playStyle', 'fbRatio'].forEach(c => {
+                    ['winRate', 'errorType', 'radar', 'volume', 'playStyle', 'fbRatio', 'timeline', 'rally'].forEach(c => {
                         this.charts[c].data.datasets = []; this.charts[c].update();
                     });
                     this.charts.recvPies.forEach(c => c.destroy()); this.charts.recvPies = [];
                     document.getElementById('recvPieContainer').innerHTML = '';
-                    ['winRateTable', 'errorTypeTable', 'volumeTable', 'recvPieTable', 'playStyleTable', 'fbRatioTable'].forEach(t => {
+                    ['winRateTable', 'errorTypeTable', 'volumeTable', 'recvPieTable', 'playStyleTable', 'fbRatioTable', 'rallyTable'].forEach(t => {
                         document.querySelector(`#${t} tbody`).innerHTML = '';
                     });
                     const ctx = document.getElementById('heatmapCanvas').getContext('2d');
@@ -643,7 +696,14 @@
 
                 const labels = displayEntities.map(e => e.name);
 
-                // ① プレースタイル・戦力比較
+                let maxLength = 0;
+                displayEntities.forEach(e => { if (e.momentum_history.length > maxLength) maxLength = e.momentum_history.length; });
+                this.charts.timeline.data.labels = Array.from({length: maxLength}, (_, i) => i);
+                this.charts.timeline.data.datasets = displayEntities.map((e, i) => ({
+                    label: e.name, borderColor: this.colors[i % this.colors.length].border, backgroundColor: this.colors[i % this.colors.length].bg, data: e.momentum_history, fill: true
+                }));
+                this.charts.timeline.update();
+
                 this.charts.radar.data.datasets = displayEntities.map((e, i) => {
                     const serve = this.calcRate(e.fi, e.st); 
                     const stroke = this.calcRate(e.pt_stroke, e.p); 
@@ -654,7 +714,6 @@
                 });
                 this.charts.radar.update();
 
-                // ② 局面別の主導権
                 this.charts.winRate.data.datasets = displayEntities.map((e, i) => ({
                     label: e.name, backgroundColor: this.colors[i % this.colors.length].border,
                     data: [ this.calcRate(e.s1w, e.s1t), this.calcRate(e.r2w, e.r2t), this.calcRate(e.r1w, e.r1t), this.calcRate(e.s2w, e.s2t) ]
@@ -667,7 +726,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td class="td-attack">${f(e.s1w,e.s1t)}</td><td class="td-attack">${f(e.r2w,e.r2t)}</td><td class="td-defense">${f(e.r1w,e.r1t)}</td><td class="td-defense">${f(e.s2w,e.s2t)}</td></tr>`;
                 }).join('');
 
-                // ③ フォア・バック得点割合
                 this.charts.fbRatio.data.labels = labels;
                 this.charts.fbRatio.data.datasets = [
                     { label: 'フォアハンド', backgroundColor: this.shotColors.f_shoot, data: displayEntities.map(e => this.calcRate(e.pt_fore, e.p)) },
@@ -682,7 +740,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.pt_fore)}</td><td>${f(e.pt_back)}</td><td>${f(e.pt_other_fb)}</td></tr>`;
                 }).join('');
 
-                // ④ エラーの質
                 this.charts.errorType.data.labels = labels;
                 this.charts.errorType.data.datasets = [
                     { label: 'ネット', backgroundColor: '#ea580c', data: displayEntities.map(e => e.err_net) },
@@ -698,7 +755,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.err_net)}</td><td>${f(e.err_out)}</td><td>${f(e.err_df)}</td><td>${f(e.err_recv)}</td></tr>`;
                 }).join('');
 
-                // ⑤ ボリューム分析
                 this.charts.volume.data.labels = labels;
                 this.charts.volume.data.datasets = [
                     { label: '得点', backgroundColor: '#10b981', data: displayEntities.map(e => e.p) },
@@ -713,7 +769,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val">${e.p}</span></td><td><span class="bold-val">${e.m}</span></td><td>${diffFmt}</td></tr>`;
                 }).join('');
 
-                // ⑥ レシーブミスの内訳
                 const pieContainer = document.getElementById('recvPieContainer');
                 pieContainer.innerHTML = '';
                 this.charts.recvPies.forEach(c => c.destroy());
@@ -740,7 +795,6 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td><span class="bold-val" style="color:${this.shotColors.f_shoot}">${e.err_recv_f}</span>件</td><td><span class="bold-val" style="color:${this.shotColors.b_shoot}">${e.err_recv_b}</span>件</td><td>${e.err_recv_u}件</td></tr>`;
                 }).join('');
 
-                // ⑦ プレースタイル内訳
                 this.charts.playStyle.data.labels = labels;
                 this.charts.playStyle.data.datasets = [
                     { label: 'Fシュート', backgroundColor: this.shotColors.f_shoot, data: displayEntities.map(e => this.calcRate(e.pt_f_shoot, e.p)) },
@@ -758,7 +812,29 @@
                     return `<tr><td style="color:${color}; font-weight:bold;">${e.name}</td><td>${f(e.pt_f_shoot)}</td><td>${f(e.pt_b_shoot)}</td><td>${f(e.pt_lob_drop)}</td><td>${f(e.pt_volley)}</td><td>${f(e.pt_smash)}</td><td>${f(e.pt_other)}</td></tr>`;
                 }).join('');
 
-                // ⑧ コート・ヒートマップ
+                // 🌟 新設：⑧ ラリーテンポ分析の描画
+                this.charts.rally.data.datasets = displayEntities.map((e, i) => ({
+                    label: e.name,
+                    backgroundColor: this.colors[i % this.colors.length].border,
+                    data: [
+                        this.calcRate(e.rl_short_w, e.rl_short_t),
+                        this.calcRate(e.rl_mid_w, e.rl_mid_t),
+                        this.calcRate(e.rl_long_w, e.rl_long_t)
+                    ]
+                }));
+                this.charts.rally.update();
+
+                document.querySelector('#rallyTable tbody').innerHTML = displayEntities.map((e, i) => {
+                    const color = this.colors[i % this.colors.length].border;
+                    const f = (w,t) => t>0 ? `<span class="bold-val">${this.calcRate(w,t)}%</span><br><span class="frac">${w}/${t}</span>` : '-';
+                    return `<tr>
+                        <td style="color:${color}; font-weight:bold;">${e.name}</td>
+                        <td>${f(e.rl_short_w, e.rl_short_t)}</td>
+                        <td>${f(e.rl_mid_w, e.rl_mid_t)}</td>
+                        <td>${f(e.rl_long_w, e.rl_long_t)}</td>
+                    </tr>`;
+                }).join('');
+
                 this.drawHeatmap(displayEntities);
             }
         };
