@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>土淵中ソフトテニス部 試合分析データ</title></title>
+    <title>土淵中ソフトテニス部データ分析</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -100,7 +100,7 @@
 
     <div class="control-panel">
         <div class="cp-header">
-            <h1>📊土淵中ソフトテニス部 試合分析データ</h1>
+            <h1>📊土淵中ソフトテニス部データ分析</h1>
             <div class="system-status" id="currentDateDisplay">データ同期中...</div>
         </div>
         
@@ -642,7 +642,7 @@
                 this.renderCharts();
             },
 
-            // 🌟 究極系：ダッシュボード（フロントエンド）から直接AIを呼び出す関数
+            // 🌟 究極系・改：OpenRouter経由で無料AIを呼び出す関数
             async requestAIAdvice() {
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
                 const list = document.getElementById('coach-advice-list');
@@ -652,7 +652,6 @@
                     return;
                 }
 
-                // AIに送信するために、通信量を節約して必要なデータだけを抽出
                 const aiData = displayEntities.map(e => ({
                     name: e.name,
                     side: e.side === 'L' ? '自チーム' : '相手チーム',
@@ -668,35 +667,39 @@
                     receive_miss: e.err_recv
                 }));
 
-                // ローディング表示（AIが考えている感を演出）
-                list.innerHTML = '<li style="color:#d97706; font-weight:bold; text-align:center;">🤖 AIデジタルコーチが最新のデータを分析中...<br><span style="font-size:0.8rem; color:gray;">(Gemini APIと通信しています。数秒お待ちください)</span></li>';
+                list.innerHTML = '<li style="color:#d97706; font-weight:bold; text-align:center;">🤖 AIデジタルコーチが最新のデータを分析中...<br><span style="font-size:0.8rem; color:gray;">(OpenRouter経由で通信しています。数秒お待ちください)</span></li>';
 
                 try {
-                    // 🌟 魔法の改修：GASを通さず、直接Geminiにリクエストを送る！
-                    const apiKey = 'AIzaSyAv8Qm0NgTy76gf0DsiSvmxKPccw1LDt9k';
-                    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey;
+                    // ▼▼▼ 取得したOpenRouterのAPIキーを貼り付けてください ▼▼▼
+                    const apiKey = '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';
+                    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+                    
+                    const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
-                    const prompt = `あなたはプロのソフトテニス指導者であり、超一流のデータアナリストです。初心者指導から、全国大会レベルの指導まで、どんなレベル、年代の選手の指導もできます。以下の選手のスタッツを分析し、明日からの具体的な練習課題と試合での戦術的アドバイスを150文字〜200文字程度の日本語で出力してください。専門用語を交えつつ、中学生にもわかる熱い言葉でお願いします。
+                    const prompt = `あなたはプロのソフトテニス指導者であり、超一流のデータアナリストです。指導カテゴリは初心者の小学生～プロ選手まで多岐にわたります。以下の選手のスタッツを分析し、明日からの具体的な練習課題と試合での戦術的アドバイスを150文字〜200文字程度の日本語で出力してください。専門用語を交えつつ、中学生にもわかる熱い言葉でお願いします。
 【対象選手のデータ】
 ${JSON.stringify(aiData)}`;
 
                     const response = await fetch(apiUrl, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Authorization': `Bearer ${apiKey}`,
+                            'Content-Type': 'application/json' 
+                        },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }]
+                            model: 'google/gemini-2.0-flash:free', 
+                            messages: [{ role: 'user', content: prompt }]
                         })
                     });
 
                     if (!response.ok) {
                         const errData = await response.json();
-                        throw new Error(errData.error?.message || 'API通信に失敗しました');
+                        throw new Error(errData.error?.message || `API通信エラー: ${response.status}`);
                     }
                     
                     const result = await response.json();
-                    const adviceText = result.candidates[0].content.parts[0].text;
+                    const adviceText = result.choices[0].message.content;
                     
-                    // 結果の表示（Markdownのような改行をHTMLタグに変換）
                     list.innerHTML = `<li>${adviceText.replace(/\n/g, '<br>')}</li>`;
                 } catch (error) {
                     console.error("AI Advice Error:", error);
@@ -789,7 +792,6 @@ ${JSON.stringify(aiData)}`;
             renderCharts() {
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
 
-                // 🌟 分析対象が変わったら、アドバイス欄をリセットする
                 document.getElementById('coach-advice-list').innerHTML = '<li style="color:gray;">分析したい選手を選んで、上の「✨ AIにアドバイスを求める」ボタンを押してください。</li>';
 
                 if(displayEntities.length === 0) {
