@@ -169,7 +169,7 @@
         <div class="modal-card">
             
             <div id="step-0">
-                <h1 style="text-align: center; background: linear-gradient(135deg, #ff7b00, #ffc107); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: 'S Motoya Daikai', 'Sモトヤ大楷', 'Yuji Syuku', serif; font-size: clamp(1.5rem, 11vw, 3.2rem); white-space: nowrap; font-weight: 900; margin-bottom: 5px; letter-spacing: 0px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); line-height: 1.2;">もえあがれ土淵中</h1>
+                <h1 style="text-align: center; background: linear-gradient(135deg, #ff7b00, #ffc107); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: 'S Motoya Daikai', 'Sモトヤ大楷', 'Yuji Syuku', serif; font-size: clamp(1.5rem, 11vw, 3.2rem); white-space: nowrap; font-weight: 900; margin-bottom: 5px; letter-spacing: 0px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); line-height: 1.2;">あすへはばたけ</h1>
                 <p style="text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-bottom:20px;">統合版スコアシステム</p>
                 
                 <p class="input-label">📌 性別</p>
@@ -832,6 +832,7 @@
             sendToLive(true); 
         }
 
+        /* 🌟 修正ポイント：メニュー体系を大幅に改修し、階層を浅く・分かりやすくしました */
         const MENUS = {
             p_server: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' }, { k: 'ace', l: 'SA', i: '🎯', sub: 'p_ace_type' } ],
             p_receiver: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'p_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'p_shot' }, { k: 'ace', l: 'RA', i: '⚡', sub: 'r_ace_shot' } ],
@@ -842,14 +843,17 @@
             p_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'p_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'p_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'p_volley_type' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'p_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'p_course' } ],
             p_volley_type: [ { k: 'high', l: 'ハイボレー', i: '⤴', sub: 'p_course' }, { k: 'low', l: 'ローボレー', i: '⤵', sub: 'p_course' }, { k: 'poach', l: 'ポーチ', i: '⚡', sub: 'p_course' }, { k: 'def', l: '守り', i: '🛡', sub: 'p_course' } ],
             p_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
-            m: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'm_shot' }, { k: 'b', l: 'バック', i: '🟪', sub: 'm_shot' }, { k: 'recv', l: 'Rミス', i: '🎾', sub: 'm_recv_hand' } ],
+            
+            // 🌟 新設：レシーバー専用のエラーメニュー（Rミスが第一階層に登場）
+            m_receiver: [ { k: 'f', l: 'ラリー(F)', i: '🟦', sub: 'm_shot' }, { k: 'b', l: 'ラリー(B)', i: '🟪', sub: 'm_shot' }, { k: 'recv_f', l: 'Rミス(F)', i: '🎾', sub: 'm_recv_type' }, { k: 'recv_b', l: 'Rミス(B)', i: '🎾', sub: 'm_recv_type' } ],
+            m_standard: [ { k: 'f', l: 'ラリー(F)', i: '🟦', sub: 'm_shot' }, { k: 'b', l: 'ラリー(B)', i: '🟪', sub: 'm_shot' } ],
+
             m_shot: [ { k: 'shoot', l: 'シュート', i: '⚡', sub: 'm_course' }, { k: 'lob', l: 'ロブ', i: '☁', sub: 'm_course' }, { k: 'volley', l: 'ボレー', i: '🛡', sub: 'm_volley_type' }, { k: 'smash', l: 'スマッシュ', i: '💥', sub: 'm_course' }, { k: 'drop', l: 'ドロップ', i: '🌀', sub: 'm_course' } ],
             m_volley_type: [ { k: 'high', l: 'ハイボレー', i: '⤴', sub: 'm_volley_err' }, { k: 'low', l: 'ローボレー', i: '⤵', sub: 'm_volley_err' }, { k: 'poach', l: 'ポーチ', i: '⚡', sub: 'm_volley_err' }, { k: 'def', l: '守り', i: '🛡', sub: 'm_volley_err' } ],
             m_volley_err: [ { k: 'out', l: 'アウト', i: '➡', sub: 'm_volley_course' }, { k: 'net', l: 'ネット', i: '🔴', sub: 'm_volley_course' }, { k: 'tip', l: 'チップ', i: '💫', sub: 'm_volley_course' }, { k: 'swing', l: '空振り', i: '💨', sub: 'm_volley_course' } ],
             m_volley_course: [ { k: 'cross', l: 'クロス', i: '↖' }, { k: 'rev', l: '逆クロス', i: '↗' }, { k: 'ctr', l: 'センター', i: '•' }, { k: 'str', l: 'ストレート', i: '↑' } ],
             m_course: [ { k: 'cross', l: 'クロス', i: '↖', sub: 'm_err' }, { k: 'rev', l: '逆クロス', i: '↗', sub: 'm_err' }, { k: 'ctr', l: 'センター', i: '•', sub: 'm_err' }, { k: 'str', l: 'ストレート', i: '↑', sub: 'm_err' } ],
             m_err: [ { k: 'bout', l: 'Bアウト', i: '⬆' }, { k: 'sout', l: 'Sアウト', i: '➡' }, { k: 'net', l: 'ネット', i: '🔴' } ],
-            m_recv_hand: [ { k: 'f', l: 'フォア', i: '🟦', sub: 'm_recv_type' }, { k: 'b', l: 'バック', i: '🟪', sub: 'm_recv_type' } ],
             m_recv_type: [ { k: 'lob', l: 'ロブ', i: '☁', sub: 'm_recv_course' }, { k: 'shoot', l: 'シュート', i: '⚡', sub: 'm_recv_course' }, { k: 'twist', l: 'ツイスト', i: '🌀', sub: 'm_recv_course' } ], 
             m_recv_course: [ { k: 'str', l: 'ストレート', i: '↑', sub: 'm_recv_err' }, { k: 'cross', l: 'クロス', i: '↖', sub: 'm_recv_err' }, { k: 'rev', l: '逆クロス', i: '↗', sub: 'm_recv_err' }, { k: 'ctr', l: 'センター', i: '•', sub: 'm_recv_err' } ],
             m_recv_err: [ { k: 'net', l: 'ネット', i: '🔴' }, { k: 'out', l: 'アウト', i: '➡' } ],
@@ -858,18 +862,20 @@
         function showSM(type, p, prefix = '') {
             const sm = document.getElementById('sm-body'); sm.innerHTML = '';
             let list; const inf = getServ(); const isServer = (p === inf.s); const isReceiver = (p === inf.r);
+            
+            // 🌟 修正ポイント：ミス(m)の場合はレシーバー専用メニューを出し分ける
             if (type === 'p') { list = isServer ? MENUS['p_server'] : (isReceiver ? MENUS['p_receiver'] : MENUS['p_standard']); }
+            else if (type === 'm') { list = isReceiver ? MENUS['m_receiver'] : MENUS['m_standard']; }
             else if (MENUS[type]) { list = MENUS[type]; }
-            else { list = type.startsWith('p_detail_') ? MENUS['p_shot'] : (type.startsWith('m_detail_') ? MENUS['m_shot'] : MENUS['p_server']); }
+            else { list = MENUS['p_server']; }
             
             document.getElementById('sm-title').textContent = type.startsWith('p') ? 'ポイント内容' : 'ミス内容';
             list.forEach(item => {
-                if (item.k === 'recv' && !isReceiver) return; 
                 const b = document.createElement('button'); b.className = 'sm-btn';
                 b.innerHTML = `<div style="font-size:1.5rem">${item.i}</div><div style="font-size:0.75rem">${item.l}</div>`;
                 b.onclick = () => { 
                     if (item.custom) { const val = prompt("内容を入力してください"); if (val) commit(prefix + "other_" + val); }
-                    else if (item.sub) { let nextPre = prefix; if (item.k === 'recv') nextPre = 'recv_'; else nextPre += item.k + '_'; showSM(item.sub, p, nextPre); }
+                    else if (item.sub) { showSM(item.sub, p, prefix + item.k + '_'); } // 🌟 コードもスッキリさせました
                     else { commit(prefix + item.k); } 
                 };
                 sm.appendChild(b);
@@ -946,7 +952,7 @@
 
             if (!navigator.onLine) {
                 saveLocally(S);
-                alert("電波がありません！\\nデータはタブレットに安全に保存しました。\\n後で電波の良い場所で「一括送信」を押してください。");
+                alert("電波がありません！\nデータはタブレットに安全に保存しました。\n後で電波の良い場所で「一括送信」を押してください。");
                 btn.innerHTML = "✓ 端末に保存済";
                 return;
             }
