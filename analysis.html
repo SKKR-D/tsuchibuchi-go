@@ -557,8 +557,9 @@
                                     else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
                                     else if(err.startsWith('recv')) {
                                         e.err_recv += val;
-                                        if(err.includes('_f_')) e.err_recv_f += val;
-                                        else if(err.includes('_b_')) e.err_recv_b += val;
+                                        // 🌟修正ポイント：文字の途中にある _f_ だけでなく、recv_f そのものもフォアとしてカウント
+                                        if(err.includes('_f_') || err.startsWith('recv_f')) e.err_recv_f += val;
+                                        else if(err.includes('_b_') || err.startsWith('recv_b')) e.err_recv_b += val;
                                         else e.err_recv_u += val;
                                     }
                                     else e.err_other += val;
@@ -598,7 +599,7 @@
                                         if(isFp) e.pt_f_vol += val; else if(isBp) e.pt_b_vol += val;
                                     } else if(pt.includes('smash') || pt.includes('overhead')) {
                                         e.pt_sma += val;
-                                    } else if(pt.includes('shoot') || pt.includes('lob') || pt.includes('drop') || pt.includes('twist')) {
+                                    } else if(pt.includes('shoot') || pt.includes('lob') || pt.includes('twist') || pt.includes('drop')) {
                                         if(isFp) e.pt_f_str += val; else if(isBp) e.pt_b_str += val;
                                     }
                                 }
@@ -642,7 +643,6 @@
                 this.renderCharts();
             },
 
-            // 🌟 究極系・最終版：安全なGASを経由してAIを呼び出す
             async requestAIAdvice() {
                 const displayEntities = this.entities.filter(e => this.state.selectedTargets.includes(e.name));
                 const list = document.getElementById('coach-advice-list');
@@ -670,7 +670,6 @@
                 list.innerHTML = '<li style="color:#d97706; font-weight:bold; text-align:center;">🤖 AIデジタルコーチが最新のデータを分析中...<br><span style="font-size:0.8rem; color:gray;">(セキュア回線で通信しています。数秒お待ちください)</span></li>';
 
                 try {
-                    // ※ご自身のGASのURLに設定済みです
                     const GAS_URL = "https://script.google.com/macros/s/AKfycbyrImy8sdzUThC1N29mNszCf-ODT_fO3SwaOQoUXIUJMG0GtmNVW5IMtu8d45lIN_Fcrg/exec";
                     
                     const response = await fetch(GAS_URL, {
