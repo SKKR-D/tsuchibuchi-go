@@ -552,17 +552,22 @@
                                     let val = st.mt[err];
                                     e.raw_mt[err] = (e.raw_mt[err] || 0) + val; 
                                     
-                                    if(err === 'df') e.err_df += val;
-                                    else if(err.includes('net')) e.err_net += val;
-                                    else if(err.includes('out') || err.includes('bout') || err.includes('sout')) e.err_out += val;
-                                    else if(err.startsWith('recv')) {
+                                    // 🌟 ここが修正ポイントです：読み取る順番と集計方法を変更しました
+                                    if (err === 'df') {
+                                        e.err_df += val;
+                                    } else if (err.startsWith('recv')) {
+                                        if (err === 'recv') continue; // 重複カウントを防ぐため集計用キーはスキップ
                                         e.err_recv += val;
-                                        // 🌟修正ポイント：文字の途中にある _f_ だけでなく、recv_f そのものもフォアとしてカウント
-                                        if(err.includes('_f_') || err.startsWith('recv_f')) e.err_recv_f += val;
-                                        else if(err.includes('_b_') || err.startsWith('recv_b')) e.err_recv_b += val;
+                                        if (err.includes('_f_') || err.startsWith('recv_f')) e.err_recv_f += val;
+                                        else if (err.includes('_b_') || err.startsWith('recv_b')) e.err_recv_b += val;
                                         else e.err_recv_u += val;
+                                    } else if (err.includes('net')) {
+                                        e.err_net += val;
+                                    } else if (err.includes('out') || err.includes('bout') || err.includes('sout')) {
+                                        e.err_out += val;
+                                    } else {
+                                        e.err_other += val;
                                     }
-                                    else e.err_other += val;
 
                                     let isFm = err.startsWith('f_') || err.includes('_f_') || err.startsWith('recv_f');
                                     let isBm = err.startsWith('b_') || err.includes('_b_') || err.startsWith('recv_b');
